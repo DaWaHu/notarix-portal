@@ -53,7 +53,7 @@ export default async function AdminVendorsPage() {
                 </td>
               </tr>
             ) : (
-              vendors.map((v) => (
+              vendors.map((v: any) => (
                 <tr key={v.id} className="border-t">
                   <td className="px-4 py-3 font-mono">{v.vendorcode}</td>
                   <td className="px-4 py-3">{v.companyName}</td>
