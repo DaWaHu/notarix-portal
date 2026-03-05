@@ -1,10 +1,8 @@
-// app/notarix/page.tsx
-
-export default function NotarixPage() {
+export default function Page() {
   return (
     <main style={{ padding: 24 }}>
       <h1>Notarix</h1>
-      <p>This page is live.</p>
+      <p>Notarix page is active.</p>
     </main>
   );
 }
