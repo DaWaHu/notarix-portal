@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       message:
         "Vendor submit endpoint is live. (S3 upload runs when AWS env vars + payload are provided.)",
     });
-  } catch (err: any) {
+    } catch (err: any) {
     return NextResponse.json(
       { ok: false, error: err?.message || "Unknown error" },
       { status: 500 }
