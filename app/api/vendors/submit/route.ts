@@ -2,11 +2,9 @@
 import { NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
-import { PrismaPg } from "@prisma/adapter-pg";
 import { prisma } from "@/lib/prisma";
 import fs from "fs";
 import path from "path";
-import { Pool } from "pg";
 
 export const runtime = "nodejs";
 
