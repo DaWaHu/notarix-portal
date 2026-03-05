@@ -2,9 +2,7 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { Pool } from "pg";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
