@@ -184,9 +184,8 @@ export default async function VendorProfilePage({ searchParams }: Props) {
               </div>
             </div>
 
-            <div className="rounded-xl border p-4">
-        </div>
-        
+        </section>
+
         {/* Contacts */}
         <section className="mt-6 grid gap-4 md:grid-cols-2">
           {/* Primary */}
