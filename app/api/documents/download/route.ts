@@ -56,7 +56,7 @@ export async function GET(req: Request) {
     const keyFile = key.split("/").pop() || "document.pdf";
     const filename = keyFile.replace(/^[0-9a-fA-F-]{36}-/, "");
 
-    return new NextResponse(bytes, {
+    return new NextResponse(Buffer.from(bytes), {
       status: 200,
       headers: {
         "Content-Type": obj.ContentType || "application/pdf",
