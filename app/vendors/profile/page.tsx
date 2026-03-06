@@ -75,7 +75,6 @@ export default async function VendorProfilePage({ searchParams }: Props) {
       secondaryContactEmail: true,
       secondaryContactPhone: true,
 
-      notes: true,
     },
   });
 
