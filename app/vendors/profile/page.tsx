@@ -185,12 +185,7 @@ export default async function VendorProfilePage({ searchParams }: Props) {
             </div>
 
             <div className="rounded-xl border p-4">
-              <div className="text-sm font-semibold">Notes</div>
-              <div className="mt-2 text-sm text-gray-700">
-                {vendor.notes?.trim() ? vendor.notes : "—"}
-              </div>
-            </div>
-          </div>
+        </div>
         </section>
 
         {/* Contacts */}
