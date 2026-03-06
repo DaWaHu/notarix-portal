@@ -10,8 +10,12 @@ export async function GET(req: Request) {
     const bucket = process.env.S3_BUCKET_NAME;
 
     if (!key) {
-      return NextResponse.json({ ok: false, error: "Missing ?key= parameter" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "Missing ?key= parameter" },
+        { status: 400 }
+      );
     }
+
     if (!region || !bucket) {
       return NextResponse.json(
         { ok: false, error: "Missing AWS_REGION or S3_BUCKET_NAME in .env.local" },
@@ -35,15 +39,16 @@ export async function GET(req: Request) {
     );
 
     if (!obj.Body) {
-      return NextResponse.json({ ok: false, error: "File body was empty" }, { status: 500 });
+      return NextResponse.json(
+        { ok: false, error: "File body was empty" },
+        { status: 500 }
+      );
     }
 
-    const bytes = await obj.Body.transformToByteArray();
-
-    // Use the last part of the key as the filename (ex: "uploads/myfile.pdf" -> "myfile.pdf")
+    const stream = obj.Body.transformToWebStream();
     const filenameFromKey = key.split("/").pop() || "document.pdf";
 
-    return new NextResponse(bytes, {
+    return new Response(stream, {
       status: 200,
       headers: {
         "Content-Type": obj.ContentType || "application/pdf",
