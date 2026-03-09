@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 type Props = {
-  searchParams?: { vendorCode?: string };
+  searchParams?: Promise<{ vendorCode?: string }>;
 };
 
 function initials(name: string) {
@@ -21,9 +21,9 @@ function nice(v: string | null | undefined) {
 }
 
 export default async function VendorProfilePage({ searchParams }: Props) {
-  const vendorCode = (searchParams?.vendorCode || "").toUpperCase().trim();
+  const params = (await searchParams) || {};
+  const vendorCode = String(params.vendorCode || "").toUpperCase().trim();
 
-  // If they open the page without a vendor code
   if (!vendorCode) {
     return (
       <div className="mx-auto max-w-4xl p-6">
@@ -41,7 +41,10 @@ export default async function VendorProfilePage({ searchParams }: Props) {
           </div>
 
           <div className="mt-6">
-            <Link href="/admin/vendors/new" className="rounded bg-black px-4 py-2 text-sm text-white">
+            <Link
+              href="/admin/vendors/new"
+              className="rounded bg-black px-4 py-2 text-sm text-white"
+            >
               Go create a vendor
             </Link>
           </div>
@@ -50,35 +53,28 @@ export default async function VendorProfilePage({ searchParams }: Props) {
     );
   }
 
-  // Your Prisma model uses vendorcode (all lowercase in schema)
   const vendor = await prisma.vendor.findUnique({
     where: { vendorcode: vendorCode },
     select: {
       id: true,
       createdAt: true,
-
       vendorcode: true,
       companyName: true,
       companyLogoUrl: true,
-
       address1: true,
       address2: true,
       city: true,
       state: true,
       zip: true,
-
       primaryContactName: true,
       primaryContactEmail: true,
       primaryContactPhone: true,
-
       secondaryContactName: true,
       secondaryContactEmail: true,
       secondaryContactPhone: true,
-
     },
   });
 
-  // If code is not found
   if (!vendor) {
     return (
       <div className="mx-auto max-w-4xl p-6">
@@ -93,10 +89,16 @@ export default async function VendorProfilePage({ searchParams }: Props) {
           </div>
 
           <div className="mt-6 flex flex-wrap gap-2">
-            <Link href="/admin/vendors/new" className="rounded bg-black px-4 py-2 text-sm text-white">
+            <Link
+              href="/admin/vendors/new"
+              className="rounded bg-black px-4 py-2 text-sm text-white"
+            >
               Create Vendor
             </Link>
-            <Link href="/admin/vendors" className="rounded border px-4 py-2 text-sm">
+            <Link
+              href="/admin/vendors"
+              className="rounded border px-4 py-2 text-sm"
+            >
               View Vendor List
             </Link>
           </div>
@@ -106,11 +108,12 @@ export default async function VendorProfilePage({ searchParams }: Props) {
   }
 
   const pInit = initials(vendor.primaryContactName);
-  const sInit = vendor.secondaryContactName ? initials(vendor.secondaryContactName) : "—";
+  const sInit = vendor.secondaryContactName
+    ? initials(vendor.secondaryContactName)
+    : "—";
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top header */}
       <div className="border-b bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
           <div>
@@ -139,7 +142,6 @@ export default async function VendorProfilePage({ searchParams }: Props) {
       </div>
 
       <div className="mx-auto max-w-5xl p-6">
-        {/* Company card */}
         <section className="rounded-xl border bg-white p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
@@ -182,15 +184,23 @@ export default async function VendorProfilePage({ searchParams }: Props) {
                   {nice(vendor.city)}, {nice(vendor.state)} {nice(vendor.zip)}
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-xl border p-4">
+              <div className="text-sm font-semibold">Vendor Code</div>
+              <div className="mt-2 font-mono text-sm text-gray-700">
+                {vendor.vendorcode}
               </div>
+            </div>
+          </div>
         </section>
 
-        {/* Contacts */}
         <section className="mt-6 grid gap-4 md:grid-cols-2">
-          {/* Primary */}
           <div className="rounded-xl border bg-white p-6">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold">Primary Representative</div>
+              <div className="text-sm font-semibold">
+                Primary Representative
+              </div>
               <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">
                 Main
               </span>
@@ -225,10 +235,11 @@ export default async function VendorProfilePage({ searchParams }: Props) {
             </div>
           </div>
 
-          {/* Secondary */}
           <div className="rounded-xl border bg-white p-6">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold">Secondary Representative</div>
+              <div className="text-sm font-semibold">
+                Secondary Representative
+              </div>
               <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">
                 Optional
               </span>
@@ -264,7 +275,6 @@ export default async function VendorProfilePage({ searchParams }: Props) {
           </div>
         </section>
 
-        {/* Helpful links */}
         <section className="mt-6 rounded-xl border bg-white p-6">
           <div className="text-sm font-semibold">Quick Links</div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -275,13 +285,13 @@ export default async function VendorProfilePage({ searchParams }: Props) {
               Vendor Portal Home
             </Link>
             <Link
-              href={`/admin/vendors/new`}
+              href="/admin/vendors/new"
               className="rounded border px-4 py-2 text-sm"
             >
               Admin: Create Vendor
             </Link>
             <Link
-              href={`/admin/vendors`}
+              href="/admin/vendors"
               className="rounded border px-4 py-2 text-sm"
             >
               Admin: Vendor List
@@ -289,7 +299,6 @@ export default async function VendorProfilePage({ searchParams }: Props) {
           </div>
         </section>
       </div>
-    </div>
     </div>
   );
 }
