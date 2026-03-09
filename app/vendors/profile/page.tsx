@@ -182,8 +182,7 @@ export default async function VendorProfilePage({ searchParams }: Props) {
                   {nice(vendor.city)}, {nice(vendor.state)} {nice(vendor.zip)}
                 </div>
               </div>
-            </div>
-
+              </div>
         </section>
 
         {/* Contacts */}
@@ -290,6 +289,7 @@ export default async function VendorProfilePage({ searchParams }: Props) {
           </div>
         </section>
       </div>
+    </div>
     </div>
   );
 }
