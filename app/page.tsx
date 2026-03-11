@@ -104,19 +104,19 @@ export default function HomePage() {
             boxShadow: "0 18px 50px rgba(15, 23, 42, 0.07)",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
             <Image
               src="/notarix-logo.png"
               alt="Notarix Signing"
-              width={180}
-              height={180}
+              width={220}
+              height={220}
               priority
             />
           </div>
 
           <h1
             style={{
-              fontSize: 44,
+              fontSize: 46,
               lineHeight: 1.15,
               margin: "0 0 16px",
               fontWeight: 950,
@@ -127,6 +127,7 @@ export default function HomePage() {
           </h1>
 
           <p
+          
             style={{
               fontSize: 17,
               lineHeight: 1.7,
