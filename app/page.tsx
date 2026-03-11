@@ -146,6 +146,18 @@ export default function HomePage() {
 
           <div
             style={{
+              marginTop: 14,
+              textAlign: "center",
+              fontSize: 15,
+              fontWeight: 700,
+              color: "#1E40AF",
+            }}
+          >
+            Built for title companies, signing services, and professional notary networks.
+          </div>
+
+          <div
+            style={{
               display: "flex",
               gap: 12,
               marginTop: 24,
@@ -205,7 +217,7 @@ export default function HomePage() {
               margin: 0,
               paddingLeft: 18,
               color: "#334155",
-              lineHeight: 1.8,
+              lineHeight: 1.9,
               fontSize: 16,
             }}
           >
