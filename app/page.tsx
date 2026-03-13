@@ -549,10 +549,12 @@ export default function HomePage() {
               style={{
                 background: "#0F172A",
                 color: "white",
-                padding: "12px 14px",
-                borderRadius: 12,
-                fontWeight: 950,
+                padding: "12px 16px",
+                borderRadius: 14,
+                fontWeight: 900,
                 textDecoration: "none",
+                boxShadow: "0 8px 20px rgba(15, 23, 42, 0.25)",
+                transition: "all .15s ease",
               }}
             >
               Contact / Support
@@ -561,12 +563,14 @@ export default function HomePage() {
             <a
               href="/vendors/profile"
               style={{
-                background: "#1E40AF",
+                background: "linear-gradient(90deg,#1E3A8A,#2563EB)",
                 color: "white",
-                padding: "12px 14px",
-                borderRadius: 12,
-                fontWeight: 950,
+                padding: "12px 18px",
+                borderRadius: 14,
+                fontWeight: 900,
                 textDecoration: "none",
+                boxShadow: "0 10px 24px rgba(37, 99, 235, 0.35)",
+                transition: "all .15s ease",
               }}
             >
               Request Vendor Approval
