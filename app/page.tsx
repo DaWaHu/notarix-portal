@@ -365,7 +365,80 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+{/* Who NOTARIX is for */}
+<div
+  style={{
+    marginTop: 24,
+    background: "white",
+    border: "1px solid #E5E7EB",
+    borderRadius: 18,
+    padding: 22,
+    boxShadow: "0 10px 26px rgba(15, 23, 42, 0.06)",
+  }}
+>
+  <div
+    style={{
+      fontWeight: 950,
+      fontSize: 20,
+      marginBottom: 14,
+    }}
+  >
+    Who NOTARIX™ is for
+  </div>
 
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+      gap: 14,
+    }}
+  >
+    {[
+      {
+        title: "Title Companies",
+        text: "Manage signing orders, track document delivery, and coordinate notaries from one centralized system.",
+      },
+      {
+        title: "Signing Services",
+        text: "Assign vendors, monitor signing progress, and streamline communication across your network.",
+      },
+      {
+        title: "Professional Notaries",
+        text: "Receive assignments, access documents, communicate with clients, and track payment status.",
+      },
+    ].map((item) => (
+      <div
+        key={item.title}
+        style={{
+          border: "1px solid #E5E7EB",
+          borderRadius: 14,
+          padding: 16,
+          background: "#F8FAFC",
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 900,
+            marginBottom: 6,
+            color: "#0F172A",
+          }}
+        >
+          {item.title}
+        </div>
+
+        <div
+          style={{
+            fontSize: 14,
+            color: "#475569",
+            lineHeight: 1.6,
+          }}
+        >
+          {item.text}
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
         {/* In-use proof section */}
         <div
           style={{
@@ -518,8 +591,7 @@ export default function HomePage() {
       >
         <div>© NOTARIX™</div>
         <div>
-          Path: <span style={{ fontWeight: 900 }}>/</span> • Accessed:{" "}
-          <span style={{ fontWeight: 900 }}>{today}</span>
+          Accessed: <span style={{ fontWeight: 900 }}>{today}</span>
         </div>
       </footer>
     </main>
