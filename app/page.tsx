@@ -56,7 +56,7 @@ export default function HomePage() {
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <a
-            href="/vendors/test/orders"
+            href="/contact"
             style={{
               background: "white",
               color: "#1E40AF",
@@ -67,7 +67,7 @@ export default function HomePage() {
               boxShadow: "0 8px 18px rgba(15, 23, 42, 0.12)",
             }}
           >
-            View Portal
+            Approved User Login
           </a>
 
           <a
@@ -153,7 +153,7 @@ export default function HomePage() {
               color: "#1E40AF",
             }}
           >
-            Built for title companies, signing services, and professional notary networks.
+            Built for approved title companies, signing services, and professional notary networks.
           </div>
 
           <div
@@ -166,7 +166,7 @@ export default function HomePage() {
             }}
           >
             <a
-              href="/vendors/test/orders"
+              href="/contact"
               style={{
                 background: "#1E40AF",
                 color: "white",
@@ -177,7 +177,7 @@ export default function HomePage() {
                 boxShadow: "0 10px 24px rgba(30, 64, 175, 0.22)",
               }}
             >
-              Create / Manage Notary Orders
+              Request Platform Access
             </a>
 
             <a
@@ -488,7 +488,7 @@ export default function HomePage() {
                 textDecoration: "none",
               }}
             >
-              Create Vendor Profile
+              Request Vendor Approval
             </a>
           </div>
         </div>
