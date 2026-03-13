@@ -127,7 +127,6 @@ export default function HomePage() {
           </h1>
 
           <p
-          
             style={{
               fontSize: 17,
               lineHeight: 1.7,
@@ -154,6 +153,18 @@ export default function HomePage() {
             }}
           >
             Built for approved title companies, signing services, and professional notary networks.
+          </div>
+
+          <div
+            style={{
+              marginTop: 8,
+              textAlign: "center",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#475569",
+            }}
+          >
+            Platform access is provided only to approved organizations and authorized users.
           </div>
 
           <div
@@ -197,166 +208,162 @@ export default function HomePage() {
           </div>
         </div>
 
-{/* Product Preview Section */}
-<div
-  style={{
-    marginTop: 24,
-    background: "linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)",
-    border: "1px solid #E5E7EB",
-    borderRadius: 20,
-    padding: 24,
-    boxShadow: "0 10px 26px rgba(15, 23, 42, 0.06)",
-  }}
->
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "1.1fr 0.9fr",
-      gap: 24,
-      alignItems: "center",
-    }}
-  >
-    <div>
-      <div
-        style={{
-          fontSize: 14,
-          fontWeight: 900,
-          letterSpacing: 0.6,
-          textTransform: "uppercase",
-          color: "#1E40AF",
-          marginBottom: 10,
-        }}
-      >
-        Platform Preview
-      </div>
-
-      <h2
-        style={{
-          fontSize: 30,
-          lineHeight: 1.2,
-          fontWeight: 950,
-          margin: "0 0 14px",
-          color: "#0F172A",
-        }}
-      >
-        Manage notary operations from one centralized dashboard.
-      </h2>
-
-      <p
-        style={{
-          fontSize: 16,
-          lineHeight: 1.7,
-          color: "#334155",
-          margin: "0 0 16px",
-        }}
-      >
-        NOTARIX™ gives title companies and signing services a single place to
-        create orders, assign notaries, manage closing documents, communicate
-        with vendors, and track payments in real time.
-      </p>
-
-      <ul
-        style={{
-          margin: 0,
-          paddingLeft: 18,
-          color: "#334155",
-          lineHeight: 1.9,
-          fontSize: 15,
-        }}
-      >
-        <li>Assign and manage notary signings from one dashboard</li>
-        <li>Track document delivery, signing progress, and order status</li>
-        <li>Streamline communication, vendor coordination, and payments</li>
-      </ul>
-    </div>
-
-    <div
-      style={{
-        background: "#0F172A",
-        borderRadius: 18,
-        padding: 18,
-        boxShadow: "0 18px 40px rgba(15, 23, 42, 0.20)",
-      }}
-    >
-      <div
-        style={{
-          background: "linear-gradient(90deg, #1E3A8A 0%, #2563EB 100%)",
-          color: "white",
-          borderRadius: 12,
-          padding: "12px 14px",
-          fontWeight: 900,
-          marginBottom: 14,
-        }}
-      >
-        NOTARIX™ Dashboard
-      </div>
-
-      <div
-        style={{
-          background: "white",
-          borderRadius: 14,
-          padding: 14,
-        }}
-      >
+        {/* Product Preview Section */}
         <div
           style={{
-            display: "grid",
-            gap: 10,
+            marginTop: 24,
+            background: "linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)",
+            border: "1px solid #E5E7EB",
+            borderRadius: 20,
+            padding: 24,
+            boxShadow: "0 10px 26px rgba(15, 23, 42, 0.06)",
           }}
         >
-          {[
-            "Order #48219 • Awaiting Assignment",
-            "Order #48218 • Notary Assigned",
-            "Order #48212 • Paid in Full",
-          ].map((item) => (
-            <div
-              key={item}
-              style={{
-                border: "1px solid #E2E8F0",
-                borderRadius: 12,
-                padding: "12px 14px",
-                fontWeight: 700,
-                color: "#0F172A",
-                background: "#F8FAFC",
-              }}
-            >
-              {item}
-            </div>
-          ))}
-        </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.1fr 0.9fr",
+              gap: 24,
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 900,
+                  letterSpacing: 0.6,
+                  textTransform: "uppercase",
+                  color: "#1E40AF",
+                  marginBottom: 10,
+                }}
+              >
+                Platform Preview
+              </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 10,
-            marginTop: 14,
-          }}
-        >
-          {[
-            "Documents",
-            "Messages",
-            "Payments",
-          ].map((item) => (
+              <h2
+                style={{
+                  fontSize: 30,
+                  lineHeight: 1.2,
+                  fontWeight: 950,
+                  margin: "0 0 14px",
+                  color: "#0F172A",
+                }}
+              >
+                Manage notary operations from one centralized dashboard.
+              </h2>
+
+              <p
+                style={{
+                  fontSize: 16,
+                  lineHeight: 1.7,
+                  color: "#334155",
+                  margin: "0 0 16px",
+                }}
+              >
+                NOTARIX™ gives title companies and signing services a single place to
+                create orders, assign notaries, manage closing documents, communicate
+                with vendors, and track payments in real time.
+              </p>
+
+              <ul
+                style={{
+                  margin: 0,
+                  paddingLeft: 18,
+                  color: "#334155",
+                  lineHeight: 1.9,
+                  fontSize: 15,
+                }}
+              >
+                <li>Assign and manage notary signings from one dashboard</li>
+                <li>Track document delivery, signing progress, and order status</li>
+                <li>Streamline communication, vendor coordination, and payments</li>
+              </ul>
+            </div>
+
             <div
-              key={item}
               style={{
-                background: "#DBEAFE",
-                color: "#1E3A8A",
-                borderRadius: 12,
-                padding: "14px 10px",
-                textAlign: "center",
-                fontWeight: 900,
+                background: "#0F172A",
+                borderRadius: 18,
+                padding: 18,
+                boxShadow: "0 18px 40px rgba(15, 23, 42, 0.20)",
               }}
             >
-              {item}
+              <div
+                style={{
+                  background: "linear-gradient(90deg, #1E3A8A 0%, #2563EB 100%)",
+                  color: "white",
+                  borderRadius: 12,
+                  padding: "12px 14px",
+                  fontWeight: 900,
+                  marginBottom: 14,
+                }}
+              >
+                NOTARIX™ Dashboard
+              </div>
+
+              <div
+                style={{
+                  background: "white",
+                  borderRadius: 14,
+                  padding: 14,
+                }}
+              >
+                <div
+                  style={{
+                    display: "grid",
+                    gap: 10,
+                  }}
+                >
+                  {[
+                    "Order Intake Review",
+                    "Assignment Workflow",
+                    "Payment Status Tracking",
+                  ].map((item) => (
+                    <div
+                      key={item}
+                      style={{
+                        border: "1px solid #E2E8F0",
+                        borderRadius: 12,
+                        padding: "12px 14px",
+                        fontWeight: 700,
+                        color: "#0F172A",
+                        background: "#F8FAFC",
+                      }}
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gap: 10,
+                    marginTop: 14,
+                  }}
+                >
+                  {["Documents", "Messages", "Payments"].map((item) => (
+                    <div
+                      key={item}
+                      style={{
+                        background: "#DBEAFE",
+                        color: "#1E3A8A",
+                        borderRadius: 12,
+                        padding: "14px 10px",
+                        textAlign: "center",
+                        fontWeight: 900,
+                      }}
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          ))}
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
 
         {/* In-use proof section */}
         <div
