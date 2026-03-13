@@ -1,6 +1,10 @@
 import Image from "next/image";
+import { headers } from "next/headers";
 
 export default function HomePage() {
+
+  const path = headers().get("x-pathname") || "/";
+
   const today = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -517,7 +521,7 @@ export default function HomePage() {
       >
         <div>© NOTARIX™</div>
         <div>
-          Path: <span style={{ fontWeight: 900 }}>/</span> • Accessed:{" "}
+          Path: <span style={{ fontWeight: 900 }}>{path}</span> • Accessed:{" "}
           <span style={{ fontWeight: 900 }}>{today}</span>
         </div>
       </footer>
