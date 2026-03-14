@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
-
-const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
@@ -31,7 +29,7 @@ export async function POST(req: Request) {
       data: {
         role: contactType || "GENERAL",
         fullName: name,
-        email: email,
+        email,
         phone: phone || null,
         message: message || "",
         status: "NEW",
