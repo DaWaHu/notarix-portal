@@ -1,25 +1,56 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
+type FormState = {
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  contactType: string;
+  requestType: string;
+  coverageArea: string;
+  message: string;
+};
+
+const INITIAL_FORM: FormState = {
+  name: "",
+  email: "",
+  phone: "",
+  company: "",
+  contactType: "",
+  requestType: "",
+  coverageArea: "",
+  message: "",
+};
 
 export default function ContactPage() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    company: "",
-    contactType: "",
-    requestType: "",
-    coverageArea: "",
-    message: "",
-  });
-
+  const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     ok: boolean;
     message: string;
   } | null>(null);
+
+  const messagePlaceholder = useMemo(() => {
+    switch (form.requestType) {
+      case "Request Platform Access":
+        return "Tell us about your organization, who will use NOTARIX™, and what type of platform access you are requesting.";
+      case "Request Vendor Approval":
+        return "Tell us about your notary or vendor experience, service area, and how you would like to work with NOTARIX™.";
+      case "Request Demo":
+        return "Tell us about your company, your current workflow, and what you would like to see in a NOTARIX™ demo.";
+      case "Support Request":
+        return "Describe the issue, what page or workflow you were using, and any details that will help us assist you.";
+      case "Partnership Inquiry":
+        return "Tell us about your company, your services, and what type of partnership you would like to discuss.";
+      case "Integration / Technical Inquiry":
+        return "Describe the systems you use today and the type of integration or technical discussion you want to have.";
+      default:
+        return "Tell us how you would like to use NOTARIX™, what type of access you need, or any relevant details for your request.";
+    }
+  }, [form.requestType]);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -32,6 +63,16 @@ export default function ContactPage() {
     e.preventDefault();
     setLoading(true);
     setResult(null);
+
+    if (!form.name || !form.email || !form.contactType || !form.requestType) {
+      setResult({
+        ok: false,
+        message:
+          "Please complete Name, Email, Contact Type, and Request Type before submitting.",
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/intake", {
@@ -59,17 +100,8 @@ export default function ContactPage() {
           "Your request has been submitted successfully. Our team will review it and follow up with you.",
       });
 
-      setForm({
-        name: "",
-        email: "",
-        phone: "",
-        company: "",
-        contactType: "",
-        requestType: "",
-        coverageArea: "",
-        message: "",
-      });
-    } catch (error) {
+      setForm(INITIAL_FORM);
+    } catch {
       setResult({
         ok: false,
         message: "Unable to submit your request right now. Please try again.",
@@ -149,6 +181,7 @@ export default function ContactPage() {
                   type="text"
                   value={form.phone}
                   onChange={handleChange}
+                  placeholder="Optional"
                   className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
               </div>
@@ -162,18 +195,20 @@ export default function ContactPage() {
                   type="text"
                   value={form.company}
                   onChange={handleChange}
+                  placeholder="Optional"
                   className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700">
-                  Contact Type
+                  Contact Type <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="contactType"
                   value={form.contactType}
                   onChange={handleChange}
+                  required
                   className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 >
                   <option value="">Select one</option>
@@ -200,12 +235,13 @@ export default function ContactPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700">
-                  Request Type
+                  Request Type <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="requestType"
                   value={form.requestType}
                   onChange={handleChange}
+                  required
                   className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 >
                   <option value="">Select one</option>
@@ -250,7 +286,7 @@ export default function ContactPage() {
                 rows={6}
                 value={form.message}
                 onChange={handleChange}
-                placeholder="Tell us how you would like to use NOTARIX™, what type of access you need, or any relevant details for your request."
+                placeholder={messagePlaceholder}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               />
             </div>
@@ -272,7 +308,7 @@ export default function ContactPage() {
               disabled={loading}
               className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white shadow-md transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {loading ? "Submitting..." : "Send Message"}
+              {loading ? "Submitting Request..." : "Send Message"}
             </button>
           </form>
         </div>
