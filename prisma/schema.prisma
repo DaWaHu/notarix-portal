@@ -98,3 +98,15 @@ model VendorOrder {
   // Tracking
   status String @default("NEW") // NEW, ASSIGNED, COMPLETED, CANCELED
 }
+
+model AccessRequest {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  company     String?
+  requestType String
+  message     String
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

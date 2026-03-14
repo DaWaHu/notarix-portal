@@ -7,7 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint"
-      },
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.969.0",
     "@aws-sdk/s3-request-presigner": "^3.969.0",
@@ -20,12 +20,13 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
-    "@types/pg": "^8.11.10",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.11.10",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.23",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
