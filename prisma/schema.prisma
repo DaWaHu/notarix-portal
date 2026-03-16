@@ -1,16 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider   = "prisma-client-js"
-  engineType = "binary"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model IntakeSubmission {
@@ -18,32 +12,26 @@ model IntakeSubmission {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 
-  // CLIENT or NOTARY
   role String
 
-  // Contact info
   fullName String
   email    String
   phone    String?
 
-  // Extra info from the form
   message String?
   details Json?
 
-  // Tracking for your team
-  status String @default("NEW") // NEW, CONTACTED, SCHEDULED, CLOSED
+  status String @default("NEW")
 }
 
 model Vendor {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 
-  // The vendor assigned number you described (example: 1000126NC260131A)
   vendorcode String @unique
 
-  // Profile info
   companyName    String
-  companyLogoUrl String? // later we will store the logo in S3 and put the URL here
+  companyLogoUrl String?
 
   address1 String
   address2 String?
@@ -62,11 +50,9 @@ model Vendor {
   secondaryContactEmail String?
   secondaryContactPhone String?
 
-  // Link back to the original intake submission (optional but helpful)
   intakeSubmissionId String?           @unique
   intakeSubmission   IntakeSubmission? @relation("VendorIntake", fields: [intakeSubmissionId], references: [id])
 
-  // A vendor can have many orders
   orders VendorOrder[]
 }
 
@@ -77,7 +63,6 @@ model VendorOrder {
   vendorId String
   vendor   Vendor @relation(fields: [vendorId], references: [id])
 
-  // Order info the vendor enters
   signerName     String
   signerAddress1 String
   signerAddress2 String?
@@ -86,17 +71,13 @@ model VendorOrder {
   signerZip      String
   signerPhone    String
 
-  // Service type dropdown (we’ll fill the list next)
   serviceType String
 
-  // If they want remote online notarization
   isRON Boolean @default(false)
 
-  // Notes / “Other service” details
   notes String?
 
-  // Tracking
-  status String @default("NEW") // NEW, ASSIGNED, COMPLETED, CANCELED
+  status String @default("NEW")
 }
 
 model AccessRequest {
