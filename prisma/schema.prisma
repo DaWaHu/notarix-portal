@@ -8,61 +8,46 @@ datasource db {
 }
 
 model IntakeSubmission {
-  vendor    Vendor?  @relation("VendorIntake")
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-
-  role String
-
-  fullName String
-  email    String
-  phone    String?
-
-  message String?
-  details Json?
-
-  status String @default("NEW")
+  role      String
+  fullName  String
+  email     String
+  phone     String?
+  message   String?
+  details   Json?
+  status    String   @default("NEW")
+  vendor    Vendor?  @relation("VendorIntake")
 }
 
 model Vendor {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-
-  vendorcode String @unique
-
-  companyName    String
-  companyLogoUrl String?
-
-  address1 String
-  address2 String?
-  city     String
-  state    String
-  zip      String
-
-  primaryPhone   String
-  secondaryPhone String?
-
-  primaryContactName  String
-  primaryContactEmail String
-  primaryContactPhone String
-
+  id                    String            @id @default(cuid())
+  createdAt             DateTime          @default(now())
+  vendorcode            String            @unique
+  companyName           String
+  companyLogoUrl        String?
+  address1              String
+  address2              String?
+  city                  String
+  state                 String
+  zip                   String
+  primaryPhone          String
+  secondaryPhone        String?
+  primaryContactName    String
+  primaryContactEmail   String
+  primaryContactPhone   String
   secondaryContactName  String?
   secondaryContactEmail String?
   secondaryContactPhone String?
-
-  intakeSubmissionId String?           @unique
-  intakeSubmission   IntakeSubmission? @relation("VendorIntake", fields: [intakeSubmissionId], references: [id])
-
-  orders VendorOrder[]
+  intakeSubmissionId    String?           @unique
+  intakeSubmission      IntakeSubmission? @relation("VendorIntake", fields: [intakeSubmissionId], references: [id])
+  orders                VendorOrder[]
 }
 
 model VendorOrder {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-
-  vendorId String
-  vendor   Vendor @relation(fields: [vendorId], references: [id])
-
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  vendorId       String
   signerName     String
   signerAddress1 String
   signerAddress2 String?
@@ -70,14 +55,11 @@ model VendorOrder {
   signerState    String
   signerZip      String
   signerPhone    String
-
-  serviceType String
-
-  isRON Boolean @default(false)
-
-  notes String?
-
-  status String @default("NEW")
+  serviceType    String
+  isRON          Boolean  @default(false)
+  notes          String?
+  status         String   @default("NEW")
+  vendor         Vendor   @relation(fields: [vendorId], references: [id])
 }
 
 model AccessRequest {
