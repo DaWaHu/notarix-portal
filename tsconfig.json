@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "app/api/db-debug/route.ts.disabled"  ],
   "exclude": ["node_modules"]
 }
