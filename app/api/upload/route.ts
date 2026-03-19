@@ -1,6 +1,7 @@
 // app/api/upload/route.ts
 import { NextResponse } from "next/server";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { s3 } from "@/lib/s3";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
@@ -23,9 +24,6 @@ export async function POST(req: Request) {
       process.env.S3_BUCKET_NAME ||
       process.env.AWS_S3_BUCKET ||
       getRequiredEnv("S3_BUCKET_NAME");
-
-    const AWS_ACCESS_KEY_ID = getRequiredEnv("AWS_ACCESS_KEY_ID");
-    const AWS_SECRET_ACCESS_KEY = getRequiredEnv("AWS_SECRET_ACCESS_KEY");
 
     const formData = await req.formData();
     const file = formData.get("file");
@@ -56,15 +54,7 @@ export async function POST(req: Request) {
     const safeName = filename.replace(/[^\w.\-]+/g, "_");
     const key = `uploads/${crypto.randomUUID()}-${safeName}`;
 
-    const s3 = new S3Client({
-      region: AWS_REGION,
-      credentials: {
-        accessKeyId: AWS_ACCESS_KEY_ID,
-        secretAccessKey: AWS_SECRET_ACCESS_KEY,
-      },
-    });
-
-await s3.send(
+    await s3.send(
   new PutObjectCommand({
     Bucket: BUCKET,
     Key: key,
