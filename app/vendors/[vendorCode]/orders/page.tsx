@@ -226,6 +226,7 @@ export default async function VendorOrdersPage({
   const companyName = vendor?.companyName || "CLIENT NAME / TITLE COMPANY";
   const displayVendorCode = vendor?.vendorcode || vendorCode;
 
+  // Temporary mock orders until VendorOrder records are wired into the page.
   const orders = [
     {
       id: "48219",
@@ -317,6 +318,7 @@ export default async function VendorOrdersPage({
           + Create New Order
         </a>
       </div>
+
       {!selectedOrder ? (
         <div style={{ display: "grid", gap: 12, marginBottom: 18 }}>
           {orders.map((o) => (
@@ -445,331 +447,326 @@ export default async function VendorOrdersPage({
                   <Tag label="Letter" />
                 </div>
 
-                <Tag label="Blue Ink" checked />
-                <Tag label="Black Ink" />
+                <div
+                  style={{
+                    border: "1px solid #E5E7EB",
+                    borderRadius: 10,
+                    padding: 12,
+                    background: "#F8FAFC",
+                    color: "#334155",
+                    fontSize: 13,
+                    fontWeight: 650,
+                  }}
+                >
+                  Please ensure all borrowers sign according to the instructions
+                  before proceeding.
+                </div>
+              </Card>
+
+              <Card title="Documents">
+                {[
+                  {
+                    name: "Instructions.pdf",
+                    who: companyName,
+                    time: "03/03/2026 9:22 AM",
+                  },
+                  {
+                    name: "Loan_Package.pdf",
+                    who: companyName,
+                    time: "03/03/2026 9:44 AM",
+                  },
+                  {
+                    name: "Signed_Package.pdf",
+                    who: "Assigned Notary",
+                    time: "03/05/2026 4:15 PM",
+                  },
+                ].map((d) => (
+                  <div
+                    key={d.name}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "10px 10px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: 10,
+                      marginBottom: 10,
+                      background: "#fff",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 900, color: "#0F172A" }}>
+                        {d.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#64748B",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {d.who} • {d.time}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 18, color: "#94A3B8" }}>›</span>
+                  </div>
+                ))}
+
+                <button
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: "1px solid #CBD5E1",
+                    background: "#F8FAFC",
+                    fontWeight: 900,
+                    cursor: "pointer",
+                  }}
+                >
+                  + Add Document
+                </button>
+              </Card>
             </div>
 
             <div
               style={{
-                border: "1px solid #E5E7EB",
-                borderRadius: 10,
-                padding: 12,
-                background: "#F8FAFC",
-                color: "#334155",
-                fontSize: 13,
-                fontWeight: 650,
+                display: "grid",
+                gridTemplateColumns: "1.1fr 1.5fr 1.4fr",
+                gap: 12,
               }}
             >
-              Please ensure all borrowers sign according to the instructions
-              before proceeding.
-            </div>
-          </Card>
-
-          <Card title="Documents">
-            {[
-              {
-                name: "Instructions.pdf",
-                who: companyName,
-                time: "03/03/2026 9:22 AM",
-              },
-              {
-                name: "Loan_Package.pdf",
-                who: companyName,
-                time: "03/03/2026 9:44 AM",
-              },
-              {
-                name: "Signed_Package.pdf",
-                who: "Assigned Notary",
-                time: "03/05/2026 4:15 PM",
-              },
-            ].map((d) => (
-              <div
-                key={d.name}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "10px 10px",
-                  border: "1px solid #E5E7EB",
-                  borderRadius: 10,
-                  marginBottom: 10,
-                  background: "#fff",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 900, color: "#0F172A" }}>
-                    {d.name}
+              <Card title="Contacts">
+                <div style={{ display: "grid", gap: 12 }}>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 12,
+                        background: "#E2E8F0",
+                        border: "1px solid #CBD5E1",
+                      }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 900, color: "#0F172A" }}>
+                        {vendor?.primaryContactName || "John Smith"}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#64748B",
+                          fontWeight: 800,
+                        }}
+                      >
+                        Primary Contact
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#0F172A",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {vendor?.primaryContactPhone || "(555) 123-4567"}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#0F172A",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {vendor?.primaryContactEmail || "jsmith@titlecompany.com"}
+                      </div>
+                    </div>
                   </div>
+
+                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 12,
+                        background: "#E2E8F0",
+                        border: "1px solid #CBD5E1",
+                      }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 900, color: "#0F172A" }}>
+                        {vendor?.secondaryContactName || "Sarah Johnson"}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#64748B",
+                          fontWeight: 800,
+                        }}
+                      >
+                        Secondary Contact
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#0F172A",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {vendor?.secondaryContactPhone || "(555) 987-6643"}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#0F172A",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {vendor?.secondaryContactEmail || "sjohnson@notary.com"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card title="Communication Log">
+                <div style={{ display: "grid", gap: 10 }}>
+                  <div
+                    style={{
+                      border: "1px solid #E5E7EB",
+                      borderRadius: 10,
+                      padding: 12,
+                      background: "#fff",
+                    }}
+                  >
+                    <div style={{ fontWeight: 900, marginBottom: 4 }}>
+                      {companyName}{" "}
+                      <span style={{ color: "#64748B" }}>• 03/05/2026 10:15 AM</span>
+                    </div>
+                    <div style={{ color: "#334155", fontWeight: 650 }}>
+                      Please ensure borrower signs all pages in blue ink.
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      border: "1px solid #E5E7EB",
+                      borderRadius: 10,
+                      padding: 12,
+                      background: "#fff",
+                    }}
+                  >
+                    <div style={{ fontWeight: 900, marginBottom: 4 }}>
+                      Assigned Notary{" "}
+                      <span style={{ color: "#64748B" }}>• 03/05/2026 3:38 PM</span>
+                    </div>
+                    <div style={{ color: "#334155", fontWeight: 650 }}>
+                      Signing completed. Uploading documents now.
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                    <input
+                      placeholder="Type your message..."
+                      style={{
+                        flex: 1,
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        border: "1px solid #CBD5E1",
+                        outline: "none",
+                        fontWeight: 700,
+                      }}
+                    />
+                    <button
+                      style={{
+                        padding: "10px 16px",
+                        borderRadius: 10,
+                        border: "1px solid #1D4ED8",
+                        background: "#1D4ED8",
+                        color: "white",
+                        fontWeight: 950,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Send
+                    </button>
+                  </div>
+                </div>
+              </Card>
+
+              <Card title="Payment Details">
+                <Field label="Notary Fee" value="$125.00" />
+                <Field label="Estimated Payment Date" value="March 7, 2026" />
+
+                <div style={{ marginTop: 8, marginBottom: 10 }}>
                   <div
                     style={{
                       fontSize: 12,
                       color: "#64748B",
-                      fontWeight: 700,
+                      fontWeight: 800,
                     }}
                   >
-                    {d.who} • {d.time}
+                    Payment Method
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      flexWrap: "wrap",
+                      marginTop: 8,
+                    }}
+                  >
+                    {["VendorPay", "ACH Transfer", "Zelle", "PayPal Business"].map(
+                      (m) => (
+                        <span
+                          key={m}
+                          style={{
+                            padding: "7px 10px",
+                            borderRadius: 999,
+                            border: "1px solid #CBD5E1",
+                            background: "#F8FAFC",
+                            fontWeight: 900,
+                            fontSize: 12,
+                          }}
+                        >
+                          {m}
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
-                <span style={{ fontSize: 18, color: "#94A3B8" }}>›</span>
-              </div>
-            ))}
 
-            <button
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid #CBD5E1",
-                background: "#F8FAFC",
-                fontWeight: 900,
-                cursor: "pointer",
-              }}
-            >
-              + Add Document
-            </button>
-          </Card>
-        </div>
+                <div style={{ marginTop: 10 }}>
+                  <Field label="Payment Status" value="Scheduled" />
+                  <a
+                    href="#"
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 900,
+                      color: "#1D4ED8",
+                    }}
+                  >
+                    Learn more about payments and timing →
+                  </a>
+                </div>
+              </Card>
+            </div>
+
+            <Card title="Order Status">
+              <Timeline current={selectedOrder.status} />
+            </Card>
+          </div>
+        </>
+      )}
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "1.1fr 1.5fr 1.4fr",
-          gap: 12,
+          textAlign: "right",
+          color: "#64748B",
+          fontWeight: 800,
+          marginTop: 18,
         }}
       >
-        <Card title="Contacts">
-          <div style={{ display: "grid", gap: 12 }}>
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: "#E2E8F0",
-                  border: "1px solid #CBD5E1",
-                }}
-              />
-              <div>
-                <div style={{ fontWeight: 900, color: "#0F172A" }}>
-                  {vendor?.primaryContactName || "John Smith"}
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "#64748B",
-                    fontWeight: 800,
-                  }}
-                >
-                  Primary Contact
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "#0F172A",
-                    fontWeight: 800,
-                  }}
-                >
-                  {vendor?.primaryContactPhone || "(555) 123-4567"}
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "#0F172A",
-                    fontWeight: 800,
-                  }}
-                >
-                  {vendor?.primaryContactEmail || "jsmith@titlecompany.com"}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: "#E2E8F0",
-                  border: "1px solid #CBD5E1",
-                }}
-              />
-              <div>
-                <div style={{ fontWeight: 900, color: "#0F172A" }}>
-                  {vendor?.secondaryContactName || "Sarah Johnson"}
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "#64748B",
-                    fontWeight: 800,
-                  }}
-                >
-                  Secondary Contact
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "#0F172A",
-                    fontWeight: 800,
-                  }}
-                >
-                  {vendor?.secondaryContactPhone || "(555) 987-6643"}
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "#0F172A",
-                    fontWeight: 800,
-                  }}
-                >
-                  {vendor?.secondaryContactEmail || "sjohnson@notary.com"}
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card title="Communication Log">
-          <div style={{ display: "grid", gap: 10 }}>
-            <div
-              style={{
-                border: "1px solid #E5E7EB",
-                borderRadius: 10,
-                padding: 12,
-                background: "#fff",
-              }}
-            >
-              <div style={{ fontWeight: 900, marginBottom: 4 }}>
-                {companyName}{" "}
-                <span style={{ color: "#64748B" }}>• 03/05/2026 10:15 AM</span>
-              </div>
-              <div style={{ color: "#334155", fontWeight: 650 }}>
-                Please ensure borrower signs all pages in blue ink.
-              </div>
-            </div>
-
-            <div
-              style={{
-                border: "1px solid #E5E7EB",
-                borderRadius: 10,
-                padding: 12,
-                background: "#fff",
-              }}
-            >
-              <div style={{ fontWeight: 900, marginBottom: 4 }}>
-                Assigned Notary{" "}
-                <span style={{ color: "#64748B" }}>• 03/05/2026 3:38 PM</span>
-              </div>
-              <div style={{ color: "#334155", fontWeight: 650 }}>
-                Signing completed. Uploading documents now.
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-              <input
-                placeholder="Type your message..."
-                style={{
-                  flex: 1,
-                  padding: "10px 12px",
-                  borderRadius: 10,
-                  border: "1px solid #CBD5E1",
-                  outline: "none",
-                  fontWeight: 700,
-                }}
-              />
-              <button
-                style={{
-                  padding: "10px 16px",
-                  borderRadius: 10,
-                  border: "1px solid #1D4ED8",
-                  background: "#1D4ED8",
-                  color: "white",
-                  fontWeight: 950,
-                  cursor: "pointer",
-                }}
-              >
-                Send
-              </button>
-            </div>
-          </div>
-        </Card>
-
-        <Card title="Payment Details">
-          <Field label="Notary Fee" value="$125.00" />
-          <Field label="Estimated Payment Date" value="March 7, 2026" />
-
-          <div style={{ marginTop: 8, marginBottom: 10 }}>
-            <div
-              style={{
-                fontSize: 12,
-                color: "#64748B",
-                fontWeight: 800,
-              }}
-            >
-              Payment Method
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                flexWrap: "wrap",
-                marginTop: 8,
-              }}
-            >
-              {["VendorPay", "ACH Transfer", "Zelle", "PayPal Business"].map(
-                (m) => (
-                  <span
-                    key={m}
-                    style={{
-                      padding: "7px 10px",
-                      borderRadius: 999,
-                      border: "1px solid #CBD5E1",
-                      background: "#F8FAFC",
-                      fontWeight: 900,
-                      fontSize: 12,
-                    }}
-                  >
-                    {m}
-                  </span>
-                )
-              )}
-            </div>
-          </div>
-
-          <div style={{ marginTop: 10 }}>
-            <Field label="Payment Status" value="Scheduled" />
-            <a
-              href="#"
-              style={{
-                fontSize: 12,
-                fontWeight: 900,
-                color: "#1D4ED8",
-              }}
-            >
-              Learn more about payments and timing →
-            </a>
-          </div>
-        </Card>
+        © 2026 Notarix.live
       </div>
-
-      <Card title="Order Status">
-        <Timeline current={selectedOrder.status} />
-      </Card>
-    </div>
-        </>
-      )
-}
-
-<div
-  style={{
-    textAlign: "right",
-    color: "#64748B",
-    fontWeight: 800,
-    marginTop: 18,
-  }}
->
-  © 2026 Notarix.live
-</div>
-    </main >
+    </main>
   );
 }
