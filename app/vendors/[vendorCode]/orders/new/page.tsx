@@ -398,7 +398,7 @@ export default async function VendorOrdersPage({
         </div>
 
         <a
-          href={`/vendors/${displayVendorCode}/orders/new`}
+          href={`/vendors/${vendorCode}/orders/new`}
           style={{
             display: "inline-flex",
             alignItems: "center",
