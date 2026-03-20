@@ -8,7 +8,7 @@ export default function Page() {
         alignItems: "center",
       }}
     >
-      <div style={{ fontSize: "48px", color: "black" }}>HELLO</div>
+      <div style={{ fontSize: "48px", color: "black" }}>Create New Order</div>
     </div>
   );
 }
