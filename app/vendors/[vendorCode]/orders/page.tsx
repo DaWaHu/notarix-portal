@@ -418,7 +418,8 @@ export default async function VendorOrdersPage({
                   <Tag label="Letter" />
                 </div>
 
-                Additional Signer: Robert Garcia
+                  <Tag label="Blue Ink" checked />
+                  <Tag label="Black Ink" />
                 </div>
 
                 <div
