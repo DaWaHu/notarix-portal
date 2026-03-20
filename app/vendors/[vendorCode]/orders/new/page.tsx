@@ -374,7 +374,7 @@ export default async function VendorOrdersPage({
             }}
           />
           <div style={{ fontWeight: 900, letterSpacing: 0.2 }}>
-            {companyName}
+            {"Notarix Staff Portal"}
           </div>
         </div>
 
