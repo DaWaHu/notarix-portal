@@ -446,7 +446,7 @@ export default async function VendorOrdersPage({
               return (
                 <a
                   key={o.id}
-                  href={`/vendors/${displayVendorCode}/orders?order=${o.id}`}
+                  href={`/vendors/${vendorcode}/orders?order=${o.id}`}
                   style={{
                     textDecoration: "none",
                     display: "block",
