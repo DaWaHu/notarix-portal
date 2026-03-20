@@ -80,13 +80,13 @@ model VendorOrder {
   notes                  String?
 
   // Legacy fields still required by current DB table
-  signerName             String
-  signerAddress1         String
+  signerName             String?
+  signerAddress1         String?
   signerAddress2         String?
-  signerCity             String
-  signerState            String
-  signerZip              String
-  signerPhone            String
+  signerCity             String?
+  signerState            String?
+  signerZip              String?
+  signerPhone            String?
 
   vendor                 Vendor   @relation(fields: [vendorId], references: [id])
 }
