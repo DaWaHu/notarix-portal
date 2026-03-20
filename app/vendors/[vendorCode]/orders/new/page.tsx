@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 
 type FormState = {
   primaryBorrowerName: string;
@@ -42,12 +43,9 @@ const initialForm: FormState = {
   specialInstructions: "",
 };
 
-export default function NewVendorOrderPage({
-  params,
-}: {
-  params: { vendorCode: string };
-}) {
-  const vendorCode = String(params.vendorCode || "").toUpperCase().trim();
+export default function NewVendorOrderPage() {
+  const params = useParams();
+  const vendorCode = String(params?.vendorCode || "").toUpperCase().trim();
 
   const [form, setForm] = useState<FormState>(initialForm);
   const [submitting, setSubmitting] = useState(false);
@@ -62,6 +60,11 @@ export default function NewVendorOrderPage({
     e.preventDefault();
     setError("");
     setSuccess("");
+
+    if (!vendorCode) {
+      setError("Vendor code is missing from the page URL.");
+      return;
+    }
 
     if (
       !form.primaryBorrowerName.trim() ||
