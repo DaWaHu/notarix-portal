@@ -46,8 +46,29 @@ function generateOrderNumber() {
   const y = now.getFullYear().toString().slice(-2);
   const m = String(now.getMonth() + 1).padStart(2, "0");
   const d = String(now.getDate()).padStart(2, "0");
-  const rand = Math.floor(1000 + Math.random() * 9000);
-  return `${y}${m}${d}-${rand}`;
+  async function generateOrderNumber() {
+    const now = new Date();
+    const y = now.getFullYear().toString().slice(-2);
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    const prefix = `${y}${m}${d}`;
+
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    const countToday = await prisma.vendorOrder.count({
+      where: {
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+    });
+
+    const sequence = String(countToday + 1).padStart(4, "0");
+
+    return `${prefix}-${sequence}`;
+  }
 }
 
 export async function POST(req: Request) {
@@ -82,7 +103,7 @@ export async function POST(req: Request) {
     const created = await prisma.vendorOrder.create({
       data: {
         vendorId: vendor.id,
-        orderNumber: generateOrderNumber(),
+        orderNumber: await generateOrderNumber(),
         status: "PENDING",
 
         // New fields
