@@ -75,7 +75,7 @@ model VendorOrder {
   preferredInk           String?
 
   isRON                  Boolean  @default(false)
-  serviceType            String
+  serviceType            String?
   specialInstructions    String?
   notes                  String?
 
