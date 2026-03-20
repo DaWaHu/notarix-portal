@@ -509,7 +509,7 @@ export default async function VendorOrdersPage({
           >
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <a
-                href={`/vendors/${displayVendorCode}/orders`}
+                href={`/admin/orders`}
                 style={{
                   color: "white",
                   textDecoration: "none",
