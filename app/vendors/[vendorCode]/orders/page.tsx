@@ -232,20 +232,15 @@ function buildPropertyLine(order: {
   propertyState: string | null;
   propertyZip: string | null;
 }) {
-  const parts = [
-    nice(order.propertyAddress1) !== "—" ? order.propertyAddress1 : null,
-    nice(order.propertyAddress2) !== "—" ? order.propertyAddress2 : null,
-    [
-      nice(order.propertyCity) !== "—" ? order.propertyCity : null,
-      nice(order.propertyState) !== "—" ? order.propertyState : null,
-      nice(order.propertyZip) !== "—" ? order.propertyZip : null,
-    ]
-      .filter(Boolean)
-      .join(", ")
-      .replace(", ,", ","),
-  ].filter(Boolean);
+  const first = [order.propertyAddress1, order.propertyAddress2]
+    .filter((v) => String(v || "").trim())
+    .join(", ");
 
-  return parts.join(" • ") || "—";
+  const second = [order.propertyCity, order.propertyState, order.propertyZip]
+    .filter((v) => String(v || "").trim())
+    .join(", ");
+
+  return [first, second].filter(Boolean).join(" • ") || "—";
 }
 
 export default async function VendorOrdersPage({
@@ -333,7 +328,7 @@ export default async function VendorOrdersPage({
   }
 
   const displayVendorCode = vendor.vendorcode;
-  const companyName = vendor.companyName || "CLIENT NAME / TITLE COMPANY";
+  const companyName = vendor.companyName || "CLIENT";
   const orders = vendor.orders;
   const selectedOrder = orders.find((o) => o.id === selectedOrderId) || null;
   const selectedStatus = normalizeStatus(selectedOrder?.status);
@@ -361,9 +356,7 @@ export default async function VendorOrdersPage({
           marginBottom: 18,
         }}
       >
-        <div style={{ fontWeight: 900, letterSpacing: 0.2 }}>
-          {companyName}
-        </div>
+        <div style={{ fontWeight: 900, letterSpacing: 0.2 }}>{companyName}</div>
         <div style={{ fontWeight: 800 }}>Powered by Notarix</div>
       </div>
 
@@ -600,10 +593,7 @@ export default async function VendorOrdersPage({
                       .toUpperCase()
                       .includes("LETTER")}
                   />
-                  <Tag
-                    label="RON"
-                    checked={Boolean(selectedOrder.isRON)}
-                  />
+                  <Tag label="RON" checked={Boolean(selectedOrder.isRON)} />
                 </div>
 
                 <Field
@@ -628,36 +618,21 @@ export default async function VendorOrdersPage({
                 >
                   {nice(selectedOrder.specialInstructions) !== "—"
                     ? selectedOrder.specialInstructions
-                    : nice(selectedOrder.notes)}
+                    : "No special instructions entered."}
                 </div>
               </Card>
 
               <Card title="Documents">
                 <div
                   style={{
-                    color: "#64748B",
+                    color: "#475569",
                     fontWeight: 700,
                     fontSize: 14,
                     padding: "4px 2px",
                   }}
                 >
-                  Document upload section can be wired next.
+                  No documents uploaded yet.
                 </div>
-
-                <button
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: "1px solid #CBD5E1",
-                    background: "#F8FAFC",
-                    fontWeight: 900,
-                    cursor: "pointer",
-                    marginTop: 10,
-                  }}
-                >
-                  + Add Document
-                </button>
               </Card>
             </div>
 
@@ -763,56 +738,19 @@ export default async function VendorOrdersPage({
               <Card title="Communication Log">
                 <div
                   style={{
-                    color: "#64748B",
+                    color: "#475569",
                     fontWeight: 700,
                     fontSize: 14,
-                    padding: "4px 2px 12px",
+                    padding: "4px 2px",
                   }}
                 >
-                  Communication log can be connected after order messaging is
-                  built.
-                </div>
-
-                <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-                  <input
-                    placeholder="Type your message..."
-                    style={{
-                      flex: 1,
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      border: "1px solid #CBD5E1",
-                      outline: "none",
-                      fontWeight: 700,
-                    }}
-                  />
-                  <button
-                    style={{
-                      padding: "10px 16px",
-                      borderRadius: 10,
-                      border: "1px solid #1D4ED8",
-                      background: "#1D4ED8",
-                      color: "white",
-                      fontWeight: 950,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Send
-                  </button>
+                  No communication messages yet.
                 </div>
               </Card>
 
               <Card title="Payment Details">
-                <Field label="Payment Status" value="Pending setup" />
+                <Field label="Payment Status" value="Not configured" />
                 <Field label="Estimated Payment Date" value="—" />
-                <div
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 900,
-                    color: "#1D4ED8",
-                  }}
-                >
-                  Payment workflow can be connected next.
-                </div>
               </Card>
             </div>
 
