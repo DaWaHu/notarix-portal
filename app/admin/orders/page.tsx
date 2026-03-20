@@ -4,6 +4,16 @@ export const dynamic = "force-dynamic";
 
 type Status = "Pending" | "Active" | "Completed" | "Closed";
 
+type PageProps = {
+  searchParams?: Promise<{
+    vendorCode?: string;
+    status?: string;
+    q?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }>;
+};
+
 function normalizeStatus(value: string | null | undefined): Status {
   const v = String(value || "").trim().toUpperCase();
 
@@ -11,6 +21,17 @@ function normalizeStatus(value: string | null | undefined): Status {
   if (v === "COMPLETED" || v === "DONE") return "Completed";
   if (v === "CLOSED" || v === "CANCELLED" || v === "CANCELED") return "Closed";
   return "Pending";
+}
+
+function toDbStatusFilter(value: string | null | undefined): string[] | null {
+  const v = String(value || "").trim().toUpperCase();
+
+  if (!v) return null;
+  if (v === "PENDING") return ["PENDING", "NEW"];
+  if (v === "ACTIVE") return ["ACTIVE", "IN_PROGRESS", "OPEN"];
+  if (v === "COMPLETED") return ["COMPLETED", "DONE"];
+  if (v === "CLOSED") return ["CLOSED", "CANCELLED", "CANCELED"];
+  return null;
 }
 
 function nice(value: string | null | undefined) {
@@ -90,8 +111,69 @@ function StatusBadge({ status }: { status: Status }) {
   );
 }
 
-export default async function AdminOrdersPage() {
+export default async function AdminOrdersPage({ searchParams }: PageProps) {
+  const sp = (await searchParams) || {};
+
+  const selectedVendorCode = String(sp.vendorCode || "").toUpperCase().trim();
+  const selectedStatus = String(sp.status || "").toUpperCase().trim();
+  const query = String(sp.q || "").trim();
+  const dateFrom = String(sp.dateFrom || "").trim();
+  const dateTo = String(sp.dateTo || "").trim();
+
+  const vendors = await prisma.vendor.findMany({
+    orderBy: [{ companyName: "asc" }],
+    select: {
+      vendorcode: true,
+      companyName: true,
+    },
+    take: 500,
+  });
+
+  const statusFilter = toDbStatusFilter(selectedStatus);
+
+  const where: any = {};
+
+  if (selectedVendorCode) {
+    where.vendor = {
+      vendorcode: selectedVendorCode,
+    };
+  }
+
+  if (statusFilter) {
+    where.status = {
+      in: statusFilter,
+    };
+  }
+
+  if (query) {
+    where.OR = [
+      { orderNumber: { contains: query, mode: "insensitive" } },
+      { primaryBorrowerName: { contains: query, mode: "insensitive" } },
+      { secondaryBorrowerName: { contains: query, mode: "insensitive" } },
+      { propertyAddress1: { contains: query, mode: "insensitive" } },
+      { propertyAddress2: { contains: query, mode: "insensitive" } },
+      { propertyCity: { contains: query, mode: "insensitive" } },
+      { propertyState: { contains: query, mode: "insensitive" } },
+      { propertyZip: { contains: query, mode: "insensitive" } },
+      { borrowerEmail: { contains: query, mode: "insensitive" } },
+      { borrowerPhone: { contains: query, mode: "insensitive" } },
+      { vendor: { vendorcode: { contains: query, mode: "insensitive" } } },
+      { vendor: { companyName: { contains: query, mode: "insensitive" } } },
+    ];
+  }
+
+  if (dateFrom || dateTo) {
+    where.createdAt = {};
+    if (dateFrom) {
+      where.createdAt.gte = new Date(`${dateFrom}T00:00:00`);
+    }
+    if (dateTo) {
+      where.createdAt.lte = new Date(`${dateTo}T23:59:59.999`);
+    }
+  }
+
   const orders = await prisma.vendorOrder.findMany({
+    where,
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
@@ -123,7 +205,7 @@ export default async function AdminOrdersPage() {
         },
       },
     },
-    take: 500,
+    take: 1000,
   });
 
   return (
@@ -138,7 +220,7 @@ export default async function AdminOrdersPage() {
     >
       <div
         style={{
-          maxWidth: 1440,
+          maxWidth: 1480,
           margin: "0 auto",
         }}
       >
@@ -190,9 +272,211 @@ export default async function AdminOrdersPage() {
               color: "#0F172A",
             }}
           >
-            Total Orders: {orders.length}
+            Filtered Results: {orders.length}
           </div>
         </div>
+
+        <form
+          method="GET"
+          style={{
+            background: "#fff",
+            border: "1px solid #E5E7EB",
+            borderRadius: 14,
+            padding: 16,
+            marginBottom: 18,
+            boxShadow: "0 8px 22px rgba(15, 23, 42, 0.06)",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.3fr 1fr 1fr 1fr 1fr auto",
+              gap: 12,
+              alignItems: "end",
+            }}
+          >
+            <label>
+              <div
+                style={{
+                  marginBottom: 6,
+                  fontSize: 12,
+                  color: "#64748B",
+                  fontWeight: 800,
+                }}
+              >
+                Search
+              </div>
+              <input
+                name="q"
+                defaultValue={query}
+                placeholder="Order #, borrower, property, email, phone..."
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: "1px solid #CBD5E1",
+                  outline: "none",
+                  background: "#fff",
+                  fontWeight: 700,
+                }}
+              />
+            </label>
+
+            <label>
+              <div
+                style={{
+                  marginBottom: 6,
+                  fontSize: 12,
+                  color: "#64748B",
+                  fontWeight: 800,
+                }}
+              >
+                Vendor Code
+              </div>
+              <select
+                name="vendorCode"
+                defaultValue={selectedVendorCode}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: "1px solid #CBD5E1",
+                  outline: "none",
+                  background: "#fff",
+                  fontWeight: 700,
+                }}
+              >
+                <option value="">All Vendors</option>
+                {vendors.map((vendor) => (
+                  <option key={vendor.vendorcode} value={vendor.vendorcode}>
+                    {vendor.vendorcode} — {vendor.companyName}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <div
+                style={{
+                  marginBottom: 6,
+                  fontSize: 12,
+                  color: "#64748B",
+                  fontWeight: 800,
+                }}
+              >
+                Status
+              </div>
+              <select
+                name="status"
+                defaultValue={selectedStatus}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: "1px solid #CBD5E1",
+                  outline: "none",
+                  background: "#fff",
+                  fontWeight: 700,
+                }}
+              >
+                <option value="">All Statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="ACTIVE">Active</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CLOSED">Closed</option>
+              </select>
+            </label>
+
+            <label>
+              <div
+                style={{
+                  marginBottom: 6,
+                  fontSize: 12,
+                  color: "#64748B",
+                  fontWeight: 800,
+                }}
+              >
+                Date From
+              </div>
+              <input
+                type="date"
+                name="dateFrom"
+                defaultValue={dateFrom}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: "1px solid #CBD5E1",
+                  outline: "none",
+                  background: "#fff",
+                  fontWeight: 700,
+                }}
+              />
+            </label>
+
+            <label>
+              <div
+                style={{
+                  marginBottom: 6,
+                  fontSize: 12,
+                  color: "#64748B",
+                  fontWeight: 800,
+                }}
+              >
+                Date To
+              </div>
+              <input
+                type="date"
+                name="dateTo"
+                defaultValue={dateTo}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: "1px solid #CBD5E1",
+                  outline: "none",
+                  background: "#fff",
+                  fontWeight: 700,
+                }}
+              />
+            </label>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                type="submit"
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: 10,
+                  border: "1px solid #1D4ED8",
+                  background: "#1D4ED8",
+                  color: "white",
+                  fontWeight: 900,
+                  cursor: "pointer",
+                }}
+              >
+                Apply
+              </button>
+
+              <a
+                href="/admin/orders"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "10px 16px",
+                  borderRadius: 10,
+                  border: "1px solid #CBD5E1",
+                  background: "#fff",
+                  color: "#0F172A",
+                  fontWeight: 900,
+                  textDecoration: "none",
+                }}
+              >
+                Clear
+              </a>
+            </div>
+          </div>
+        </form>
 
         <div
           style={{
@@ -212,7 +496,7 @@ export default async function AdminOrdersPage() {
               style={{
                 width: "100%",
                 borderCollapse: "collapse",
-                minWidth: 1400,
+                minWidth: 1600,
               }}
             >
               <thead
@@ -270,7 +554,7 @@ export default async function AdminOrdersPage() {
                         fontWeight: 700,
                       }}
                     >
-                      No orders found yet.
+                      No orders matched the current filter.
                     </td>
                   </tr>
                 ) : (
