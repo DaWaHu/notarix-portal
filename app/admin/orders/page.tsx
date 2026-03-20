@@ -523,7 +523,6 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                     "Borrower Phone",
                     "Created",
                     "Updated",
-                    "Portal Link",
                   ].map((h) => (
                     <th
                       key={h}
@@ -562,11 +561,10 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                     const status = normalizeStatus(order.status);
                     const propertyLine = buildPropertyLine(order);
                     const signingLine = order.signingDate
-                      ? `${formatDate(order.signingDate)}${
-                          order.signingTimeLabel
-                            ? ` • ${order.signingTimeLabel}`
-                            : ""
-                        }`
+                      ? `${formatDate(order.signingDate)}${order.signingTimeLabel
+                        ? ` • ${order.signingTimeLabel}`
+                        : ""
+                      }`
                       : "—";
 
                     return (
@@ -580,7 +578,16 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {nice(order.orderNumber)}
+                          <a
+                            href={`/vendors/${order.vendor.vendorcode}/orders?order=${order.id}`}
+                            style={{
+                              color: "#1D4ED8",
+                              fontWeight: 900,
+                              textDecoration: "none",
+                            }}
+                          >
+                            {nice(order.orderNumber)}
+                          </a>
                         </td>
 
                         <td
@@ -775,24 +782,6 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                           {formatDateTime(order.updatedAt)}
                         </td>
 
-                        <td
-                          style={{
-                            padding: "12px 14px",
-                            borderBottom: "1px solid #E5E7EB",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          <a
-                            href={`/vendors/${order.vendor.vendorcode}/orders?order=${order.id}`}
-                            style={{
-                              color: "#1D4ED8",
-                              fontWeight: 900,
-                              textDecoration: "none",
-                            }}
-                          >
-                            Open
-                          </a>
-                        </td>
                       </tr>
                     );
                   })
