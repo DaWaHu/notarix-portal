@@ -128,22 +128,29 @@ export async function POST(req: Request) {
       },
       { status: 200 }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("ORDER CREATE ERROR:", err);
 
-    const isDev = process.env.NODE_ENV !== "production";
+    let errorText = "Server error saving order";
 
-    return jsonError(
-      isDev ? err?.message || "Server error saving order" : "Server error saving order",
-      500,
-      isDev
-        ? {
-            message: err?.message,
-            code: err?.code,
-            meta: err?.meta,
-            name: err?.name,
-          }
-        : undefined
+    if (err instanceof Error) {
+      errorText = err.message;
+    } else if (typeof err === "string") {
+      errorText = err;
+    } else {
+      try {
+        errorText = JSON.stringify(err);
+      } catch {
+        errorText = "Unknown server error";
+      }
+    }
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error: errorText,
+      },
+      { status: 500 }
     );
   }
 }
