@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 
@@ -153,9 +154,27 @@ export default function NewVendorOrderPage() {
             alignItems: "center",
             boxShadow: "0 10px 30px rgba(30, 64, 175, 0.25)",
             marginBottom: 18,
+            gap: 16,
           }}
         >
-          <div style={{ fontWeight: 900 }}>Create New Order</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <Image
+              src="/notarix-logo.png"
+              alt="Notarix"
+              width={44}
+              height={44}
+              style={{
+                width: 44,
+                height: 44,
+                objectFit: "contain",
+                background: "white",
+                borderRadius: 10,
+                padding: 4,
+              }}
+            />
+            <div style={{ fontWeight: 900 }}>Create New Order</div>
+          </div>
+
           <div style={{ fontWeight: 800 }}>Vendor: {vendorCode}</div>
         </div>
 
@@ -459,6 +478,26 @@ export default function NewVendorOrderPage() {
             </a>
           </div>
         </form>
+
+        <div
+          style={{
+            marginTop: 24,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 10,
+            color: "#64748B",
+          }}
+        >
+          <Image
+            src="/notarix-logo.png"
+            alt="Notarix"
+            width={72}
+            height={72}
+            style={{ width: 72, height: 72, objectFit: "contain" }}
+          />
+          <div style={{ fontWeight: 800 }}>© 2026 Notarix.live</div>
+        </div>
       </div>
     </main>
   );
