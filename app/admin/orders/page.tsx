@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -218,12 +219,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
           'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial',
       }}
     >
-      <div
-        style={{
-          maxWidth: 1480,
-          margin: "0 auto",
-        }}
-      >
+      <div style={{ maxWidth: 1480, margin: "0 auto" }}>
         <div
           style={{
             background: "#1e40af",
@@ -235,12 +231,35 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
             alignItems: "center",
             boxShadow: "0 10px 30px rgba(30, 64, 175, 0.25)",
             marginBottom: 18,
+            gap: 16,
           }}
         >
-          <div style={{ fontWeight: 900, letterSpacing: 0.2 }}>
-            Notarix Owner Dashboard
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <Image
+              src="/notarix-logo.png"
+              alt="Notarix"
+              width={44}
+              height={44}
+              style={{
+                width: 44,
+                height: 44,
+                objectFit: "contain",
+                background: "white",
+                borderRadius: 10,
+                padding: 4,
+              }}
+            />
+            <div>
+              <div style={{ fontWeight: 900, letterSpacing: 0.2 }}>
+                Notarix Owner Dashboard
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 12, opacity: 0.95 }}>
+                All Orders
+              </div>
+            </div>
           </div>
-          <div style={{ fontWeight: 800 }}>All Orders</div>
+
+          <div style={{ fontWeight: 800 }}>Powered by Notarix</div>
         </div>
 
         <div
@@ -487,11 +506,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
             boxShadow: "0 8px 22px rgba(15, 23, 42, 0.06)",
           }}
         >
-          <div
-            style={{
-              overflowX: "auto",
-            }}
-          >
+          <div style={{ overflowX: "auto" }}>
             <table
               style={{
                 width: "100%",
@@ -499,11 +514,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                 minWidth: 1600,
               }}
             >
-              <thead
-                style={{
-                  background: "#E2E8F0",
-                }}
-              >
+              <thead style={{ background: "#E2E8F0" }}>
                 <tr>
                   {[
                     "Order #",
@@ -546,7 +557,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                 {orders.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={18}
+                      colSpan={17}
                       style={{
                         padding: 20,
                         color: "#475569",
@@ -561,10 +572,9 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                     const status = normalizeStatus(order.status);
                     const propertyLine = buildPropertyLine(order);
                     const signingLine = order.signingDate
-                      ? `${formatDate(order.signingDate)}${order.signingTimeLabel
-                        ? ` • ${order.signingTimeLabel}`
-                        : ""
-                      }`
+                      ? `${formatDate(order.signingDate)}${
+                          order.signingTimeLabel ? ` • ${order.signingTimeLabel}` : ""
+                        }`
                       : "—";
 
                     return (
@@ -693,9 +703,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {order.estimatedPages != null
-                            ? String(order.estimatedPages)
-                            : "—"}
+                          {order.estimatedPages != null ? String(order.estimatedPages) : "—"}
                         </td>
 
                         <td
@@ -781,7 +789,6 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                         >
                           {formatDateTime(order.updatedAt)}
                         </td>
-
                       </tr>
                     );
                   })
@@ -789,6 +796,26 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
               </tbody>
             </table>
           </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 24,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 10,
+            color: "#64748B",
+          }}
+        >
+          <Image
+            src="/notarix-logo.png"
+            alt="Notarix"
+            width={72}
+            height={72}
+            style={{ width: 72, height: 72, objectFit: "contain" }}
+          />
+          <div style={{ fontWeight: 800 }}>© 2026 Notarix.live</div>
         </div>
       </div>
     </main>
