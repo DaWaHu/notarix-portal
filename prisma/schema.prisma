@@ -46,21 +46,39 @@ model Vendor {
 }
 
 model VendorOrder {
-  id             String   @id @default(cuid())
-  createdAt      DateTime @default(now())
-  vendorId       String
-  signerName     String
-  signerAddress1 String
-  signerAddress2 String?
-  signerCity     String
-  signerState    String
-  signerZip      String
-  signerPhone    String
-  serviceType    String
-  isRON          Boolean  @default(false)
-  notes          String?
-  status         String   @default("NEW")
-  vendor         Vendor   @relation(fields: [vendorId], references: [id])
+  id                     String   @id @default(cuid())
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  vendorId               String
+
+  orderNumber            String?  @unique
+  status                 String   @default("PENDING")
+
+  primaryBorrowerName    String
+  secondaryBorrowerName  String?
+
+  propertyAddress1       String
+  propertyAddress2       String?
+  propertyCity           String
+  propertyState          String
+  propertyZip            String
+
+  borrowerPhone          String?
+  borrowerEmail          String?
+
+  signingDate            DateTime?
+  signingTimeLabel       String?
+
+  estimatedPages         Int?
+  paperSize              String?   // LEGAL, LETTER, BOTH
+  preferredInk           String?   // BLUE, BLACK 
+
+  isRON                  Boolean   @default(false)
+  serviceType            String?
+  specialInstructions    String?
+
+  vendor                 Vendor    @relation(fields: [vendorId], references: [id])
 }
 
 model AccessRequest {

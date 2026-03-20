@@ -1,0 +1,131 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";
+
+const OrderCreateSchema = z.object({
+  vendorCode: z
+    .string()
+    .min(1, "vendorCode is required")
+    .transform((v) => (v || "").toUpperCase().trim()),
+
+  primaryBorrowerName: z.string().min(1, "Primary borrower name is required"),
+  secondaryBorrowerName: z.string().optional().nullable(),
+
+  propertyAddress1: z.string().min(1, "Property address is required"),
+  propertyAddress2: z.string().optional().nullable(),
+  propertyCity: z.string().min(1, "Property city is required"),
+  propertyState: z.string().min(1, "Property state is required"),
+  propertyZip: z.string().min(1, "Property zip is required"),
+
+  borrowerPhone: z.string().optional().nullable(),
+  borrowerEmail: z.string().optional().nullable(),
+
+  signingDate: z.string().optional().nullable(),
+  signingTimeLabel: z.string().optional().nullable(),
+
+  estimatedPages: z.number().int().optional().nullable(),
+  paperSize: z.string().optional().nullable(),
+  preferredInk: z.string().optional().nullable(),
+
+  isRON: z.boolean().optional(),
+  serviceType: z.string().optional().nullable(),
+  specialInstructions: z.string().optional().nullable(),
+});
+
+function jsonError(message: string, status = 400, extra?: any) {
+  return NextResponse.json(
+    { ok: false, error: message, ...(extra ? { extra } : {}) },
+    { status }
+  );
+}
+
+function generateOrderNumber() {
+  const now = new Date();
+  const y = now.getFullYear().toString().slice(-2);
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  const rand = Math.floor(1000 + Math.random() * 9000);
+  return `${y}${m}${d}-${rand}`;
+}
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json().catch(() => null);
+    if (!body) return jsonError("Missing JSON body", 400);
+
+    const parsed = OrderCreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return jsonError("Validation failed", 422, parsed.error.flatten());
+    }
+
+    const data = parsed.data;
+
+    const vendor = await prisma.vendor.findUnique({
+      where: { vendorcode: data.vendorCode },
+      select: { id: true, vendorcode: true, companyName: true },
+    });
+
+    if (!vendor) {
+      return jsonError("Vendor not found for the provided vendor code.", 404);
+    }
+
+    const created = await prisma.vendorOrder.create({
+      data: {
+        vendorId: vendor.id,
+        orderNumber: generateOrderNumber(),
+        status: "PENDING",
+
+        primaryBorrowerName: data.primaryBorrowerName,
+        secondaryBorrowerName: data.secondaryBorrowerName || null,
+
+        propertyAddress1: data.propertyAddress1,
+        propertyAddress2: data.propertyAddress2 || null,
+        propertyCity: data.propertyCity,
+        propertyState: data.propertyState,
+        propertyZip: data.propertyZip,
+
+        borrowerPhone: data.borrowerPhone || null,
+        borrowerEmail: data.borrowerEmail || null,
+
+        signingDate: data.signingDate ? new Date(data.signingDate) : null,
+        signingTimeLabel: data.signingTimeLabel || null,
+
+        estimatedPages: data.estimatedPages ?? null,
+        paperSize: data.paperSize || null,
+        preferredInk: data.preferredInk || null,
+
+        isRON: data.isRON ?? false,
+        serviceType: data.serviceType || null,
+        specialInstructions: data.specialInstructions || null,
+      },
+      select: {
+        id: true,
+        orderNumber: true,
+        status: true,
+        primaryBorrowerName: true,
+        createdAt: true,
+      },
+    });
+
+    return NextResponse.json(
+      {
+        ok: true,
+        order: created,
+        vendor: {
+          vendorCode: vendor.vendorcode,
+          companyName: vendor.companyName,
+        },
+      },
+      { status: 200 }
+    );
+  } catch (err: any) {
+    console.error("ORDER CREATE ERROR:", err);
+
+    return jsonError("Server error saving order", 500, {
+      message: err?.message,
+      code: err?.code,
+    });
+  }
+}
