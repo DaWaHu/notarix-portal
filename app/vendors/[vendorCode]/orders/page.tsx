@@ -418,18 +418,7 @@ export default async function VendorOrdersPage({
                   <Tag label="Letter" />
                 </div>
 
-                <div
-                  style={{
-                    marginBottom: 12,
-                    padding: "10px 12px",
-                    border: "1px solid #E5E7EB",
-                    borderRadius: 10,
-                    background: "#F8FAFC",
-                    fontWeight: 800,
-                    color: "#0F172A",
-                  }}
-                >
-                  Additional Signer: Robert Garcia
+                Additional Signer: Robert Garcia
                 </div>
 
                 <div
