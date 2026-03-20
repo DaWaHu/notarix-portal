@@ -328,7 +328,7 @@ export default async function VendorOrdersPage({
     );
   }
 
-  const displayVendorCode = vendor.vendorcode;
+  const displayVendorCode = "Notarix Staff Portal";
   const companyName = vendor.companyName || "CLIENT";
   const orders = vendor.orders;
   const selectedOrder = orders.find((o) => o.id === selectedOrderId) || null;
