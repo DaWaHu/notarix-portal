@@ -41,34 +41,61 @@ function jsonError(message: string, status = 400, extra?: any) {
   );
 }
 
-function generateOrderNumber() {
+async function generateOrderNumber(): Promise<string> {
   const now = new Date();
   const y = now.getFullYear().toString().slice(-2);
   const m = String(now.getMonth() + 1).padStart(2, "0");
   const d = String(now.getDate()).padStart(2, "0");
-  async function generateOrderNumber() {
-    const now = new Date();
-    const y = now.getFullYear().toString().slice(-2);
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    const d = String(now.getDate()).padStart(2, "0");
-    const prefix = `${y}${m}${d}`;
+  const prefix = `${y}${m}${d}`;
 
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  const startOfDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    0,
+    0,
+    0,
+    0
+  );
 
-    const countToday = await prisma.vendorOrder.count({
-      where: {
-        createdAt: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
+  const endOfDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    23,
+    59,
+    59,
+    999
+  );
+
+  const todayOrders = await prisma.vendorOrder.findMany({
+    where: {
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay,
       },
-    });
+    },
+    select: {
+      orderNumber: true,
+    },
+  });
 
-    const sequence = String(countToday + 1).padStart(4, "0");
+  let maxSequence = 0;
 
-    return `${prefix}-${sequence}`;
+  for (const order of todayOrders) {
+    const value = String(order.orderNumber || "");
+    if (!value.startsWith(`${prefix}-`)) continue;
+
+    const sequencePart = value.split("-")[1];
+    const sequenceNum = Number(sequencePart);
+
+    if (!Number.isNaN(sequenceNum) && sequenceNum > maxSequence) {
+      maxSequence = sequenceNum;
+    }
   }
+
+  const nextSequence = String(maxSequence + 1).padStart(4, "0");
+  return `${prefix}-${nextSequence}`;
 }
 
 export async function POST(req: Request) {
@@ -130,7 +157,7 @@ export async function POST(req: Request) {
         serviceType: data.serviceType?.trim() || null,
         specialInstructions: data.specialInstructions?.trim() || null,
 
-        // Old required fields still in the table
+        // Legacy fields still in the current table
         signerName: data.primaryBorrowerName.trim(),
         signerAddress1: data.propertyAddress1.trim(),
         signerAddress2: data.propertyAddress2?.trim() || null,
