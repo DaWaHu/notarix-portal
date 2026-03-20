@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -6,10 +5,8 @@ export const dynamic = "force-dynamic";
 type Status = "Pending" | "Active" | "Completed" | "Closed";
 
 type PageProps = {
-  params: { vendorCode: string };
-  searchParams?: {
-    order?: string;
-  };
+  params: Promise<{ vendorCode: string }>;
+  searchParams?: Promise<{ order?: string }>;
 };
 
 function StatusPill({ status }: { status: Status }) {
@@ -203,8 +200,14 @@ export default async function VendorOrdersPage({
   params,
   searchParams,
 }: PageProps) {
-  const vendorCode = String(params.vendorCode || "").toUpperCase().trim();
-  const selectedOrderId = String(searchParams?.order || "").trim();
+  const resolvedParams = await params;
+  const resolvedSearchParams = (await searchParams) || {};
+
+  const vendorCode = String(resolvedParams.vendorCode || "")
+    .toUpperCase()
+    .trim();
+
+  const selectedOrderId = String(resolvedSearchParams.order || "").trim();
 
   const vendor = await prisma.vendor.findUnique({
     where: { vendorcode: vendorCode },
@@ -247,8 +250,7 @@ export default async function VendorOrdersPage({
     },
   ];
 
-  const selectedOrder =
-    orders.find((o) => o.id === selectedOrderId) || null;
+  const selectedOrder = orders.find((o) => o.id === selectedOrderId) || null;
 
   return (
     <main
@@ -289,44 +291,46 @@ export default async function VendorOrdersPage({
       </div>
 
       {!selectedOrder ? (
-        <>
-          <div style={{ display: "grid", gap: 12, marginBottom: 18 }}>
-            {orders.map((o) => (
-              <Link
-                key={o.id}
-                href={`/vendors/${displayVendorCode}/orders?order=${o.id}`}
-                style={{ textDecoration: "none" }}
+        <div style={{ display: "grid", gap: 12, marginBottom: 18 }}>
+          {orders.map((o) => (
+            <a
+              key={o.id}
+              href={`/vendors/${displayVendorCode}/orders?order=${o.id}`}
+              style={{
+                textDecoration: "none",
+                display: "block",
+              }}
+            >
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: 12,
+                  padding: 16,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  boxShadow: "0 8px 22px rgba(15, 23, 42, 0.05)",
+                  cursor: "pointer",
+                }}
               >
-                <div
-                  style={{
-                    background: "#fff",
-                    border: "1px solid #E5E7EB",
-                    borderRadius: 12,
-                    padding: 16,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    boxShadow: "0 8px 22px rgba(15, 23, 42, 0.05)",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 900, color: "#0F172A" }}>
-                      Order #{o.id} | {o.name} | Property: {o.prop}
-                    </div>
-                    <div style={{ marginTop: 4, fontSize: 12, color: "#475569" }}>
-                      {o.sub}
-                    </div>
+                <div>
+                  <div style={{ fontWeight: 900, color: "#0F172A" }}>
+                    Order #{o.id} | {o.name} | Property: {o.prop}
                   </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <StatusPill status={o.status} />
-                    <span style={{ fontSize: 18, color: "#94A3B8" }}>›</span>
+                  <div style={{ marginTop: 4, fontSize: 12, color: "#475569" }}>
+                    {o.sub}
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
-        </>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <StatusPill status={o.status} />
+                  <span style={{ fontSize: 18, color: "#94A3B8" }}>›</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
       ) : (
         <>
           <div
@@ -343,7 +347,7 @@ export default async function VendorOrdersPage({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <Link
+              <a
                 href={`/vendors/${displayVendorCode}/orders`}
                 style={{
                   color: "white",
@@ -353,14 +357,16 @@ export default async function VendorOrdersPage({
                 }}
               >
                 ←
-              </Link>
+              </a>
               <div style={{ fontWeight: 950 }}>
                 Order #{selectedOrder.id} – {selectedOrder.name}
               </div>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontWeight: 800 }}>✓ Status: {selectedOrder.status}</span>
+              <span style={{ fontWeight: 800 }}>
+                ✓ Status: {selectedOrder.status}
+              </span>
             </div>
           </div>
 
