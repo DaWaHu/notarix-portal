@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { ReactNode } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,15 @@ type PageProps = {
   params: Promise<{ vendorCode: string }>;
   searchParams?: Promise<{ order?: string }>;
 };
+
+function normalizeStatus(value: string | null | undefined): Status {
+  const v = String(value || "").trim().toUpperCase();
+
+  if (v === "ACTIVE" || v === "IN_PROGRESS" || v === "OPEN") return "Active";
+  if (v === "COMPLETED" || v === "DONE") return "Completed";
+  if (v === "CLOSED" || v === "CANCELLED" || v === "CANCELED") return "Closed";
+  return "Pending";
+}
 
 function StatusPill({ status }: { status: Status }) {
   const map: Record<Status, { bg: string; fg: string; border: string }> = {
@@ -54,7 +64,7 @@ function Card({
   children,
 }: {
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section
@@ -196,6 +206,48 @@ function Timeline({ current }: { current: Status }) {
   );
 }
 
+function formatDate(value: Date | string | null | undefined) {
+  if (!value) return "—";
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString();
+}
+
+function formatDateTime(value: Date | string | null | undefined) {
+  if (!value) return "—";
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString();
+}
+
+function nice(value: string | null | undefined) {
+  const v = String(value || "").trim();
+  return v || "—";
+}
+
+function buildPropertyLine(order: {
+  propertyAddress1: string | null;
+  propertyAddress2: string | null;
+  propertyCity: string | null;
+  propertyState: string | null;
+  propertyZip: string | null;
+}) {
+  const parts = [
+    nice(order.propertyAddress1) !== "—" ? order.propertyAddress1 : null,
+    nice(order.propertyAddress2) !== "—" ? order.propertyAddress2 : null,
+    [
+      nice(order.propertyCity) !== "—" ? order.propertyCity : null,
+      nice(order.propertyState) !== "—" ? order.propertyState : null,
+      nice(order.propertyZip) !== "—" ? order.propertyZip : null,
+    ]
+      .filter(Boolean)
+      .join(", ")
+      .replace(", ,", ","),
+  ].filter(Boolean);
+
+  return parts.join(" • ") || "—";
+}
+
 export default async function VendorOrdersPage({
   params,
   searchParams,
@@ -212,6 +264,7 @@ export default async function VendorOrdersPage({
   const vendor = await prisma.vendor.findUnique({
     where: { vendorcode: vendorCode },
     select: {
+      id: true,
       companyName: true,
       vendorcode: true,
       primaryContactName: true,
@@ -220,38 +273,70 @@ export default async function VendorOrdersPage({
       secondaryContactName: true,
       secondaryContactEmail: true,
       secondaryContactPhone: true,
+      orders: {
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          createdAt: true,
+          updatedAt: true,
+          orderNumber: true,
+          status: true,
+          primaryBorrowerName: true,
+          secondaryBorrowerName: true,
+          propertyAddress1: true,
+          propertyAddress2: true,
+          propertyCity: true,
+          propertyState: true,
+          propertyZip: true,
+          borrowerPhone: true,
+          borrowerEmail: true,
+          signingDate: true,
+          signingTimeLabel: true,
+          estimatedPages: true,
+          paperSize: true,
+          preferredInk: true,
+          isRON: true,
+          serviceType: true,
+          specialInstructions: true,
+          notes: true,
+        },
+      },
     },
   });
 
-  const companyName = vendor?.companyName || "CLIENT NAME / TITLE COMPANY";
-  const displayVendorCode = vendor?.vendorcode || vendorCode;
+  if (!vendor) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          padding: 28,
+          background: "#F1F5F9",
+          fontFamily:
+            'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 900,
+            margin: "0 auto",
+            background: "#fff",
+            border: "1px solid #E5E7EB",
+            borderRadius: 14,
+            padding: 24,
+          }}
+        >
+          <h1 style={{ marginTop: 0 }}>Vendor not found</h1>
+          <p>No vendor record was found for code: {vendorCode || "—"}</p>
+        </div>
+      </main>
+    );
+  }
 
-  // Temporary mock orders until VendorOrder records are wired into the page.
-  const orders = [
-    {
-      id: "48219",
-      name: "John Smith",
-      prop: "114 Lake Dr",
-      sub: "Created: 03/02/2026 10:14 AM EST",
-      status: "Pending" as Status,
-    },
-    {
-      id: "48218",
-      name: "Garcia",
-      prop: "72 Pine Ave",
-      sub: "Signing Date: March 5, 2026 – 2:30 PM EST",
-      status: "Active" as Status,
-    },
-    {
-      id: "48212",
-      name: "Daniel Brown",
-      prop: "905 Oak Ct",
-      sub: "Completed: 02/28/2026 5:18 PM EST",
-      status: "Completed" as Status,
-    },
-  ];
-
+  const displayVendorCode = vendor.vendorcode;
+  const companyName = vendor.companyName || "CLIENT NAME / TITLE COMPANY";
+  const orders = vendor.orders;
   const selectedOrder = orders.find((o) => o.id === selectedOrderId) || null;
+  const selectedStatus = normalizeStatus(selectedOrder?.status);
 
   return (
     <main
@@ -321,44 +406,82 @@ export default async function VendorOrdersPage({
 
       {!selectedOrder ? (
         <div style={{ display: "grid", gap: 12, marginBottom: 18 }}>
-          {orders.map((o) => (
-            <a
-              key={o.id}
-              href={`/vendors/${displayVendorCode}/orders?order=${o.id}`}
+          {orders.length === 0 ? (
+            <div
               style={{
-                textDecoration: "none",
-                display: "block",
+                background: "#fff",
+                border: "1px solid #E5E7EB",
+                borderRadius: 12,
+                padding: 18,
+                color: "#475569",
+                fontWeight: 700,
               }}
             >
-              <div
-                style={{
-                  background: "#fff",
-                  border: "1px solid #E5E7EB",
-                  borderRadius: 12,
-                  padding: 16,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  boxShadow: "0 8px 22px rgba(15, 23, 42, 0.05)",
-                  cursor: "pointer",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 900, color: "#0F172A" }}>
-                    Order #{o.id} | {o.name} | Property: {o.prop}
-                  </div>
-                  <div style={{ marginTop: 4, fontSize: 12, color: "#475569" }}>
-                    {o.sub}
-                  </div>
-                </div>
+              No orders have been created yet.
+            </div>
+          ) : (
+            orders.map((o) => {
+              const status = normalizeStatus(o.status);
+              const borrower =
+                nice(o.primaryBorrowerName) !== "—"
+                  ? o.primaryBorrowerName
+                  : "Borrower";
+              const property =
+                nice(o.propertyAddress1) !== "—"
+                  ? o.propertyAddress1
+                  : "Property not entered";
+              const orderLabel = o.orderNumber || o.id.slice(-8);
 
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <StatusPill status={o.status} />
-                  <span style={{ fontSize: 18, color: "#94A3B8" }}>›</span>
-                </div>
-              </div>
-            </a>
-          ))}
+              return (
+                <a
+                  key={o.id}
+                  href={`/vendors/${displayVendorCode}/orders?order=${o.id}`}
+                  style={{
+                    textDecoration: "none",
+                    display: "block",
+                  }}
+                >
+                  <div
+                    style={{
+                      background: "#fff",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: 12,
+                      padding: 16,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      boxShadow: "0 8px 22px rgba(15, 23, 42, 0.05)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 900, color: "#0F172A" }}>
+                        Order #{orderLabel} | {borrower} | Property: {property}
+                      </div>
+                      <div
+                        style={{ marginTop: 4, fontSize: 12, color: "#475569" }}
+                      >
+                        {o.signingDate
+                          ? `Signing Date: ${formatDate(o.signingDate)}${
+                              o.signingTimeLabel
+                                ? ` – ${o.signingTimeLabel}`
+                                : ""
+                            }`
+                          : `Created: ${formatDateTime(o.createdAt)}`}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 10 }}
+                    >
+                      <StatusPill status={status} />
+                      <span style={{ fontSize: 18, color: "#94A3B8" }}>›</span>
+                    </div>
+                  </div>
+                </a>
+              );
+            })
+          )}
         </div>
       ) : (
         <>
@@ -388,13 +511,14 @@ export default async function VendorOrdersPage({
                 ←
               </a>
               <div style={{ fontWeight: 950 }}>
-                Order #{selectedOrder.id} – {selectedOrder.name}
+                Order #{selectedOrder.orderNumber || selectedOrder.id.slice(-8)}{" "}
+                – {nice(selectedOrder.primaryBorrowerName)}
               </div>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontWeight: 800 }}>
-                ✓ Status: {selectedOrder.status}
+                ✓ Status: {selectedStatus}
               </span>
             </div>
           </div>
@@ -408,16 +532,34 @@ export default async function VendorOrdersPage({
               }}
             >
               <Card title="Borrower Information">
-                <Field label="Primary Borrower" value="Maria Garcia" />
-                <Field label="Secondary Borrower / Signer" value="Robert Garcia" />
+                <Field
+                  label="Primary Borrower"
+                  value={nice(selectedOrder.primaryBorrowerName)}
+                />
+                <Field
+                  label="Secondary Borrower / Signer"
+                  value={nice(selectedOrder.secondaryBorrowerName)}
+                />
                 <Field
                   label="Property Address"
-                  value="72 Pine Ave, Orlando, FL 32801"
+                  value={buildPropertyLine(selectedOrder)}
                 />
-                <Field label="Signing Date" value="March 5, 2026" />
-                <Field label="Signing Time" value="2:30 PM EST" />
-                <Field label="Phone" value="(555) 987-6543" />
-                <Field label="Email" value="mariagarcia@email.com" />
+                <Field
+                  label="Signing Date"
+                  value={formatDate(selectedOrder.signingDate)}
+                />
+                <Field
+                  label="Signing Time"
+                  value={nice(selectedOrder.signingTimeLabel)}
+                />
+                <Field
+                  label="Phone"
+                  value={nice(selectedOrder.borrowerPhone)}
+                />
+                <Field
+                  label="Email"
+                  value={nice(selectedOrder.borrowerEmail)}
+                />
               </Card>
 
               <Card title="Order Details">
@@ -440,12 +582,38 @@ export default async function VendorOrdersPage({
                       color: "#0F172A",
                     }}
                   >
-                    Est. Pages: 140
+                    Est. Pages:{" "}
+                    {selectedOrder.estimatedPages != null
+                      ? selectedOrder.estimatedPages
+                      : "—"}
                   </div>
 
-                  <Tag label="Legal" checked />
-                  <Tag label="Letter" />
+                  <Tag
+                    label="Legal"
+                    checked={String(selectedOrder.paperSize || "")
+                      .toUpperCase()
+                      .includes("LEGAL")}
+                  />
+                  <Tag
+                    label="Letter"
+                    checked={String(selectedOrder.paperSize || "")
+                      .toUpperCase()
+                      .includes("LETTER")}
+                  />
+                  <Tag
+                    label="RON"
+                    checked={Boolean(selectedOrder.isRON)}
+                  />
                 </div>
+
+                <Field
+                  label="Preferred Ink"
+                  value={nice(selectedOrder.preferredInk)}
+                />
+                <Field
+                  label="Service Type"
+                  value={nice(selectedOrder.serviceType)}
+                />
 
                 <div
                   style={{
@@ -458,59 +626,23 @@ export default async function VendorOrdersPage({
                     fontWeight: 650,
                   }}
                 >
-                  Please ensure all borrowers sign according to the instructions
-                  before proceeding.
+                  {nice(selectedOrder.specialInstructions) !== "—"
+                    ? selectedOrder.specialInstructions
+                    : nice(selectedOrder.notes)}
                 </div>
               </Card>
 
               <Card title="Documents">
-                {[
-                  {
-                    name: "Instructions.pdf",
-                    who: companyName,
-                    time: "03/03/2026 9:22 AM",
-                  },
-                  {
-                    name: "Loan_Package.pdf",
-                    who: companyName,
-                    time: "03/03/2026 9:44 AM",
-                  },
-                  {
-                    name: "Signed_Package.pdf",
-                    who: "Assigned Notary",
-                    time: "03/05/2026 4:15 PM",
-                  },
-                ].map((d) => (
-                  <div
-                    key={d.name}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "10px 10px",
-                      border: "1px solid #E5E7EB",
-                      borderRadius: 10,
-                      marginBottom: 10,
-                      background: "#fff",
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 900, color: "#0F172A" }}>
-                        {d.name}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: "#64748B",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {d.who} • {d.time}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: 18, color: "#94A3B8" }}>›</span>
-                  </div>
-                ))}
+                <div
+                  style={{
+                    color: "#64748B",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    padding: "4px 2px",
+                  }}
+                >
+                  Document upload section can be wired next.
+                </div>
 
                 <button
                   style={{
@@ -521,6 +653,7 @@ export default async function VendorOrdersPage({
                     background: "#F8FAFC",
                     fontWeight: 900,
                     cursor: "pointer",
+                    marginTop: 10,
                   }}
                 >
                   + Add Document
@@ -549,7 +682,7 @@ export default async function VendorOrdersPage({
                     />
                     <div>
                       <div style={{ fontWeight: 900, color: "#0F172A" }}>
-                        {vendor?.primaryContactName || "John Smith"}
+                        {nice(vendor.primaryContactName)}
                       </div>
                       <div
                         style={{
@@ -567,7 +700,7 @@ export default async function VendorOrdersPage({
                           fontWeight: 800,
                         }}
                       >
-                        {vendor?.primaryContactPhone || "(555) 123-4567"}
+                        {nice(vendor.primaryContactPhone)}
                       </div>
                       <div
                         style={{
@@ -576,7 +709,7 @@ export default async function VendorOrdersPage({
                           fontWeight: 800,
                         }}
                       >
-                        {vendor?.primaryContactEmail || "jsmith@titlecompany.com"}
+                        {nice(vendor.primaryContactEmail)}
                       </div>
                     </div>
                   </div>
@@ -593,7 +726,7 @@ export default async function VendorOrdersPage({
                     />
                     <div>
                       <div style={{ fontWeight: 900, color: "#0F172A" }}>
-                        {vendor?.secondaryContactName || "Sarah Johnson"}
+                        {nice(vendor.secondaryContactName)}
                       </div>
                       <div
                         style={{
@@ -611,7 +744,7 @@ export default async function VendorOrdersPage({
                           fontWeight: 800,
                         }}
                       >
-                        {vendor?.secondaryContactPhone || "(555) 987-6643"}
+                        {nice(vendor.secondaryContactPhone)}
                       </div>
                       <div
                         style={{
@@ -620,7 +753,7 @@ export default async function VendorOrdersPage({
                           fontWeight: 800,
                         }}
                       >
-                        {vendor?.secondaryContactEmail || "sjohnson@notary.com"}
+                        {nice(vendor.secondaryContactEmail)}
                       </div>
                     </div>
                   </div>
@@ -628,130 +761,63 @@ export default async function VendorOrdersPage({
               </Card>
 
               <Card title="Communication Log">
-                <div style={{ display: "grid", gap: 10 }}>
-                  <div
+                <div
+                  style={{
+                    color: "#64748B",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    padding: "4px 2px 12px",
+                  }}
+                >
+                  Communication log can be connected after order messaging is
+                  built.
+                </div>
+
+                <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                  <input
+                    placeholder="Type your message..."
                     style={{
-                      border: "1px solid #E5E7EB",
+                      flex: 1,
+                      padding: "10px 12px",
                       borderRadius: 10,
-                      padding: 12,
-                      background: "#fff",
+                      border: "1px solid #CBD5E1",
+                      outline: "none",
+                      fontWeight: 700,
+                    }}
+                  />
+                  <button
+                    style={{
+                      padding: "10px 16px",
+                      borderRadius: 10,
+                      border: "1px solid #1D4ED8",
+                      background: "#1D4ED8",
+                      color: "white",
+                      fontWeight: 950,
+                      cursor: "pointer",
                     }}
                   >
-                    <div style={{ fontWeight: 900, marginBottom: 4 }}>
-                      {companyName}{" "}
-                      <span style={{ color: "#64748B" }}>• 03/05/2026 10:15 AM</span>
-                    </div>
-                    <div style={{ color: "#334155", fontWeight: 650 }}>
-                      Please ensure borrower signs all pages in blue ink.
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      border: "1px solid #E5E7EB",
-                      borderRadius: 10,
-                      padding: 12,
-                      background: "#fff",
-                    }}
-                  >
-                    <div style={{ fontWeight: 900, marginBottom: 4 }}>
-                      Assigned Notary{" "}
-                      <span style={{ color: "#64748B" }}>• 03/05/2026 3:38 PM</span>
-                    </div>
-                    <div style={{ color: "#334155", fontWeight: 650 }}>
-                      Signing completed. Uploading documents now.
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-                    <input
-                      placeholder="Type your message..."
-                      style={{
-                        flex: 1,
-                        padding: "10px 12px",
-                        borderRadius: 10,
-                        border: "1px solid #CBD5E1",
-                        outline: "none",
-                        fontWeight: 700,
-                      }}
-                    />
-                    <button
-                      style={{
-                        padding: "10px 16px",
-                        borderRadius: 10,
-                        border: "1px solid #1D4ED8",
-                        background: "#1D4ED8",
-                        color: "white",
-                        fontWeight: 950,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Send
-                    </button>
-                  </div>
+                    Send
+                  </button>
                 </div>
               </Card>
 
               <Card title="Payment Details">
-                <Field label="Notary Fee" value="$125.00" />
-                <Field label="Estimated Payment Date" value="March 7, 2026" />
-
-                <div style={{ marginTop: 8, marginBottom: 10 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "#64748B",
-                      fontWeight: 800,
-                    }}
-                  >
-                    Payment Method
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 10,
-                      flexWrap: "wrap",
-                      marginTop: 8,
-                    }}
-                  >
-                    {["VendorPay", "ACH Transfer", "Zelle", "PayPal Business"].map(
-                      (m) => (
-                        <span
-                          key={m}
-                          style={{
-                            padding: "7px 10px",
-                            borderRadius: 999,
-                            border: "1px solid #CBD5E1",
-                            background: "#F8FAFC",
-                            fontWeight: 900,
-                            fontSize: 12,
-                          }}
-                        >
-                          {m}
-                        </span>
-                      )
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 10 }}>
-                  <Field label="Payment Status" value="Scheduled" />
-                  <a
-                    href="#"
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 900,
-                      color: "#1D4ED8",
-                    }}
-                  >
-                    Learn more about payments and timing →
-                  </a>
+                <Field label="Payment Status" value="Pending setup" />
+                <Field label="Estimated Payment Date" value="—" />
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 900,
+                    color: "#1D4ED8",
+                  }}
+                >
+                  Payment workflow can be connected next.
                 </div>
               </Card>
             </div>
 
             <Card title="Order Status">
-              <Timeline current={selectedOrder.status} />
+              <Timeline current={selectedStatus} />
             </Card>
           </div>
         </>
