@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import type { ReactNode } from "react";
 
@@ -354,9 +355,29 @@ export default async function VendorOrdersPage({
           alignItems: "center",
           boxShadow: "0 10px 30px rgba(30, 64, 175, 0.25)",
           marginBottom: 18,
+          gap: 16,
         }}
       >
-        <div style={{ fontWeight: 900, letterSpacing: 0.2 }}>{companyName}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <Image
+            src="/notarix-logo.png"
+            alt="Notarix"
+            width={44}
+            height={44}
+            style={{
+              width: 44,
+              height: 44,
+              objectFit: "contain",
+              background: "white",
+              borderRadius: 10,
+              padding: 4,
+            }}
+          />
+          <div style={{ fontWeight: 900, letterSpacing: 0.2 }}>
+            {companyName}
+          </div>
+        </div>
+
         <div style={{ fontWeight: 800 }}>Powered by Notarix</div>
       </div>
 
@@ -456,9 +477,7 @@ export default async function VendorOrdersPage({
                       >
                         {o.signingDate
                           ? `Signing Date: ${formatDate(o.signingDate)}${
-                              o.signingTimeLabel
-                                ? ` – ${o.signingTimeLabel}`
-                                : ""
+                              o.signingTimeLabel ? ` – ${o.signingTimeLabel}` : ""
                             }`
                           : `Created: ${formatDateTime(o.createdAt)}`}
                       </div>
@@ -504,8 +523,8 @@ export default async function VendorOrdersPage({
                 ←
               </a>
               <div style={{ fontWeight: 950 }}>
-                Order #{selectedOrder.orderNumber || selectedOrder.id.slice(-8)}{" "}
-                – {nice(selectedOrder.primaryBorrowerName)}
+                Order #{selectedOrder.orderNumber || selectedOrder.id.slice(-8)} –{" "}
+                {nice(selectedOrder.primaryBorrowerName)}
               </div>
             </div>
 
@@ -545,14 +564,8 @@ export default async function VendorOrdersPage({
                   label="Signing Time"
                   value={nice(selectedOrder.signingTimeLabel)}
                 />
-                <Field
-                  label="Phone"
-                  value={nice(selectedOrder.borrowerPhone)}
-                />
-                <Field
-                  label="Email"
-                  value={nice(selectedOrder.borrowerEmail)}
-                />
+                <Field label="Phone" value={nice(selectedOrder.borrowerPhone)} />
+                <Field label="Email" value={nice(selectedOrder.borrowerEmail)} />
               </Card>
 
               <Card title="Order Details">
@@ -763,13 +776,22 @@ export default async function VendorOrdersPage({
 
       <div
         style={{
-          textAlign: "right",
+          marginTop: 24,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 10,
           color: "#64748B",
-          fontWeight: 800,
-          marginTop: 18,
         }}
       >
-        © 2026 Notarix.live
+        <Image
+          src="/notarix-logo.png"
+          alt="Notarix"
+          width={72}
+          height={72}
+          style={{ width: 72, height: 72, objectFit: "contain" }}
+        />
+        <div style={{ fontWeight: 800 }}>© 2026 Notarix.live</div>
       </div>
     </main>
   );
