@@ -57,7 +57,7 @@ export default function HomePage() {
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <a
-            href="/contact"
+            href="/vendors"
             style={{
               background: "white",
               color: "#1E40AF",

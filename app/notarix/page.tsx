@@ -1,10 +1,5 @@
-// app/notarix/page.tsx
+import { redirect } from "next/navigation";
 
 export default function NotarixPage() {
-  return (
-    <main style={{ padding: 24 }}>
-      <h1>Notarix</h1>
-      <p>Page is live.</p>
-    </main>
-  );
+  redirect("/vendors");
 }

@@ -126,7 +126,7 @@ export default async function VendorProfilePage({ searchParams }: Props) {
 
           <div className="flex items-center gap-2">
             <Link
-              href={`/vendors/portal?vendorCode=${encodeURIComponent(vendor.vendorcode)}`}
+              href={`/vendors/${encodeURIComponent(vendor.vendorcode)}/orders`}
               className="rounded bg-black px-3 py-2 text-sm text-white"
             >
               Go to Portal
@@ -279,7 +279,7 @@ export default async function VendorProfilePage({ searchParams }: Props) {
           <div className="text-sm font-semibold">Quick Links</div>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link
-              href={`/vendors/portal?vendorCode=${encodeURIComponent(vendor.vendorcode)}`}
+              href={`/vendors/${encodeURIComponent(vendor.vendorcode)}/orders`}
               className="rounded bg-black px-4 py-2 text-sm text-white"
             >
               Vendor Portal Home

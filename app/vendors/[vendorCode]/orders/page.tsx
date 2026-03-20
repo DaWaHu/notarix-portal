@@ -1,3 +1,7 @@
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
 type Status = "Pending" | "Active" | "Completed" | "Closed";
 
 function StatusPill({ status }: { status: Status }) {
@@ -193,12 +197,44 @@ function Timeline({ current }: { current: Status }) {
   );
 }
 
-export default function VendorOrdersTemplatePage({
+function nice(value: string | null | undefined) {
+  const s = String(value || "").trim();
+  return s ? s : "—";
+}
+
+export default async function VendorOrdersTemplatePage({
   params,
 }: {
   params: { vendorCode: string };
 }) {
-  // Mock data for now (later you’ll replace with DB/Prisma)
+  const vendorCode = String(params.vendorCode || "").toUpperCase().trim();
+
+  const vendor = await prisma.vendor.findUnique({
+    where: { vendorcode: vendorCode },
+    select: {
+      companyName: true,
+      vendorcode: true,
+      primaryContactName: true,
+      primaryContactEmail: true,
+      primaryContactPhone: true,
+      secondaryContactName: true,
+      secondaryContactEmail: true,
+      secondaryContactPhone: true,
+    },
+  });
+
+  const headerCompanyName = vendor?.companyName || "CLIENT NAME / TITLE COMPANY";
+  const displayVendorCode = vendor?.vendorcode || vendorCode;
+
+  const titleRepName = vendor?.primaryContactName || "John Smith";
+  const titleRepEmail = vendor?.primaryContactEmail || "jsmith@titlecompany.com";
+  const titleRepPhone = vendor?.primaryContactPhone || "(555) 123-4567";
+
+  const secondRepName = vendor?.secondaryContactName || "Sarah Johnson";
+  const secondRepEmail = vendor?.secondaryContactEmail || "sjohnson@notary.com";
+  const secondRepPhone = vendor?.secondaryContactPhone || "(555) 987-6643";
+
+  // Keeping mock order detail for now until we wire real VendorOrder records next.
   const expandedStatus: Status = "Active";
 
   return (
@@ -211,7 +247,6 @@ export default function VendorOrdersTemplatePage({
         minHeight: "100vh",
       }}
     >
-      {/* Top Header */}
       <div
         style={{
           background: "#1e40af",
@@ -226,18 +261,17 @@ export default function VendorOrdersTemplatePage({
         }}
       >
         <div style={{ fontWeight: 900, letterSpacing: 0.2 }}>
-          CLIENT NAME / TITLE COMPANY
+          {headerCompanyName}
         </div>
         <div style={{ fontWeight: 800 }}>Powered by Notarix</div>
       </div>
 
-      {/* Page Header */}
       <div style={{ display: "flex", alignItems: "end", gap: 14 }}>
         <h1 style={{ fontSize: 34, margin: 0, fontWeight: 950 }}>
           Notary Orders
         </h1>
         <span style={{ color: "#64748B", fontWeight: 700 }}>
-          Vendor: {params.vendorCode}
+          Vendor: {displayVendorCode}
         </span>
       </div>
 
@@ -248,7 +282,6 @@ export default function VendorOrdersTemplatePage({
         <span style={{ fontWeight: 900 }}>●</span> Closed
       </div>
 
-      {/* Orders List */}
       <div style={{ display: "grid", gap: 12, marginBottom: 18 }}>
         {[
           {
@@ -303,7 +336,6 @@ export default function VendorOrdersTemplatePage({
         ))}
       </div>
 
-      {/* Expanded Order Header */}
       <div
         style={{
           background: "#1e40af",
@@ -317,18 +349,13 @@ export default function VendorOrdersTemplatePage({
           marginBottom: 12,
         }}
       >
-        <div style={{ fontWeight: 950 }}>
-          Order #48218 – Garcia
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontWeight: 800 }}>✓ Status: {expandedStatus}</span>
           <span style={{ opacity: 0.85 }}>▾</span>
         </div>
       </div>
 
-      {/* Expanded Order Grid */}
       <div style={{ display: "grid", gap: 12 }}>
-        {/* Row 1: 3 columns */}
         <div
           style={{
             display: "grid",
@@ -338,7 +365,10 @@ export default function VendorOrdersTemplatePage({
         >
           <Card title="Borrower Information">
             <Field label="Primary Borrower" value="Maria Garcia" />
-            <Field label="Property Address" value="72 Pine Ave, Orlando, FL 32801" />
+            <Field
+              label="Property Address"
+              value="72 Pine Ave, Orlando, FL 32801"
+            />
             <Field label="Signing Date" value="March 5, 2026" />
             <Field label="Signing Time" value="2:30 PM EST" />
             <Field label="Phone" value="(555) 987-6543" />
@@ -370,7 +400,9 @@ export default function VendorOrdersTemplatePage({
               <CheckboxRow
                 checked
                 label="Additional Signer: Robert Garcia"
-                valueRight={<span style={{ color: "#64748B", fontWeight: 800 }}>▾</span>}
+                valueRight={
+                  <span style={{ color: "#64748B", fontWeight: 800 }}>▾</span>
+                }
               />
             </div>
 
@@ -386,15 +418,28 @@ export default function VendorOrdersTemplatePage({
                 fontWeight: 650,
               }}
             >
-              Please ensure all borrowers sign according to the instructions before proceeding.
+              Please ensure all borrowers sign according to the instructions
+              before proceeding.
             </div>
           </Card>
 
           <Card title="Documents">
             {[
-              { name: "Instructions.pdf", who: "Title Company", time: "03/03/2026 9:22 AM" },
-              { name: "Loan_Package.pdf", who: "Title Company", time: "03/03/2026 9:44 AM" },
-              { name: "Signed_Package.pdf", who: "Sarah Johnson", time: "03/05/2026 4:15 PM" },
+              {
+                name: "Instructions.pdf",
+                who: headerCompanyName,
+                time: "03/03/2026 9:22 AM",
+              },
+              {
+                name: "Loan_Package.pdf",
+                who: headerCompanyName,
+                time: "03/03/2026 9:44 AM",
+              },
+              {
+                name: "Signed_Package.pdf",
+                who: "Assigned Notary",
+                time: "03/05/2026 4:15 PM",
+              },
             ].map((d) => (
               <div
                 key={d.name}
@@ -410,8 +455,16 @@ export default function VendorOrdersTemplatePage({
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: 900, color: "#0F172A" }}>{d.name}</div>
-                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 700 }}>
+                  <div style={{ fontWeight: 900, color: "#0F172A" }}>
+                    {d.name}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#64748B",
+                      fontWeight: 700,
+                    }}
+                  >
                     {d.who} • {d.time}
                   </div>
                 </div>
@@ -435,7 +488,6 @@ export default function VendorOrdersTemplatePage({
           </Card>
         </div>
 
-        {/* Row 2: 3 columns */}
         <div
           style={{
             display: "grid",
@@ -456,15 +508,35 @@ export default function VendorOrdersTemplatePage({
                   }}
                 />
                 <div>
-                  <div style={{ fontWeight: 900, color: "#0F172A" }}>John Smith</div>
-                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>
-                    Title Rep
+                  <div style={{ fontWeight: 900, color: "#0F172A" }}>
+                    {nice(titleRepName)}
                   </div>
-                  <div style={{ fontSize: 12, color: "#0F172A", fontWeight: 800 }}>
-                    (555) 123-4567
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#64748B",
+                      fontWeight: 800,
+                    }}
+                  >
+                    Primary Contact
                   </div>
-                  <div style={{ fontSize: 12, color: "#0F172A", fontWeight: 800 }}>
-                    jsmith@titlecompany.com
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#0F172A",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {nice(titleRepPhone)}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#0F172A",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {nice(titleRepEmail)}
                   </div>
                 </div>
               </div>
@@ -480,22 +552,42 @@ export default function VendorOrdersTemplatePage({
                   }}
                 />
                 <div>
-                  <div style={{ fontWeight: 900, color: "#0F172A" }}>Sarah Johnson</div>
-                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>
-                    Notary Assigned
+                  <div style={{ fontWeight: 900, color: "#0F172A" }}>
+                    {nice(secondRepName)}
                   </div>
-                  <div style={{ fontSize: 12, color: "#0F172A", fontWeight: 800 }}>
-                    (555) 987-6643
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#64748B",
+                      fontWeight: 800,
+                    }}
+                  >
+                    Secondary Contact
                   </div>
-                  <div style={{ fontSize: 12, color: "#0F172A", fontWeight: 800 }}>
-                    sjohnson@notary.com
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#0F172A",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {nice(secondRepPhone)}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#0F172A",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {nice(secondRepEmail)}
                   </div>
                 </div>
               </div>
             </div>
           </Card>
 
-          <Card title="Communicate">
+          <Card title="Communication Log">
             <div style={{ display: "grid", gap: 10 }}>
               <div
                 style={{
@@ -506,7 +598,8 @@ export default function VendorOrdersTemplatePage({
                 }}
               >
                 <div style={{ fontWeight: 900, marginBottom: 4 }}>
-                  Title Company <span style={{ color: "#64748B" }}>• 03/05/2026 10:15 AM</span>
+                  {headerCompanyName}{" "}
+                  <span style={{ color: "#64748B" }}>• 03/05/2026 10:15 AM</span>
                 </div>
                 <div style={{ color: "#334155", fontWeight: 650 }}>
                   Please ensure borrower signs all pages in blue ink.
@@ -522,7 +615,8 @@ export default function VendorOrdersTemplatePage({
                 }}
               >
                 <div style={{ fontWeight: 900, marginBottom: 4 }}>
-                  Sarah Johnson (Notary) <span style={{ color: "#64748B" }}>• 03/05/2026 3:38 PM</span>
+                  Assigned Notary{" "}
+                  <span style={{ color: "#64748B" }}>• 03/05/2026 3:38 PM</span>
                 </div>
                 <div style={{ color: "#334155", fontWeight: 650 }}>
                   Signing completed. Uploading documents now.
@@ -566,35 +660,50 @@ export default function VendorOrdersTemplatePage({
               <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>
                 Payment Method
               </div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8 }}>
-                {["VendorPay", "ACH Transfer", "Zelle", "PayPal Business"].map((m) => (
-                  <span
-                    key={m}
-                    style={{
-                      padding: "7px 10px",
-                      borderRadius: 999,
-                      border: "1px solid #CBD5E1",
-                      background: "#F8FAFC",
-                      fontWeight: 900,
-                      fontSize: 12,
-                    }}
-                  >
-                    {m}
-                  </span>
-                ))}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  flexWrap: "wrap",
+                  marginTop: 8,
+                }}
+              >
+                {["VendorPay", "ACH Transfer", "Zelle", "PayPal Business"].map(
+                  (m) => (
+                    <span
+                      key={m}
+                      style={{
+                        padding: "7px 10px",
+                        borderRadius: 999,
+                        border: "1px solid #CBD5E1",
+                        background: "#F8FAFC",
+                        fontWeight: 900,
+                        fontSize: 12,
+                      }}
+                    >
+                      {m}
+                    </span>
+                  )
+                )}
               </div>
             </div>
 
             <div style={{ marginTop: 10 }}>
               <Field label="Payment Status" value="Scheduled" />
-              <a href="#" style={{ fontSize: 12, fontWeight: 900, color: "#1D4ED8" }}>
+              <a
+                href="#"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 900,
+                  color: "#1D4ED8",
+                }}
+              >
                 Learn more about payments and timing →
               </a>
             </div>
           </Card>
         </div>
 
-        {/* Timeline */}
         <Card title="Order Status">
           <Timeline current={expandedStatus} />
         </Card>

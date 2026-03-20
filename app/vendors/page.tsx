@@ -37,7 +37,7 @@ export default function VendorsPage() {
             </p>
 
             <Link
-              href="/vendors/test/orders"
+              href="/vendors/demo/orders"
               className="mt-5 inline-block rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700"
             >
               Access Vendor Portal
