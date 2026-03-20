@@ -85,6 +85,7 @@ export async function POST(req: Request) {
         orderNumber: generateOrderNumber(),
         status: "PENDING",
 
+        // New fields
         primaryBorrowerName: data.primaryBorrowerName.trim(),
         secondaryBorrowerName: data.secondaryBorrowerName?.trim() || null,
 
@@ -107,6 +108,16 @@ export async function POST(req: Request) {
         isRON: data.isRON ?? false,
         serviceType: data.serviceType?.trim() || null,
         specialInstructions: data.specialInstructions?.trim() || null,
+
+        // Old required fields still in the table
+        signerName: data.primaryBorrowerName.trim(),
+        signerAddress1: data.propertyAddress1.trim(),
+        signerAddress2: data.propertyAddress2?.trim() || null,
+        signerCity: data.propertyCity.trim(),
+        signerState: data.propertyState.trim(),
+        signerZip: data.propertyZip.trim(),
+        signerPhone: data.borrowerPhone?.trim() || "",
+        notes: data.specialInstructions?.trim() || null,
       },
       select: {
         id: true,
