@@ -1,7 +1,7 @@
-export default function VendorOrdersPage({
-  params,
-}: {
-  params: { vendorCode: string };
-}) {
-  return <div>{params.vendorCode}</div>;
+export default function Page() {
+  return (
+    <div style={{ fontSize: "48px", color: "black", padding: "40px" }}>
+      HELLO
+    </div>
+  );
 }
