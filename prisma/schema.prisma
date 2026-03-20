@@ -55,14 +55,14 @@ model VendorOrder {
   orderNumber            String?  @unique
   status                 String   @default("PENDING")
 
-  primaryBorrowerName    String
+  primaryBorrowerName    String?
   secondaryBorrowerName  String?
 
-  propertyAddress1       String
+  propertyAddress1       String?
   propertyAddress2       String?
-  propertyCity           String
-  propertyState          String
-  propertyZip            String
+  propertyCity           String?
+  propertyState          String?
+  propertyZip            String?
 
   borrowerPhone          String?
   borrowerEmail          String?
@@ -71,14 +71,24 @@ model VendorOrder {
   signingTimeLabel       String?
 
   estimatedPages         Int?
-  paperSize              String?   // LEGAL, LETTER, BOTH
-  preferredInk           String?   // BLUE, BLACK 
+  paperSize              String?
+  preferredInk           String?
 
-  isRON                  Boolean   @default(false)
-  serviceType            String?
+  isRON                  Boolean  @default(false)
+  serviceType            String
   specialInstructions    String?
+  notes                  String?
 
-  vendor                 Vendor    @relation(fields: [vendorId], references: [id])
+  // Legacy fields still required by current DB table
+  signerName             String
+  signerAddress1         String
+  signerAddress2         String?
+  signerCity             String
+  signerState            String
+  signerZip              String
+  signerPhone            String
+
+  vendor                 Vendor   @relation(fields: [vendorId], references: [id])
 }
 
 model AccessRequest {
