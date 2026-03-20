@@ -100,9 +100,7 @@ export default function NewVendorOrderPage() {
           borrowerEmail: form.borrowerEmail || null,
           signingDate: form.signingDate || null,
           signingTimeLabel: form.signingTimeLabel || null,
-          estimatedPages: form.estimatedPages
-            ? Number(form.estimatedPages)
-            : null,
+          estimatedPages: form.estimatedPages ? Number(form.estimatedPages) : null,
           paperSize: form.paperSize || null,
           preferredInk: form.preferredInk || null,
           isRON: form.isRON,
@@ -228,6 +226,7 @@ export default function NewVendorOrderPage() {
               <input
                 value={form.primaryBorrowerName}
                 onChange={(e) => update("primaryBorrowerName", e.target.value)}
+                placeholder="Last Name, First Name"
                 style={inputStyle}
               />
             </label>
@@ -239,6 +238,7 @@ export default function NewVendorOrderPage() {
               <input
                 value={form.secondaryBorrowerName}
                 onChange={(e) => update("secondaryBorrowerName", e.target.value)}
+                placeholder="Last Name, First Name"
                 style={inputStyle}
               />
             </label>

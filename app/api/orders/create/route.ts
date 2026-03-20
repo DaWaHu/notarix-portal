@@ -53,9 +53,13 @@ function generateOrderNumber() {
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null);
-    if (!body) return jsonError("Missing JSON body", 400);
+
+    if (!body) {
+      return jsonError("Missing JSON body", 400);
+    }
 
     const parsed = OrderCreateSchema.safeParse(body);
+
     if (!parsed.success) {
       return jsonError("Validation failed", 422, parsed.error.flatten());
     }
@@ -64,7 +68,11 @@ export async function POST(req: Request) {
 
     const vendor = await prisma.vendor.findUnique({
       where: { vendorcode: data.vendorCode },
-      select: { id: true, vendorcode: true, companyName: true },
+      select: {
+        id: true,
+        vendorcode: true,
+        companyName: true,
+      },
     });
 
     if (!vendor) {
@@ -77,28 +85,28 @@ export async function POST(req: Request) {
         orderNumber: generateOrderNumber(),
         status: "PENDING",
 
-        primaryBorrowerName: data.primaryBorrowerName,
-        secondaryBorrowerName: data.secondaryBorrowerName || null,
+        primaryBorrowerName: data.primaryBorrowerName.trim(),
+        secondaryBorrowerName: data.secondaryBorrowerName?.trim() || null,
 
-        propertyAddress1: data.propertyAddress1,
-        propertyAddress2: data.propertyAddress2 || null,
-        propertyCity: data.propertyCity,
-        propertyState: data.propertyState,
-        propertyZip: data.propertyZip,
+        propertyAddress1: data.propertyAddress1.trim(),
+        propertyAddress2: data.propertyAddress2?.trim() || null,
+        propertyCity: data.propertyCity.trim(),
+        propertyState: data.propertyState.trim(),
+        propertyZip: data.propertyZip.trim(),
 
-        borrowerPhone: data.borrowerPhone || null,
-        borrowerEmail: data.borrowerEmail || null,
+        borrowerPhone: data.borrowerPhone?.trim() || null,
+        borrowerEmail: data.borrowerEmail?.trim().toLowerCase() || null,
 
         signingDate: data.signingDate ? new Date(data.signingDate) : null,
-        signingTimeLabel: data.signingTimeLabel || null,
+        signingTimeLabel: data.signingTimeLabel?.trim() || null,
 
         estimatedPages: data.estimatedPages ?? null,
-        paperSize: data.paperSize || null,
-        preferredInk: data.preferredInk || null,
+        paperSize: data.paperSize?.trim().toUpperCase() || null,
+        preferredInk: data.preferredInk?.trim().toUpperCase() || null,
 
         isRON: data.isRON ?? false,
-        serviceType: data.serviceType || null,
-        specialInstructions: data.specialInstructions || null,
+        serviceType: data.serviceType?.trim() || null,
+        specialInstructions: data.specialInstructions?.trim() || null,
       },
       select: {
         id: true,
@@ -123,9 +131,19 @@ export async function POST(req: Request) {
   } catch (err: any) {
     console.error("ORDER CREATE ERROR:", err);
 
-    return jsonError("Server error saving order", 500, {
-      message: err?.message,
-      code: err?.code,
-    });
+    const isDev = process.env.NODE_ENV !== "production";
+
+    return jsonError(
+      isDev ? err?.message || "Server error saving order" : "Server error saving order",
+      500,
+      isDev
+        ? {
+            message: err?.message,
+            code: err?.code,
+            meta: err?.meta,
+            name: err?.name,
+          }
+        : undefined
+    );
   }
 }
