@@ -107,7 +107,7 @@ export default async function VendorProfilePage({ searchParams }: Props) {
     );
   }
 
-  const pInit = initials(vendor.primaryContactName);
+  const pInit = initials(vendor.primaryContactName || "");
   const sInit = vendor.secondaryContactName
     ? initials(vendor.secondaryContactName)
     : "—";

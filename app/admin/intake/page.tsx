@@ -46,16 +46,21 @@ export default async function AdminIntakePage({ searchParams }: Props) {
   const selectedStatus = normalizeStatus(params.status);
 
   const submissions = await prisma.intakeSubmission.findMany({
-    where:
-      selectedStatus === "ALL"
-        ? {}
-        : {
-            status: selectedStatus,
-          },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  where:
+    selectedStatus === "ALL"
+      ? {}
+      : {
+          status: selectedStatus as
+            | "NEW"
+            | "REVIEWING"
+            | "APPROVED"
+            | "REJECTED"
+            | "CLOSED",
+        },
+  orderBy: {
+    createdAt: "desc",
+  },
+});
 
   const counts = await prisma.intakeSubmission.groupBy({
     by: ["status"],

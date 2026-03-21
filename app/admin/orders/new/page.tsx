@@ -90,7 +90,7 @@ async function createOrder(formData: FormData) {
     data: {
       vendorId: vendor.id,
       orderNumber,
-      status: "Pending",
+      status: "DRAFT",
       primaryBorrowerName,
       secondaryBorrowerName: secondaryBorrowerName || null,
       propertyAddress1,
