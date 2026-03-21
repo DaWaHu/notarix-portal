@@ -1,11 +1,34 @@
-@import "tailwindcss";
+* {
+  box-sizing: border-box;
+}
 
-/* Optional: baseline app feel */
 html,
 body {
-  height: 100%;
+  padding: 0;
+  margin: 0;
 }
 
 body {
-  margin: 0;
+  background: #f1f5f9;
+  color: #0f172a;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }

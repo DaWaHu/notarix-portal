@@ -1,11 +1,9 @@
+import type { Metadata } from "next";
 import "./globals.css";
-import { Inter } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] });
-
-export const metadata = {
-  title: "Notary Portal",
-  description: "Secure document management for professional notaries",
+export const metadata: Metadata = {
+  title: "Notarix",
+  description: "Notarix notary workflow portal",
 };
 
 export default function RootLayout({
@@ -15,11 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-gray-50 text-gray-900`}>
-        <main className="min-h-screen flex justify-center">
-          <div className="w-full max-w-7xl p-6">{children}</div>
-        </main>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

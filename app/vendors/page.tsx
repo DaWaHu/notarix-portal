@@ -1,86 +1,93 @@
-import Link from "next/link";
-
-export default function VendorsPage() {
+export default function VendorsLandingPage() {
   return (
-    <div className="min-h-screen bg-slate-100 px-6 py-10">
-      <div className="mx-auto max-w-5xl">
-
-        {/* Header */}
-        <div className="mb-8 rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-500 px-8 py-8 text-white shadow-xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-100">
-            Notarix
-          </p>
-
-          <h1 className="mt-2 text-4xl font-bold">
-            Vendor Access Portal
+    <main
+      style={{
+        padding: 28,
+        minHeight: "100vh",
+        background: "#F1F5F9",
+        fontFamily:
+          'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial',
+      }}
+    >
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <div
+          style={{
+            background: "#fff",
+            border: "1px solid #E5E7EB",
+            borderRadius: 16,
+            padding: 28,
+            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+            marginBottom: 20,
+          }}
+        >
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 40,
+              lineHeight: 1.1,
+              fontWeight: 950,
+              color: "#0F172A",
+            }}
+          >
+            Vendor Portal
           </h1>
 
-          <p className="mt-3 max-w-2xl text-base text-blue-100">
-            The NOTARIX™ vendor portal allows approved signing professionals,
-            notaries, and partner vendors to access assignments, documents,
-            and communication tools.
-          </p>
+          <div
+            style={{
+              marginTop: 10,
+              color: "#475569",
+              fontWeight: 600,
+              fontSize: 15,
+            }}
+          >
+            Client-facing vendor area for approved title companies, law firms,
+            lenders, escrow companies, and other approved organizations.
+          </div>
         </div>
 
-        {/* Access Cards */}
-        <div className="grid gap-6 md:grid-cols-2">
-
-          {/* Approved Vendor Login */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
-            <h2 className="text-xl font-bold text-slate-900">
-              Approved Vendor Login
-            </h2>
-
-            <p className="mt-2 text-sm text-slate-600">
-              Vendors who have already been approved and issued portal access
-              credentials may log in here to manage assignments and documents.
-            </p>
-
-            <Link
-              href="/vendors/demo/orders"
-              className="mt-5 inline-block rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700"
-            >
-              Access Vendor Portal
-            </Link>
+        <div
+          style={{
+            background: "#fff",
+            border: "1px solid #E5E7EB",
+            borderRadius: 16,
+            padding: 24,
+            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 24,
+              fontWeight: 900,
+              color: "#0F172A",
+              marginBottom: 12,
+            }}
+          >
+            Portal Access Notes
           </div>
 
-          {/* Request Approval */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
-            <h2 className="text-xl font-bold text-slate-900">
-              Request Vendor Approval
-            </h2>
-
-            <p className="mt-2 text-sm text-slate-600">
-              If you are a notary signing agent, vendor, or service provider
-              interested in working with NOTARIX™, submit an approval request.
-              Our team will review your information before granting platform access.
-            </p>
-
-            <Link
-              href="/contact"
-              className="mt-5 inline-block rounded-lg bg-slate-900 px-6 py-3 font-semibold text-white hover:bg-slate-800"
-            >
-              Request Approval
-            </Link>
+          <div
+            style={{
+              display: "grid",
+              gap: 12,
+              color: "#475569",
+              fontWeight: 600,
+              lineHeight: 1.7,
+            }}
+          >
+            <div>
+              Vendor pages are intended for approved client organizations only.
+            </div>
+            <div>
+              Vendor code should appear only for approved non-notary client
+              accounts with a created profile page.
+            </div>
+            <div>
+              Notary-facing and staff-facing pages should not expose vendor code
+              as display text.
+            </div>
           </div>
-
         </div>
-
-        {/* Info Section */}
-        <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-8 shadow">
-          <h3 className="text-lg font-semibold text-slate-900">
-            Vendor Network
-          </h3>
-
-          <p className="mt-3 text-sm text-slate-600 max-w-2xl">
-            NOTARIX™ works with professional notaries, signing services,
-            and vendor partners across multiple jurisdictions. Access to the
-            platform is provided only to verified vendors who meet our
-            operational and compliance requirements.
-          </p>
-        </div>
-
       </div>
-    </div>
+    </main>
   );
 }
