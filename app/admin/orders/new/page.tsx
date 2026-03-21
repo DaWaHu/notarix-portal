@@ -1,3 +1,1 @@
-export default function Page() {
-  return <div>Admin New Order Page</div>;
-}
+export { default } from "@/app/vendors/[vendorCode]/orders/new/page";
