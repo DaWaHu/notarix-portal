@@ -104,7 +104,7 @@ function getStatusDot(status: OrderStatus) {
 export const dynamic = "force-dynamic";
 
 export default async function AdminOrdersPage() {
-  const orders = await prisma.order.findMany({
+  const orders = await prisma.vendorOrder.findMany({
     orderBy: { createdAt: "desc" },
     select: {
       id: true,

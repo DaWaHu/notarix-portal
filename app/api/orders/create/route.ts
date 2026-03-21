@@ -34,7 +34,7 @@ const OrderCreateSchema = z.object({
   specialInstructions: z.string().optional().nullable(),
 });
 
-function jsonError(message: string, status = 400, extra?: any) {
+function jsonError(message: string, status = 400, extra?: unknown) {
   return NextResponse.json(
     { ok: false, error: message, ...(extra ? { extra } : {}) },
     { status }
@@ -131,9 +131,8 @@ export async function POST(req: Request) {
       data: {
         vendorId: vendor.id,
         orderNumber: await generateOrderNumber(),
-        status: "PENDING",
+        status: "DRAFT",
 
-        // New fields
         primaryBorrowerName: data.primaryBorrowerName.trim(),
         secondaryBorrowerName: data.secondaryBorrowerName?.trim() || null,
 
@@ -157,7 +156,7 @@ export async function POST(req: Request) {
         serviceType: data.serviceType?.trim() || null,
         specialInstructions: data.specialInstructions?.trim() || null,
 
-        // Legacy fields still in the current table
+        // compatibility fields still present in the current table
         signerName: data.primaryBorrowerName.trim(),
         signerAddress1: data.propertyAddress1.trim(),
         signerAddress2: data.propertyAddress2?.trim() || null,

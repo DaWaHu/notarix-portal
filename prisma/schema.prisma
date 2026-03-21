@@ -8,97 +8,443 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum PortalRole {
+  OWNER
+  ADMIN
+  STAFF
+  NOTARY
+  VENDOR
+  CLIENT
+}
+
+enum IntakeRole {
+  VENDOR
+  CLIENT
+  NOTARY
+  GENERAL
+}
+
+enum IntakeStatus {
+  NEW
+  REVIEWING
+  APPROVED
+  REJECTED
+  CLOSED
+}
+
+enum VendorApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum VendorOrderStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  ASSIGNED
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum AccessRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CLOSED
+}
+
+enum AppointmentStatus {
+  PENDING
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum DocumentType {
+  ORDER_PACKAGE
+  ID_DOCUMENT
+  SIGNED_PACKAGE
+  INVOICE
+  RECEIPT
+  OTHER
+}
+
+enum DocumentVisibility {
+  INTERNAL
+  VENDOR
+  CLIENT
+  NOTARY
+}
+
+enum AuditEntityType {
+  USER
+  VENDOR
+  CLIENT
+  NOTARY
+  INTAKE_SUBMISSION
+  ACCESS_REQUEST
+  VENDOR_ORDER
+  APPOINTMENT
+  DOCUMENT
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  STATUS_CHANGE
+  ASSIGN
+  UNASSIGN
+  LOGIN
+  EXPORT
+  VIEW
+}
+
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email        String  @unique
+  passwordHash String?
+  firstName    String?
+  lastName     String?
+  phone        String?
+  isActive     Boolean @default(true)
+
+  roles       UserRole[]
+  vendorLinks VendorUser[]
+  clientLinks ClientUser[]
+
+  createdOrders VendorOrder[] @relation("OrderCreatedBy")
+  updatedOrders VendorOrder[] @relation("OrderUpdatedBy")
+
+  auditLogs     AuditLog[]     @relation("AuditActor")
+  notaryProfile NotaryProfile?
+
+  @@index([email])
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId String
+  role   PortalRole
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@index([role])
+}
+
 model IntakeSubmission {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  role      String
-  fullName  String
-  email     String
-  phone     String?
-  message   String?
-  details   Json?
-  status    String   @default("NEW")
-  vendor    Vendor?  @relation("VendorIntake")
+  updatedAt DateTime @updatedAt
+
+  role     IntakeRole
+  fullName String
+  email    String
+  phone    String?
+  message  String?
+  details  Json?
+  status   IntakeStatus @default(NEW)
+
+  vendor         Vendor?         @relation("VendorIntake")
+  client         Client?         @relation("ClientIntake")
+  accessRequests AccessRequest[]
+
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
 }
 
 model Vendor {
-  id                    String            @id @default(cuid())
-  createdAt             DateTime          @default(now())
-  vendorcode            String            @unique
-  companyName           String
-  companyLogoUrl        String?
-  address1              String
-  address2              String?
-  city                  String
-  state                 String
-  zip                   String
-  primaryPhone          String
-  secondaryPhone        String?
-  primaryContactName    String
-  primaryContactEmail   String
-  primaryContactPhone   String
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendorcode     String  @unique
+  companyName    String
+  companyType    String?
+  companyLogoUrl String?
+
+  address1 String?
+  address2 String?
+  city     String?
+  state    String?
+  zip      String?
+  website  String?
+
+  primaryPhone   String?
+  secondaryPhone String?
+
+  primaryContactName  String?
+  primaryContactEmail String?
+  primaryContactPhone String?
+
   secondaryContactName  String?
   secondaryContactEmail String?
   secondaryContactPhone String?
-  intakeSubmissionId    String?           @unique
-  intakeSubmission      IntakeSubmission? @relation("VendorIntake", fields: [intakeSubmissionId], references: [id])
-  orders                VendorOrder[]
+
+  approvalStatus     VendorApprovalStatus @default(PENDING)
+  profilePageCreated Boolean              @default(false)
+  isActive           Boolean              @default(true)
+
+  intakeSubmissionId String?           @unique
+  intakeSubmission   IntakeSubmission? @relation("VendorIntake", fields: [intakeSubmissionId], references: [id], onDelete: SetNull)
+
+  orders    VendorOrder[]
+  users     VendorUser[]
+  documents Document[]
+
+  @@index([companyName])
+  @@index([approvalStatus])
+  @@index([isActive])
+}
+
+model VendorUser {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  vendorId  String
+  userId    String
+  isPrimary Boolean @default(false)
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, userId])
+  @@index([userId])
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fullName    String
+  email       String?
+  phone       String?
+  companyName String?
+
+  address1 String?
+  address2 String?
+  city     String?
+  state    String?
+  zip      String?
+
+  intakeSubmissionId String?           @unique
+  intakeSubmission   IntakeSubmission? @relation("ClientIntake", fields: [intakeSubmissionId], references: [id], onDelete: SetNull)
+
+  users  ClientUser[]
+  orders VendorOrder[]
+
+  @@index([fullName])
+  @@index([email])
+}
+
+model ClientUser {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  clientId  String
+  userId    String
+  isPrimary Boolean @default(false)
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, userId])
+  @@index([userId])
+}
+
+model NotaryProfile {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId              String    @unique
+  commissionNumber    String?
+  commissionState     String?
+  commissionExpiresAt DateTime?
+  isRONApproved       Boolean   @default(false)
+  isActive            Boolean   @default(true)
+  coverageAreas       String?
+  notes               String?
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedOrders VendorOrder[] @relation("OrderAssignedNotary")
+
+  @@index([isActive])
+  @@index([commissionState])
 }
 
 model VendorOrder {
-  id                     String   @id @default(cuid())
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  vendorId               String
+  vendorId         String
+  clientId         String?
+  assignedNotaryId String?
+  createdByUserId  String?
+  updatedByUserId  String?
 
-  orderNumber            String?  @unique
-  status                 String   @default("PENDING")
+  orderNumber String?           @unique
+  status      VendorOrderStatus @default(DRAFT)
 
-  primaryBorrowerName    String?
-  secondaryBorrowerName  String?
+  primaryBorrowerName   String?
+  secondaryBorrowerName String?
 
-  propertyAddress1       String?
-  propertyAddress2       String?
-  propertyCity           String?
-  propertyState          String?
-  propertyZip            String?
+  propertyAddress1 String?
+  propertyAddress2 String?
+  propertyCity     String?
+  propertyState    String?
+  propertyZip      String?
 
-  borrowerPhone          String?
-  borrowerEmail          String?
+  borrowerPhone String?
+  borrowerEmail String?
 
-  signingDate            DateTime?
-  signingTimeLabel       String?
+  signingDate      DateTime?
+  signingTimeLabel String?
 
-  estimatedPages         Int?
-  paperSize              String?
-  preferredInk           String?
+  estimatedPages Int?
+  paperSize      String?
+  preferredInk   String?
 
-  isRON                  Boolean  @default(false)
-  serviceType            String?
-  specialInstructions    String?
-  notes                  String?
+  isRON               Boolean @default(false)
+  serviceType         String?
+  specialInstructions String?
+  notes               String?
 
-  // Legacy fields still required by current DB table
-  signerName             String?
-  signerAddress1         String?
-  signerAddress2         String?
-  signerCity             String?
-  signerState            String?
-  signerZip              String?
-  signerPhone            String?
+  signerName     String?
+  signerAddress1 String?
+  signerAddress2 String?
+  signerCity     String?
+  signerState    String?
+  signerZip      String?
+  signerPhone    String?
 
-  vendor                 Vendor   @relation(fields: [vendorId], references: [id])
+  vendor         Vendor         @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  client         Client?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  assignedNotary NotaryProfile? @relation("OrderAssignedNotary", fields: [assignedNotaryId], references: [id], onDelete: SetNull)
+  createdByUser  User?          @relation("OrderCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedByUser  User?          @relation("OrderUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+
+  appointments Appointment[]
+  documents    Document[]
+  auditLogs    AuditLog[]
+
+  @@index([vendorId])
+  @@index([clientId])
+  @@index([assignedNotaryId])
+  @@index([status])
+  @@index([signingDate])
+  @@index([createdAt])
+}
+
+model Appointment {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendorOrderId String
+  status        AppointmentStatus @default(PENDING)
+
+  scheduledStart DateTime?
+  scheduledEnd   DateTime?
+
+  locationName String?
+  address1     String?
+  address2     String?
+  city         String?
+  state        String?
+  zip          String?
+
+  contactName  String?
+  contactPhone String?
+  notes        String?
+
+  vendorOrder VendorOrder @relation(fields: [vendorOrderId], references: [id], onDelete: Cascade)
+
+  @@index([vendorOrderId])
+  @@index([status])
+  @@index([scheduledStart])
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendorOrderId String?
+  vendorId      String?
+
+  fileName      String
+  storageKey    String             @unique
+  mimeType      String?
+  fileSizeBytes Int?
+  documentType  DocumentType       @default(OTHER)
+  visibility    DocumentVisibility @default(INTERNAL)
+
+  uploadedByUserId String?
+  notes            String?
+
+  vendorOrder VendorOrder? @relation(fields: [vendorOrderId], references: [id], onDelete: Cascade)
+  vendor      Vendor?      @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorOrderId])
+  @@index([vendorId])
+  @@index([documentType])
+  @@index([visibility])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  actorUserId String?
+  entityType  AuditEntityType
+  entityId    String
+  action      AuditAction
+
+  vendorOrderId String?
+  before        Json?
+  after         Json?
+  metadata      Json?
+
+  actorUser   User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  vendorOrder VendorOrder? @relation(fields: [vendorOrderId], references: [id], onDelete: Cascade)
+
+  @@index([actorUserId])
+  @@index([entityType, entityId])
+  @@index([vendorOrderId])
+  @@index([createdAt])
 }
 
 model AccessRequest {
-  id          String   @id @default(cuid())
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   name        String
   email       String
   company     String?
   requestType String
   message     String
-  status      String   @default("pending")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      AccessRequestStatus @default(PENDING)
+
+  intakeSubmissionId String?
+  intakeSubmission   IntakeSubmission? @relation(fields: [intakeSubmissionId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
 }

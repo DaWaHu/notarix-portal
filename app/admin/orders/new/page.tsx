@@ -86,7 +86,7 @@ async function createOrder(formData: FormData) {
 
   const orderNumber = `ORD-${Date.now()}`;
 
-  await prisma.order.create({
+  await prisma.vendorOrder.create({
     data: {
       vendorId: vendor.id,
       orderNumber,
