@@ -100,12 +100,21 @@ ALTER COLUMN "primaryContactEmail" DROP NOT NULL;
 ALTER TABLE "Vendor" ALTER COLUMN "updatedAt" DROP DEFAULT;
 
 -- AlterTable
-ALTER TABLE "VendorOrder" ADD COLUMN     "assignedNotaryId" TEXT,
+-- AlterTable
+ALTER TABLE "VendorOrder"
+ADD COLUMN     "assignedNotaryId" TEXT,
 ADD COLUMN     "clientId" TEXT,
 ADD COLUMN     "createdByUserId" TEXT,
 ADD COLUMN     "updatedByUserId" TEXT,
+ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 ADD COLUMN     "status_new" "VendorOrderStatus" NOT NULL DEFAULT 'DRAFT',
-ALTER COLUMN "serviceType" DROP NOT NULL,
+ALTER COLUMN "serviceType" DROP NOT NULL;
+
+UPDATE "VendorOrder"
+SET "updatedAt" = CURRENT_TIMESTAMP
+WHERE "updatedAt" IS NULL;
+
+ALTER TABLE "VendorOrder"
 ALTER COLUMN "updatedAt" DROP DEFAULT;
 
 UPDATE "VendorOrder"
@@ -124,7 +133,17 @@ ALTER TABLE "VendorOrder" DROP COLUMN "status";
 ALTER TABLE "VendorOrder" RENAME COLUMN "status_new" TO "status";
 
 -- DropTable
-DROP TABLE "DailyOrderSequence";
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'DailyOrderSequence'
+  ) THEN
+    DROP TABLE "DailyOrderSequence";
+  END IF;
+END $$;
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -384,7 +403,18 @@ CREATE INDEX "VendorOrder_assignedNotaryId_idx" ON "VendorOrder"("assignedNotary
 CREATE INDEX "VendorOrder_status_idx" ON "VendorOrder"("status");
 
 -- CreateIndex
-CREATE INDEX "VendorOrder_signingDate_idx" ON "VendorOrder"("signingDate");
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'VendorOrder'
+      AND column_name = 'signingDate'
+  ) THEN
+    EXECUTE 'CREATE INDEX "VendorOrder_signingDate_idx" ON "VendorOrder"("signingDate")';
+  END IF;
+END $$;
 
 -- CreateIndex
 CREATE INDEX "VendorOrder_createdAt_idx" ON "VendorOrder"("createdAt");

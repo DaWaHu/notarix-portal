@@ -47,6 +47,8 @@ enum VendorOrderStatus {
   SCHEDULED
   COMPLETED
   CANCELLED
+  REJECTED
+  NO_SHOW
 }
 
 enum AccessRequestStatus {
@@ -60,6 +62,7 @@ enum AppointmentStatus {
   PENDING
   SCHEDULED
   CONFIRMED
+  RESCHEDULED
   COMPLETED
   CANCELLED
   NO_SHOW
@@ -79,6 +82,7 @@ enum DocumentVisibility {
   VENDOR
   CLIENT
   NOTARY
+  SHARED
 }
 
 enum AuditEntityType {
@@ -91,6 +95,7 @@ enum AuditEntityType {
   VENDOR_ORDER
   APPOINTMENT
   DOCUMENT
+  STATUS_HISTORY
 }
 
 enum AuditAction {
@@ -103,6 +108,7 @@ enum AuditAction {
   LOGIN
   EXPORT
   VIEW
+  UPLOAD
 }
 
 model User {
@@ -124,8 +130,11 @@ model User {
   createdOrders VendorOrder[] @relation("OrderCreatedBy")
   updatedOrders VendorOrder[] @relation("OrderUpdatedBy")
 
-  auditLogs     AuditLog[]     @relation("AuditActor")
-  notaryProfile NotaryProfile?
+  auditLogs           AuditLog[]                 @relation("AuditActor")
+  notaryProfile       NotaryProfile?
+  uploadedDocuments   Document[]                 @relation("DocumentUploadedBy")
+  createdAppointments Appointment[]              @relation("AppointmentCreatedBy")
+  orderStatusChanges  VendorOrderStatusHistory[] @relation("OrderStatusChangedBy")
 
   @@index([email])
 }
@@ -338,9 +347,10 @@ model VendorOrder {
   createdByUser  User?          @relation("OrderCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   updatedByUser  User?          @relation("OrderUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
 
-  appointments Appointment[]
-  documents    Document[]
-  auditLogs    AuditLog[]
+  appointments  Appointment[]
+  documents     Document[]
+  auditLogs     AuditLog[]
+  statusHistory VendorOrderStatusHistory[]
 
   @@index([vendorId])
   @@index([clientId])
@@ -350,13 +360,33 @@ model VendorOrder {
   @@index([createdAt])
 }
 
+model VendorOrderStatusHistory {
+  id              String             @id @default(cuid())
+  createdAt       DateTime           @default(now())
+  vendorOrderId   String
+  fromStatus      VendorOrderStatus?
+  toStatus        VendorOrderStatus
+  changedByUserId String?
+  reason          String?
+  metadata        Json?
+
+  vendorOrder   VendorOrder @relation(fields: [vendorOrderId], references: [id], onDelete: Restrict)
+  changedByUser User?       @relation("OrderStatusChangedBy", fields: [changedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([vendorOrderId])
+  @@index([changedByUserId])
+  @@index([createdAt])
+  @@index([toStatus])
+}
+
 model Appointment {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  vendorOrderId String
-  status        AppointmentStatus @default(PENDING)
+  vendorOrderId   String
+  status          AppointmentStatus @default(PENDING)
+  createdByUserId String?
 
   scheduledStart DateTime?
   scheduledEnd   DateTime?
@@ -372,11 +402,13 @@ model Appointment {
   contactPhone String?
   notes        String?
 
-  vendorOrder VendorOrder @relation(fields: [vendorOrderId], references: [id], onDelete: Cascade)
+  vendorOrder   VendorOrder @relation(fields: [vendorOrderId], references: [id], onDelete: Cascade)
+  createdByUser User?       @relation("AppointmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   @@index([vendorOrderId])
   @@index([status])
   @@index([scheduledStart])
+  @@index([createdByUserId])
 }
 
 model Document {
@@ -395,15 +427,21 @@ model Document {
   visibility    DocumentVisibility @default(INTERNAL)
 
   uploadedByUserId String?
+  checksumSha256   String?
+  uploadedAt       DateTime @default(now())
   notes            String?
 
-  vendorOrder VendorOrder? @relation(fields: [vendorOrderId], references: [id], onDelete: Cascade)
-  vendor      Vendor?      @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  vendorOrder    VendorOrder? @relation(fields: [vendorOrderId], references: [id], onDelete: Restrict)
+  vendor         Vendor?      @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  uploadedByUser User?        @relation("DocumentUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
 
   @@index([vendorOrderId])
   @@index([vendorId])
   @@index([documentType])
   @@index([visibility])
+  @@index([uploadedByUserId])
+  @@index([uploadedAt])
+  @@index([checksumSha256])
 }
 
 model AuditLog {
@@ -421,7 +459,7 @@ model AuditLog {
   metadata      Json?
 
   actorUser   User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-  vendorOrder VendorOrder? @relation(fields: [vendorOrderId], references: [id], onDelete: Cascade)
+  vendorOrder VendorOrder? @relation(fields: [vendorOrderId], references: [id], onDelete: Restrict)
 
   @@index([actorUserId])
   @@index([entityType, entityId])
