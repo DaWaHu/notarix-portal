@@ -49,6 +49,14 @@ async function createVendor(formData: FormData) {
     throw new Error("Company name is required.");
   }
 
+  const vendorCodePattern = /^\d{2}\d{4}[A-Z]{2}$/;
+
+  if (!vendorCodePattern.test(vendorCode)) {
+    throw new Error(
+      "Vendor code must use format YYVVVVST, for example 265000NC."
+    );
+  }
+
   if (!vendorCode) {
     throw new Error("Vendor code is required.");
   }
@@ -63,18 +71,18 @@ async function createVendor(formData: FormData) {
   }
 
   await prisma.vendor.create({
-  data: {
-    companyType: companyType || null,
-    companyName,
-    vendorcode: vendorCode,
-    primaryContactName: primaryContactName || null,
-    primaryContactEmail: primaryContactEmail || null,
-    primaryContactPhone: primaryContactPhone || null,
-    secondaryContactName: secondaryContactName || null,
-    secondaryContactEmail: secondaryContactEmail || null,
-    secondaryContactPhone: secondaryContactPhone || null,
-  },
-});
+    data: {
+      companyType: companyType || null,
+      companyName,
+      vendorcode: vendorCode,
+      primaryContactName: primaryContactName || null,
+      primaryContactEmail: primaryContactEmail || null,
+      primaryContactPhone: primaryContactPhone || null,
+      secondaryContactName: secondaryContactName || null,
+      secondaryContactEmail: secondaryContactEmail || null,
+      secondaryContactPhone: secondaryContactPhone || null,
+    },
+  });
 
   revalidatePath("/admin");
   revalidatePath("/admin/orders");
