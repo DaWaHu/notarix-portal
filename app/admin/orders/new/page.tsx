@@ -84,7 +84,23 @@ async function createOrder(formData: FormData) {
       ? new Date(signingDateRaw)
       : null;
 
-  const orderNumber = `ORD-${Date.now()}`;
+  const now = new Date();
+
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const orderPrefix = `${yy}${mm}${dd}`;
+
+  const existingOrdersToday = await prisma.vendorOrder.count({
+    where: {
+      orderNumber: {
+        startsWith: `${orderPrefix}-`,
+      },
+    },
+  });
+
+  const sequence = String(existingOrdersToday + 1).padStart(4, "0");
+  const orderNumber = `${orderPrefix}-${sequence}`;
 
   await prisma.vendorOrder.create({
     data: {

@@ -18,10 +18,12 @@ const inputStyle: React.CSSProperties = {
 async function createVendor(formData: FormData) {
   "use server";
 
+  const companyType = String(formData.get("companyType") || "").trim();
   const companyName = String(formData.get("companyName") || "").trim();
   const vendorCode = String(formData.get("vendorCode") || "")
     .trim()
     .toUpperCase();
+  const logoUrl = String(formData.get("logoUrl") || "").trim();
 
   const primaryContactName = String(
     formData.get("primaryContactName") || ""
@@ -61,23 +63,24 @@ async function createVendor(formData: FormData) {
   }
 
   await prisma.vendor.create({
-    data: {
-      companyName,
-      vendorcode: vendorCode,
-      primaryContactName: primaryContactName || null,
-      primaryContactEmail: primaryContactEmail || null,
-      primaryContactPhone: primaryContactPhone || null,
-      secondaryContactName: secondaryContactName || null,
-      secondaryContactEmail: secondaryContactEmail || null,
-      secondaryContactPhone: secondaryContactPhone || null,
-    },
-  });
+  data: {
+    companyType: companyType || null,
+    companyName,
+    vendorcode: vendorCode,
+    primaryContactName: primaryContactName || null,
+    primaryContactEmail: primaryContactEmail || null,
+    primaryContactPhone: primaryContactPhone || null,
+    secondaryContactName: secondaryContactName || null,
+    secondaryContactEmail: secondaryContactEmail || null,
+    secondaryContactPhone: secondaryContactPhone || null,
+  },
+});
 
   revalidatePath("/admin");
   revalidatePath("/admin/orders");
   revalidatePath("/vendors");
 
-  redirect(`/vendors/${vendorCode}`);
+  redirect("/admin/vendors");
 }
 
 export default function AdminCreateVendorPage() {
@@ -134,7 +137,7 @@ export default function AdminCreateVendorPage() {
             </div>
 
             <a
-              href="/admin/orders"
+              href="/admin/vendors"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -148,7 +151,7 @@ export default function AdminCreateVendorPage() {
                 background: "#fff",
               }}
             >
-              Back to Orders
+              Back to Vendors
             </a>
           </div>
 
@@ -327,7 +330,7 @@ export default function AdminCreateVendorPage() {
               </button>
 
               <a
-                href="/admin/orders"
+                href="/admin/vendors"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
