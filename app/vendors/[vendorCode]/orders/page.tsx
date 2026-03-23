@@ -1,33 +1,51 @@
+import { prisma } from "@/lib/prisma";
+
 type PageProps = {
   params: Promise<{ vendorCode: string }>;
 };
 
-const orders = [
-  {
-    id: "260320-8679",
-    borrower: "Test Order",
-    property: "241 Westside",
-    status: "Pending",
-    detail: "Signing Date: 3/30/2026 - 1:30 PM EST",
-  },
-  {
-    id: "260320-3807",
-    borrower: "Walker, T",
-    property: "902 Cypress Lane",
-    status: "Active",
-    detail: "Signing Date: 3/24/2026 - 1:45 PM PST",
-  },
-  {
-    id: "260320-2087",
-    borrower: "Will, B",
-    property: "456 West Street",
-    status: "Completed",
-    detail: "Signing Date: 3/28/2026 - 7:30 AM PST",
-  },
-];
+function nice(value: string | null | undefined) {
+  const v = String(value || "").trim();
+  return v || "—";
+}
+
+function formatDate(value: Date | string | null | undefined) {
+  if (!value) return "—";
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString();
+}
 
 export default async function VendorOrdersPage({ params }: PageProps) {
   const { vendorCode } = await params;
+
+  const vendor = await prisma.vendor.findUnique({
+    where: { vendorcode: vendorCode },
+    select: {
+      id: true,
+      companyName: true,
+      vendorcode: true,
+    },
+  });
+
+  const orders = vendor
+    ? await prisma.vendorOrder.findMany({
+        where: { vendorId: vendor.id },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          orderNumber: true,
+          primaryBorrowerName: true,
+          propertyAddress1: true,
+          propertyCity: true,
+          propertyState: true,
+          status: true,
+          signingDate: true,
+          signingTimeLabel: true,
+          createdAt: true,
+        },
+      })
+    : [];
 
   return (
     <main
@@ -85,178 +103,159 @@ export default async function VendorOrdersPage({ params }: PageProps) {
             <div
               style={{
                 fontSize: 14,
-                fontWeight: 800,
-                color: "#475569",
+                color: "#64748B",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: 0.4,
               }}
             >
-              Vendor Code
+              Vendor
             </div>
             <div
               style={{
                 marginTop: 4,
-                fontSize: 24,
-                fontWeight: 950,
-                color: "#1D4ED8",
+                fontSize: 22,
+                fontWeight: 900,
+                color: "#0F172A",
               }}
             >
-              {vendorCode}
+              {vendor?.companyName || vendorCode}
             </div>
           </div>
 
-          <a
-            href={`/vendors/${vendorCode}/orders/new`}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "#1D4ED8",
-              color: "white",
-              textDecoration: "none",
-              borderRadius: 10,
-              padding: "12px 16px",
-              fontWeight: 900,
-            }}
-          >
-            + Create Vendor Order
-          </a>
-        </div>
-
-        <div style={{ display: "grid", gap: 12 }}>
-          {orders.map((order) => (
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <a
-              key={order.id}
-              href={`/vendors/${vendorCode}/orders`}
+              href={`/vendors/${vendorCode}/orders/new`}
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
                 textDecoration: "none",
-                display: "block",
+                borderRadius: 10,
+                padding: "14px 18px",
+                fontWeight: 900,
+                background: "#1D4ED8",
+                color: "#fff",
+                boxShadow: "0 10px 24px rgba(29, 78, 216, 0.22)",
               }}
             >
+              New Order
+            </a>
+          </div>
+        </div>
+
+        {orders.length === 0 ? (
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid #E5E7EB",
+              borderRadius: 16,
+              padding: 24,
+              color: "#475569",
+              fontWeight: 600,
+            }}
+          >
+            No orders found for this vendor yet.
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gap: 18,
+            }}
+          >
+            {orders.map((order) => (
               <div
+                key={order.id}
                 style={{
                   background: "#fff",
                   border: "1px solid #E5E7EB",
-                  borderRadius: 12,
-                  padding: 16,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  boxShadow: "0 8px 22px rgba(15, 23, 42, 0.05)",
-                  cursor: "pointer",
-                  gap: 16,
+                  borderRadius: 16,
+                  padding: 20,
+                  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
                 }}
               >
-                <div>
-                  <div
-                    style={{
-                      fontWeight: 900,
-                      color: "#0F172A",
-                      fontSize: 18,
-                    }}
-                  >
-                    Order #{order.id} | {order.borrower} | Property:{" "}
-                    {order.property}
-                  </div>
-                  <div
-                    style={{
-                      marginTop: 6,
-                      fontSize: 14,
-                      color: "#475569",
-                    }}
-                  >
-                    {order.detail}
-                  </div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: "#64748B",
+                    letterSpacing: 0.3,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Order {nice(order.orderNumber)}
                 </div>
 
                 <div
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    flexShrink: 0,
+                    marginTop: 10,
+                    fontSize: 22,
+                    fontWeight: 900,
+                    color: "#0F172A",
                   }}
                 >
-                  <span style={getStatusStyle(order.status)}>
-                    <span
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: 999,
-                        background: getStatusDot(order.status),
-                        display: "inline-block",
-                      }}
-                    />
-                    {order.status}
-                  </span>
+                  {nice(order.primaryBorrowerName)}
+                </div>
 
-                  <span
-                    style={{
-                      fontSize: 20,
-                      color: "#94A3B8",
-                      fontWeight: 700,
-                    }}
-                  >
-                    ›
-                  </span>
+                <div
+                  style={{
+                    marginTop: 8,
+                    color: "#475569",
+                    fontWeight: 600,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {nice(order.propertyAddress1)}
+                  <br />
+                  {nice(order.propertyCity)}
+                  {order.propertyCity && order.propertyState ? ", " : ""}
+                  {nice(order.propertyState) === "—" ? "" : order.propertyState}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 14,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    borderRadius: 999,
+                    background: "#EFF6FF",
+                    color: "#1D4ED8",
+                    padding: "8px 12px",
+                    fontSize: 13,
+                    fontWeight: 800,
+                  }}
+                >
+                  {nice(order.status)}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 14,
+                    color: "#475569",
+                    fontWeight: 600,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Signing Date: {formatDate(order.signingDate)} - {nice(order.signingTimeLabel)}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 10,
+                    color: "#64748B",
+                    fontWeight: 600,
+                    fontSize: 14,
+                  }}
+                >
+                  Created: {formatDate(order.createdAt)}
                 </div>
               </div>
-            </a>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );
-}
-
-function getStatusStyle(status: string): React.CSSProperties {
-  if (status === "Active") {
-    return {
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 8,
-      padding: "8px 12px",
-      borderRadius: 999,
-      background: "#DCFCE7",
-      color: "#166534",
-      border: "1px solid #BBF7D0",
-      fontWeight: 800,
-      fontSize: 14,
-      whiteSpace: "nowrap",
-    };
-  }
-
-  if (status === "Completed") {
-    return {
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 8,
-      padding: "8px 12px",
-      borderRadius: 999,
-      background: "#E0F2FE",
-      color: "#075985",
-      border: "1px solid #BAE6FD",
-      fontWeight: 800,
-      fontSize: 14,
-      whiteSpace: "nowrap",
-    };
-  }
-
-  return {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "8px 12px",
-    borderRadius: 999,
-    background: "#FEF3C7",
-    color: "#B45309",
-    border: "1px solid #FDE68A",
-    fontWeight: 800,
-    fontSize: 14,
-    whiteSpace: "nowrap",
-  };
-}
-
-function getStatusDot(status: string) {
-  if (status === "Active") return "#166534";
-  if (status === "Completed") return "#075985";
-  return "#B45309";
 }
