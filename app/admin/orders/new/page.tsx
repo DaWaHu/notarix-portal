@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
-const inputStyle: React.CSSProperties = {
+const inputStyle: CSSProperties = {
   width: "100%",
   border: "1px solid #CBD5E1",
   borderRadius: 10,
@@ -14,6 +14,12 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
   boxSizing: "border-box",
 };
+
+function parseOptionalDate(value: string) {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
 
 async function createOrder(formData: FormData) {
   "use server";
@@ -30,7 +36,13 @@ async function createOrder(formData: FormData) {
     formData.get("secondaryBorrowerName") || ""
   ).trim();
 
-  const borrowerPhone = String(formData.get("borrowerPhone") || "").trim();
+  const rawBorrowerPhone = String(formData.get("borrowerPhone") || "").trim();
+  const borrowerPhoneDigits = rawBorrowerPhone.replace(/\D/g, "");
+  const borrowerPhone =
+    borrowerPhoneDigits.length === 10
+      ? `${borrowerPhoneDigits.slice(0, 3)}-${borrowerPhoneDigits.slice(3, 6)}-${borrowerPhoneDigits.slice(6)}`
+      : rawBorrowerPhone;
+
   const borrowerEmail = String(formData.get("borrowerEmail") || "").trim();
 
   const propertyAddress1 = String(formData.get("propertyAddress1") || "").trim();
@@ -40,10 +52,22 @@ async function createOrder(formData: FormData) {
   const propertyZip = String(formData.get("propertyZip") || "").trim();
 
   const signingDateRaw = String(formData.get("signingDate") || "").trim();
-  const signingTimeLabel = String(formData.get("signingTimeLabel") || "").trim();
+  const signingTime = String(formData.get("signingTime") || "").trim();
+  const signingTimeZone = String(formData.get("signingTimeZone") || "").trim();
+  const signingTimeLabel =
+    [signingTime, signingTimeZone].filter(Boolean).join(" ") || null;
 
   const estimatedPagesRaw = String(formData.get("estimatedPages") || "").trim();
   const estimatedPages = estimatedPagesRaw ? Number(estimatedPagesRaw) : null;
+
+  const feeAmountRaw = String(formData.get("feeAmount") || "").trim();
+  const feeAmount = feeAmountRaw ? Number(feeAmountRaw) : null;
+  const paymentDueStatus = String(formData.get("paymentDueStatus") || "").trim();
+  const paymentDueDateRaw = String(formData.get("paymentDueDate") || "").trim();
+  const paymentMethod = String(formData.get("paymentMethod") || "").trim();
+  const paymentPaid = String(formData.get("paymentPaid") || "false") === "true";
+  const paymentPaidDateRaw = String(formData.get("paymentPaidDate") || "").trim();
+  const paymentNotes = String(formData.get("paymentNotes") || "").trim();
 
   const paperSize = String(formData.get("paperSize") || "").trim();
   const preferredInk = String(formData.get("preferredInk") || "").trim();
@@ -79,13 +103,11 @@ async function createOrder(formData: FormData) {
     throw new Error("Vendor code was not found.");
   }
 
-  const signingDate =
-    signingDateRaw && !Number.isNaN(new Date(signingDateRaw).getTime())
-      ? new Date(signingDateRaw)
-      : null;
+  const signingDate = parseOptionalDate(signingDateRaw);
+  const paymentDueDate = parseOptionalDate(paymentDueDateRaw);
+  const paymentPaidDate = parseOptionalDate(paymentPaidDateRaw);
 
   const now = new Date();
-
   const yy = String(now.getFullYear()).slice(-2);
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const orderPrefix = `${yy}${mm}`;
@@ -116,10 +138,21 @@ async function createOrder(formData: FormData) {
       borrowerPhone: borrowerPhone || null,
       borrowerEmail: borrowerEmail || null,
       signingDate,
-      signingTimeLabel: signingTimeLabel || null,
-      estimatedPages: typeof estimatedPages === "number" && !Number.isNaN(estimatedPages)
-        ? estimatedPages
-        : null,
+      signingTimeLabel,
+      estimatedPages:
+        typeof estimatedPages === "number" && !Number.isNaN(estimatedPages)
+          ? estimatedPages
+          : null,
+      feeAmount:
+        typeof feeAmount === "number" && !Number.isNaN(feeAmount)
+          ? feeAmount
+          : null,
+      paymentDueStatus: paymentDueStatus || null,
+      paymentDueDate,
+      paymentMethod: paymentMethod || null,
+      paymentPaid,
+      paymentPaidDate,
+      paymentNotes: paymentNotes || null,
       paperSize: paperSize || null,
       preferredInk: preferredInk || null,
       isRON,
@@ -139,6 +172,13 @@ async function createOrder(formData: FormData) {
 }
 
 export default function AdminNewOrderPage() {
+  const minDate = new Date().toISOString().split("T")[0];
+  const maxDate = new Date(
+    new Date().setMonth(new Date().getMonth() + 6)
+  )
+    .toISOString()
+    .split("T")[0];
+
   return (
     <main
       style={{
@@ -154,11 +194,11 @@ export default function AdminNewOrderPage() {
       >
         <div
           style={{
-            background: "#fff",
-            border: "1px solid #E5E7EB",
-            borderRadius: 16,
-            padding: 28,
-            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+            background: "#FFFFFF",
+            border: "1px solid #D6DEE8",
+            borderRadius: 20,
+            padding: 32,
+            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)"
           }}
         >
           <div
@@ -191,7 +231,8 @@ export default function AdminNewOrderPage() {
                   fontSize: 15,
                 }}
               >
-                Staff order intake form for title companies, law firms, and other approved clients.
+                Staff order intake form for title companies, law firms, and other
+                approved clients.
               </div>
             </div>
 
@@ -293,7 +334,11 @@ export default function AdminNewOrderPage() {
                   <input
                     name="borrowerPhone"
                     style={inputStyle}
-                    placeholder="(000) 000-0000"
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={12}
+                    placeholder="111-222-3333"
+                    title="Use format 111-222-3333"
                   />
                 </Field>
 
@@ -352,11 +397,62 @@ export default function AdminNewOrderPage() {
                 </Field>
 
                 <Field label="State">
-                  <input
-                    name="propertyState"
-                    style={inputStyle}
-                    placeholder="State"
-                  />
+                  <select name="propertyState" style={inputStyle} defaultValue="">
+                    <option value="" disabled>
+                      Select state
+                    </option>
+                    <option value="AL">AL</option>
+                    <option value="AK">AK</option>
+                    <option value="AZ">AZ</option>
+                    <option value="AR">AR</option>
+                    <option value="CA">CA</option>
+                    <option value="CO">CO</option>
+                    <option value="CT">CT</option>
+                    <option value="DC">DC</option>
+                    <option value="DE">DE</option>
+                    <option value="FL">FL</option>
+                    <option value="GA">GA</option>
+                    <option value="HI">HI</option>
+                    <option value="ID">ID</option>
+                    <option value="IL">IL</option>
+                    <option value="IN">IN</option>
+                    <option value="IA">IA</option>
+                    <option value="KS">KS</option>
+                    <option value="KY">KY</option>
+                    <option value="LA">LA</option>
+                    <option value="ME">ME</option>
+                    <option value="MD">MD</option>
+                    <option value="MA">MA</option>
+                    <option value="MI">MI</option>
+                    <option value="MN">MN</option>
+                    <option value="MS">MS</option>
+                    <option value="MO">MO</option>
+                    <option value="MT">MT</option>
+                    <option value="NE">NE</option>
+                    <option value="NV">NV</option>
+                    <option value="NH">NH</option>
+                    <option value="NJ">NJ</option>
+                    <option value="NM">NM</option>
+                    <option value="NY">NY</option>
+                    <option value="NC">NC</option>
+                    <option value="ND">ND</option>
+                    <option value="OH">OH</option>
+                    <option value="OK">OK</option>
+                    <option value="OR">OR</option>
+                    <option value="PA">PA</option>
+                    <option value="RI">RI</option>
+                    <option value="SC">SC</option>
+                    <option value="SD">SD</option>
+                    <option value="TN">TN</option>
+                    <option value="TX">TX</option>
+                    <option value="UT">UT</option>
+                    <option value="VT">VT</option>
+                    <option value="VA">VA</option>
+                    <option value="WA">WA</option>
+                    <option value="WV">WV</option>
+                    <option value="WI">WI</option>
+                    <option value="WY">WY</option>
+                  </select>
                 </Field>
 
                 <Field label="Zip">
@@ -368,15 +464,64 @@ export default function AdminNewOrderPage() {
                 </Field>
 
                 <Field label="Signing Date">
-                  <input name="signingDate" type="date" style={inputStyle} />
+                  <input
+                    name="signingDate"
+                    type="date"
+                    style={inputStyle}
+                    min={minDate}
+                    max={maxDate}
+                  />
                 </Field>
 
                 <Field label="Signing Time">
-                  <input
-                    name="signingTimeLabel"
-                    style={inputStyle}
-                    placeholder="2:30 PM EST"
-                  />
+                  <select name="signingTime" style={inputStyle} defaultValue="">
+                    <option value="" disabled>
+                      Select signing time
+                    </option>
+                    <option value="6:00 AM">6:00 AM</option>
+                    <option value="6:30 AM">6:30 AM</option>
+                    <option value="7:00 AM">7:00 AM</option>
+                    <option value="7:30 AM">7:30 AM</option>
+                    <option value="8:00 AM">8:00 AM</option>
+                    <option value="8:30 AM">8:30 AM</option>
+                    <option value="9:00 AM">9:00 AM</option>
+                    <option value="9:30 AM">9:30 AM</option>
+                    <option value="10:00 AM">10:00 AM</option>
+                    <option value="10:30 AM">10:30 AM</option>
+                    <option value="11:00 AM">11:00 AM</option>
+                    <option value="11:30 AM">11:30 AM</option>
+                    <option value="12:00 PM">12:00 PM</option>
+                    <option value="12:30 PM">12:30 PM</option>
+                    <option value="1:00 PM">1:00 PM</option>
+                    <option value="1:30 PM">1:30 PM</option>
+                    <option value="2:00 PM">2:00 PM</option>
+                    <option value="2:30 PM">2:30 PM</option>
+                    <option value="3:00 PM">3:00 PM</option>
+                    <option value="3:30 PM">3:30 PM</option>
+                    <option value="4:00 PM">4:00 PM</option>
+                    <option value="4:30 PM">4:30 PM</option>
+                    <option value="5:00 PM">5:00 PM</option>
+                    <option value="5:30 PM">5:30 PM</option>
+                    <option value="6:00 PM">6:00 PM</option>
+                    <option value="6:30 PM">6:30 PM</option>
+                    <option value="7:00 PM">7:00 PM</option>
+                    <option value="7:30 PM">7:30 PM</option>
+                    <option value="8:00 PM">8:00 PM</option>
+                    <option value="8:30 PM">8:30 PM</option>
+                    <option value="9:00 PM">9:00 PM</option>
+                  </select>
+                </Field>
+
+                <Field label="Time Zone">
+                  <select name="signingTimeZone" style={inputStyle} defaultValue="">
+                    <option value="" disabled>
+                      Select time zone
+                    </option>
+                    <option value="EST">EST</option>
+                    <option value="CST">CST</option>
+                    <option value="MST">MST</option>
+                    <option value="PST">PST</option>
+                  </select>
                 </Field>
 
                 <Field label="Estimated Pages">
@@ -388,6 +533,101 @@ export default function AdminNewOrderPage() {
                     placeholder="Estimated pages"
                   />
                 </Field>
+              </div>
+            </section>
+
+            <section>
+              <div
+                style={{
+                  fontSize: 20,
+                  fontWeight: 900,
+                  color: "#0F172A",
+                  marginBottom: 16,
+                }}
+              >
+                Payment / Fee Details
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: 16,
+                }}
+              >
+                <Field label="Fee Amount">
+                  <input
+                    name="feeAmount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    style={inputStyle}
+                    placeholder="0.00"
+                  />
+                </Field>
+
+                <Field label="Payment Due Status">
+                  <select name="paymentDueStatus" style={inputStyle} defaultValue="">
+                    <option value="" disabled>
+                      Select payment status
+                    </option>
+                    <option value="Due on receipt">Due on receipt</option>
+                    <option value="Due at signing">Due at signing</option>
+                    <option value="Net 15">Net 15</option>
+                    <option value="Net 30">Net 30</option>
+                    <option value="Paid">Paid</option>
+                  </select>
+                </Field>
+
+                <Field label="Payment Due Date">
+                  <input
+                    name="paymentDueDate"
+                    type="date"
+                    style={inputStyle}
+                  />
+                </Field>
+
+                <Field label="Payment Method">
+                  <select name="paymentMethod" style={inputStyle} defaultValue="">
+                    <option value="" disabled>
+                      Select payment method
+                    </option>
+                    <option value="ACH">ACH</option>
+                    <option value="Check">Check</option>
+                    <option value="Wire">Wire</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </Field>
+
+                <Field label="Payment Paid">
+                  <select name="paymentPaid" style={inputStyle} defaultValue="false">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                </Field>
+
+                <Field label="Payment Paid Date">
+                  <input
+                    name="paymentPaidDate"
+                    type="date"
+                    style={inputStyle}
+                  />
+                </Field>
+
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <Field label="Payment Notes">
+                    <textarea
+                      name="paymentNotes"
+                      style={{
+                        ...inputStyle,
+                        minHeight: 110,
+                        resize: "vertical",
+                      }}
+                      placeholder="Add fee notes, due terms, special billing instructions, or payment follow-up details"
+                    />
+                  </Field>
+                </div>
               </div>
             </section>
 
@@ -415,6 +655,7 @@ export default function AdminNewOrderPage() {
                     <option value="" disabled>
                       Select paper size
                     </option>
+                    <option>Both</option>
                     <option>Letter</option>
                     <option>Legal</option>
                   </select>

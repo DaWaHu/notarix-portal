@@ -10,61 +10,71 @@ export default function AdminLayout({
     <div
       style={{
         minHeight: "100vh",
-        background: "#F1F5F9",
-        fontFamily:
-          'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial',
+        background: "#EEF3F9",
       }}
     >
-      <div
+      <header
         style={{
-          background: "#0F172A",
-          color: "white",
+          background: "#0B1533",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
+          padding: "14px 24px",
         }}
       >
         <div
           style={{
-            maxWidth: 1240,
+            maxWidth: 1280,
             margin: "0 auto",
-            padding: "14px 24px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             gap: 16,
-            flexWrap: "wrap",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Image
-              src="/notarix-logo.png"
-              alt="Notarix"
-              width={40}
-              height={40}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+            }}
+          >
+            <div
               style={{
-                width: 40,
-                height: 40,
-                objectFit: "contain",
-                background: "white",
+                width: 42,
+                height: 42,
                 borderRadius: 10,
-                padding: 4,
+                background: "#FFFFFF",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
               }}
-            />
+            >
+              <Image
+                src="/notarix-logo.png"
+                alt="Notarix logo"
+                width={32}
+                height={32}
+                style={{ objectFit: "contain" }}
+              />
+            </div>
+
             <div>
               <div
                 style={{
+                  color: "#FFFFFF",
                   fontWeight: 900,
-                  fontSize: 18,
-                  color: "white",
-                  letterSpacing: 0.2,
+                  fontSize: 16,
+                  lineHeight: 1.1,
                 }}
               >
                 Notarix Staff Portal
               </div>
               <div
                 style={{
-                  fontSize: 12,
                   color: "rgba(255,255,255,0.72)",
-                  fontWeight: 700,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  marginTop: 2,
                 }}
               >
                 Internal operations workspace
@@ -75,41 +85,52 @@ export default function AdminLayout({
           <nav
             style={{
               display: "flex",
-              alignItems: "center",
               gap: 10,
               flexWrap: "wrap",
             }}
           >
-            <a href="/" style={navLink}>
+            <a
+              href="/admin"
+              style={navLinkStyle}
+            >
               Home
             </a>
-            <a href="/admin/orders" style={navLink}>
+            <a
+              href="/admin/orders"
+              style={navLinkStyle}
+            >
               Orders
             </a>
-            <a href="/admin/orders/new" style={navLink}>
+            <a
+              href="/admin/orders/new"
+              style={navLinkStyle}
+            >
               Create Order
             </a>
-            <a href="/admin/vendors/new" style={navLink}>
+            <a
+              href="/admin/vendors/new"
+              style={navLinkStyle}
+            >
               Create Vendor
             </a>
           </nav>
         </div>
-      </div>
+      </header>
 
       <div>{children}</div>
     </div>
   );
 }
 
-const navLink: React.CSSProperties = {
+const navLinkStyle = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   textDecoration: "none",
-  color: "white",
+  color: "#FFFFFF",
+  background: "rgba(255,255,255,0.10)",
+  borderRadius: 12,
+  padding: "10px 14px",
   fontWeight: 800,
   fontSize: 14,
-  padding: "10px 14px",
-  borderRadius: 10,
-  background: "rgba(255,255,255,0.08)",
 };

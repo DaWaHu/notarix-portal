@@ -242,7 +242,7 @@ export default async function AdminOrdersPage() {
               return (
                 <a
                   key={order.id}
-                  href="/admin/orders"
+                  href={`/admin/orders/${order.id}`}
                   style={{
                     textDecoration: "none",
                     display: "block",

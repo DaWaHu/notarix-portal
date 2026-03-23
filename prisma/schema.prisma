@@ -47,8 +47,6 @@ enum VendorOrderStatus {
   SCHEDULED
   COMPLETED
   CANCELLED
-  REJECTED
-  NO_SHOW
 }
 
 enum AccessRequestStatus {
@@ -62,7 +60,6 @@ enum AppointmentStatus {
   PENDING
   SCHEDULED
   CONFIRMED
-  RESCHEDULED
   COMPLETED
   CANCELLED
   NO_SHOW
@@ -82,7 +79,6 @@ enum DocumentVisibility {
   VENDOR
   CLIENT
   NOTARY
-  SHARED
 }
 
 enum AuditEntityType {
@@ -95,7 +91,6 @@ enum AuditEntityType {
   VENDOR_ORDER
   APPOINTMENT
   DOCUMENT
-  STATUS_HISTORY
 }
 
 enum AuditAction {
@@ -108,8 +103,7 @@ enum AuditAction {
   LOGIN
   EXPORT
   VIEW
-  UPLOAD
-}
+  }
 
 model User {
   id        String   @id @default(cuid())
@@ -332,6 +326,13 @@ model VendorOrder {
   serviceType         String?
   specialInstructions String?
   notes               String?
+  feeAmount           Decimal? @db.Decimal(10, 2)
+  paymentDueStatus    String?
+  paymentDueDate      DateTime?
+  paymentMethod       String?
+  paymentPaid         Boolean  @default(false)
+  paymentPaidDate     DateTime?
+  paymentNotes        String?
 
   signerName     String?
   signerAddress1 String?
