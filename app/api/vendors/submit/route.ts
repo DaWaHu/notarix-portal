@@ -22,8 +22,10 @@ const bodySchema = z.object({
   paperSize: z.string().optional().nullable(),
   preferredInk: z.string().optional().nullable(),
   serviceType: z.string().min(1, "Service type is required"),
+  feeAmount: z.number().nonnegative().optional().nullable(),
   isRON: z.boolean().optional(),
   specialInstructions: z.string().optional().nullable(),
+  paymentMethod: z.string().optional().nullable(),
 });
 
 function jsonError(message: string, status: number) {
@@ -90,8 +92,10 @@ export async function POST(req: Request) {
         paperSize: data.paperSize ?? undefined,
         preferredInk: data.preferredInk ?? undefined,
         serviceType: data.serviceType,
+        feeAmount: data.feeAmount ?? undefined,
         isRON: data.isRON ?? false,
         specialInstructions: data.specialInstructions ?? undefined,
+        paymentMethod: data.paymentMethod ?? "VendorPay",
         status: "SUBMITTED",
       },
       select: {

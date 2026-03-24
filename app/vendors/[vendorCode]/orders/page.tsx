@@ -166,14 +166,17 @@ export default async function VendorOrdersPage({ params }: PageProps) {
             }}
           >
             {orders.map((order) => (
-              <div
+              <a
                 key={order.id}
+                href={`/vendors/${vendorCode}/orders/${order.id}`}
                 style={{
+                  display: "block",
                   background: "#fff",
                   border: "1px solid #E5E7EB",
                   borderRadius: 16,
                   padding: 20,
                   boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
+                  textDecoration: "none",
                 }}
               >
                 <div
@@ -251,7 +254,7 @@ export default async function VendorOrdersPage({ params }: PageProps) {
                 >
                   Created: {formatDate(order.createdAt)}
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         )}

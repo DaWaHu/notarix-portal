@@ -26,6 +26,14 @@ const OrderCreateSchema = z.object({
   signingTimeLabel: z.string().optional().nullable(),
 
   estimatedPages: z.number().int().optional().nullable(),
+  feeAmount: z.number().nonnegative().optional().nullable(),
+  paymentDueStatus: z.string().optional().nullable(),
+  paymentDueDate: z.string().optional().nullable(),
+  paymentMethod: z.string().optional().nullable(),
+  paymentPaid: z.boolean().optional(),
+  paymentPaidDate: z.string().optional().nullable(),
+  paymentNotes: z.string().optional().nullable(),
+
   paperSize: z.string().optional().nullable(),
   preferredInk: z.string().optional().nullable(),
 
@@ -41,6 +49,12 @@ function jsonError(message: string, status = 400, extra?: unknown) {
   );
 }
 
+function parseOptionalDate(value?: string | null) {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 async function generateOrderNumber(): Promise<string> {
   const now = new Date();
   const y = now.getFullYear().toString().slice(-2);
@@ -48,25 +62,8 @@ async function generateOrderNumber(): Promise<string> {
   const d = String(now.getDate()).padStart(2, "0");
   const prefix = `${y}${m}${d}`;
 
-  const startOfDay = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    0,
-    0,
-    0,
-    0
-  );
-
-  const endOfDay = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    23,
-    59,
-    59,
-    999
-  );
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
   const todayOrders = await prisma.vendorOrder.findMany({
     where: {
@@ -84,18 +81,15 @@ async function generateOrderNumber(): Promise<string> {
 
   for (const order of todayOrders) {
     const value = String(order.orderNumber || "");
-    if (!value.startsWith(`${prefix}-`)) continue;
-
-    const sequencePart = value.split("-")[1];
-    const sequenceNum = Number(sequencePart);
-
+    if (!value.startsWith(prefix)) continue;
+    const last4 = value.slice(-4);
+    const sequenceNum = Number(last4);
     if (!Number.isNaN(sequenceNum) && sequenceNum > maxSequence) {
       maxSequence = sequenceNum;
     }
   }
 
-  const nextSequence = String(maxSequence + 1).padStart(4, "0");
-  return `${prefix}-${nextSequence}`;
+  return `${prefix}${String(maxSequence + 1).padStart(4, "0")}`;
 }
 
 export async function POST(req: Request) {
@@ -145,18 +139,25 @@ export async function POST(req: Request) {
         borrowerPhone: data.borrowerPhone?.trim() || null,
         borrowerEmail: data.borrowerEmail?.trim().toLowerCase() || null,
 
-        signingDate: data.signingDate ? new Date(data.signingDate) : null,
+        signingDate: parseOptionalDate(data.signingDate),
         signingTimeLabel: data.signingTimeLabel?.trim() || null,
 
         estimatedPages: data.estimatedPages ?? null,
-        paperSize: data.paperSize?.trim().toUpperCase() || null,
-        preferredInk: data.preferredInk?.trim().toUpperCase() || null,
+        feeAmount: data.feeAmount ?? null,
+        paymentDueStatus: data.paymentDueStatus?.trim() || null,
+        paymentDueDate: parseOptionalDate(data.paymentDueDate),
+        paymentMethod: data.paymentMethod?.trim() || null,
+        paymentPaid: data.paymentPaid ?? false,
+        paymentPaidDate: parseOptionalDate(data.paymentPaidDate),
+        paymentNotes: data.paymentNotes?.trim() || null,
+
+        paperSize: data.paperSize?.trim() || null,
+        preferredInk: data.preferredInk?.trim() || null,
 
         isRON: data.isRON ?? false,
         serviceType: data.serviceType?.trim() || null,
         specialInstructions: data.specialInstructions?.trim() || null,
 
-        // compatibility fields still present in the current table
         signerName: data.primaryBorrowerName.trim(),
         signerAddress1: data.propertyAddress1.trim(),
         signerAddress2: data.propertyAddress2?.trim() || null,

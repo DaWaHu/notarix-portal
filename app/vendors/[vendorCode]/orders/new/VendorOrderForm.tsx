@@ -2,8 +2,32 @@
 
 import { useState } from "react";
 
+type VendorSnapshot = {
+  vendorcode: string;
+  companyName: string;
+  companyType: string | null;
+  companyLogoUrl: string | null;
+  address1: string | null;
+  address2: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  website: string | null;
+  primaryPhone: string | null;
+  secondaryPhone: string | null;
+  primaryContactName: string | null;
+  primaryContactEmail: string | null;
+  primaryContactPhone: string | null;
+  secondaryContactName: string | null;
+  secondaryContactEmail: string | null;
+  secondaryContactPhone: string | null;
+  approvalStatus: string;
+  isActive: boolean;
+};
+
 type Props = {
   vendorCode: string;
+  vendor?: VendorSnapshot | null;
 };
 
 type FormState = {
@@ -22,8 +46,10 @@ type FormState = {
   paperSize: string;
   preferredInk: string;
   serviceType: string;
+  feeAmount: string;
   isRON: boolean;
   specialInstructions: string;
+  paymentMethod: string;
 };
 
 const inputStyle: React.CSSProperties = {
@@ -36,6 +62,43 @@ const inputStyle: React.CSSProperties = {
   fontSize: 15,
   outline: "none",
 };
+
+const US_STATE_OPTIONS = [
+  "", "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+] as const;
+
+const PAPER_SIZE_OPTIONS = ["", "Both", "Letter", "Legal"] as const;
+const INK_OPTIONS = ["", "Blue", "Black"] as const;
+
+function formatDateInput(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function addMonths(date: Date, months: number) {
+  const copy = new Date(date);
+  copy.setMonth(copy.getMonth() + months);
+  return copy;
+}
+
+function buildTimeOptions() {
+  const options: string[] = [];
+  for (let hour = 6; hour <= 21; hour += 1) {
+    for (const minute of [0, 30]) {
+      if (hour === 21 && minute > 0) continue;
+      const suffix = hour >= 12 ? "PM" : "AM";
+      const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+      const displayMinute = String(minute).padStart(2, "0");
+      options.push(`${displayHour}:${displayMinute} ${suffix}`);
+    }
+  }
+  return options;
+}
+
+const TIME_OPTIONS = buildTimeOptions();
 
 const initialState: FormState = {
   primaryBorrowerName: "",
@@ -53,11 +116,18 @@ const initialState: FormState = {
   paperSize: "",
   preferredInk: "",
   serviceType: "",
+  feeAmount: "",
   isRON: false,
   specialInstructions: "",
+  paymentMethod: "VendorPay",
 };
 
-export default function VendorOrderForm({ vendorCode }: Props) {
+export default function VendorOrderForm({ vendorCode, vendor }: Props) {
+  function nice(value: string | null | undefined) {
+    const v = String(value || "").trim();
+    return v || "—";
+  }
+
   const [form, setForm] = useState<FormState>(initialState);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<string>("");
@@ -96,8 +166,10 @@ export default function VendorOrderForm({ vendorCode }: Props) {
           paperSize: form.paperSize || null,
           preferredInk: form.preferredInk || null,
           serviceType: form.serviceType,
+          feeAmount: form.feeAmount ? Number(form.feeAmount) : null,
           isRON: form.isRON,
           specialInstructions: form.specialInstructions || null,
+          paymentMethod: form.paymentMethod || "VendorPay",
         }),
       });
 
@@ -107,7 +179,7 @@ export default function VendorOrderForm({ vendorCode }: Props) {
         throw new Error(json?.error || "Failed to submit order");
       }
 
-      window.location.href = `/vendors/${vendorCode}/orders`;
+      window.location.href = `/vendors/${vendorCode}/orders/${json.order.id}`;
     } catch (error: any) {
       setStatus(error?.message || "Failed to submit order");
       setSubmitting(false);
@@ -117,6 +189,106 @@ export default function VendorOrderForm({ vendorCode }: Props) {
 
   return (
     <form onSubmit={onSubmit} style={{ display: "grid", gap: 24 }}>
+      {vendor ? (
+        <section
+          style={{
+            background: "#fff",
+            border: "1px solid #E5E7EB",
+            borderRadius: 16,
+            padding: 24,
+            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
+          }}
+        >
+          <h2 style={{ marginTop: 0, marginBottom: 18, color: "#0F172A" }}>
+            Vendor Account Review
+          </h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 2fr) 240px",
+              gap: 24,
+              alignItems: "start",
+            }}
+          >
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 16 }}>
+              <div><strong>Vendor Code:</strong> {nice(vendor.vendorcode)}</div>
+              <div><strong>Company Name:</strong> {nice(vendor.companyName)}</div>
+              <div><strong>Company Type:</strong> {nice(vendor.companyType)}</div>
+              <div><strong>Approval Status:</strong> {nice(vendor.approvalStatus)}</div>
+              <div><strong>Primary Contact:</strong> {nice(vendor.primaryContactName)}</div>
+              <div><strong>Primary Contact Email:</strong> {nice(vendor.primaryContactEmail)}</div>
+              <div><strong>Primary Contact Phone:</strong> {nice(vendor.primaryContactPhone)}</div>
+              <div><strong>Primary Phone:</strong> {nice(vendor.primaryPhone)}</div>
+              <div><strong>Secondary Phone:</strong> {nice(vendor.secondaryPhone)}</div>
+              <div><strong>Website:</strong> {nice(vendor.website)}</div>
+              <div><strong>Address 1:</strong> {nice(vendor.address1)}</div>
+              <div><strong>Address 2:</strong> {nice(vendor.address2)}</div>
+              <div><strong>City:</strong> {nice(vendor.city)}</div>
+              <div><strong>State:</strong> {nice(vendor.state)}</div>
+              <div><strong>ZIP:</strong> {nice(vendor.zip)}</div>
+              <div><strong>Active:</strong> {vendor.isActive ? "Yes" : "No"}</div>
+            </div>
+
+            <div
+              style={{
+                border: "1px solid #E5E7EB",
+                borderRadius: 14,
+                padding: 16,
+                background: "#F8FAFC",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 800,
+                  color: "#64748B",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.4,
+                  marginBottom: 12,
+                }}
+              >
+                Vendor Logo
+              </div>
+
+              {vendor.companyLogoUrl ? (
+                <img
+                  src={vendor.companyLogoUrl}
+                  alt={`${vendor.companyName} logo`}
+                  style={{
+                    width: "100%",
+                    maxHeight: 180,
+                    objectFit: "contain",
+                    borderRadius: 10,
+                    background: "#fff",
+                    border: "1px solid #E5E7EB",
+                    padding: 12,
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    minHeight: 180,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                    borderRadius: 10,
+                    border: "1px dashed #CBD5E1",
+                    background: "#fff",
+                    color: "#64748B",
+                    fontWeight: 700,
+                    padding: 12,
+                  }}
+                >
+                  No logo on file
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section
         style={{
           background: "#fff",
@@ -215,13 +387,18 @@ export default function VendorOrderForm({ vendorCode }: Props) {
           </Field>
 
           <Field label="State">
-            <input
+            <select
               style={inputStyle}
               value={form.propertyState}
               onChange={(e) => update("propertyState", e.target.value)}
-              placeholder="State"
               required
-            />
+            >
+              {US_STATE_OPTIONS.map((state) => (
+                <option key={state || "blank-state"} value={state}>
+                  {state || "Select state"}
+                </option>
+              ))}
+            </select>
           </Field>
 
           <Field label="ZIP">
@@ -238,6 +415,8 @@ export default function VendorOrderForm({ vendorCode }: Props) {
             <input
               style={inputStyle}
               type="date"
+              min={formatDateInput(new Date())}
+              max={formatDateInput(addMonths(new Date(), 6))}
               value={form.signingDate}
               onChange={(e) => update("signingDate", e.target.value)}
               required
@@ -245,13 +424,19 @@ export default function VendorOrderForm({ vendorCode }: Props) {
           </Field>
 
           <Field label="Signing Time">
-            <input
+            <select
               style={inputStyle}
               value={form.signingTimeLabel}
               onChange={(e) => update("signingTimeLabel", e.target.value)}
-              placeholder="Example: 10:00 AM"
               required
-            />
+            >
+              <option value="">Select signing time</option>
+              {TIME_OPTIONS.map((time) => (
+                <option key={time} value={time}>
+                  {time}
+                </option>
+              ))}
+            </select>
           </Field>
 
           <Field label="Estimated Pages">
@@ -282,21 +467,31 @@ export default function VendorOrderForm({ vendorCode }: Props) {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 16 }}>
           <Field label="Paper Size">
-            <input
+            <select
               style={inputStyle}
               value={form.paperSize}
               onChange={(e) => update("paperSize", e.target.value)}
-              placeholder="Letter, Legal, A4, etc."
-            />
+            >
+              {PAPER_SIZE_OPTIONS.map((size) => (
+                <option key={size || "blank-paper"} value={size}>
+                  {size || "Select paper size"}
+                </option>
+              ))}
+            </select>
           </Field>
 
           <Field label="Preferred Ink">
-            <input
+            <select
               style={inputStyle}
               value={form.preferredInk}
               onChange={(e) => update("preferredInk", e.target.value)}
-              placeholder="Blue, Black, etc."
-            />
+            >
+              {INK_OPTIONS.map((ink) => (
+                <option key={ink || "blank-ink"} value={ink}>
+                  {ink || "Select ink preference"}
+                </option>
+              ))}
+            </select>
           </Field>
 
           <Field label="Service Type">
@@ -344,6 +539,46 @@ export default function VendorOrderForm({ vendorCode }: Props) {
               placeholder="Add special instructions for the order"
             />
           </Field>
+        </div>
+      </section>
+
+      <section
+        style={{
+          background: "#fff",
+          border: "1px solid #E5E7EB",
+          borderRadius: 16,
+          padding: 24,
+          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
+        }}
+      >
+        <h2 style={{ marginTop: 0, marginBottom: 18, color: "#0F172A" }}>
+          Payment Fee
+        </h2>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 16 }}>
+          <Field label="Signing Fee">
+            <input
+              style={inputStyle}
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.feeAmount}
+              onChange={(e) => update("feeAmount", e.target.value)}
+              placeholder="Enter fee amount"
+            />
+          </Field>
+
+          <Field label="Payment Method">
+            <input
+              style={inputStyle}
+              value={form.paymentMethod}
+              readOnly
+            />
+          </Field>
+        </div>
+
+        <div style={{ marginTop: 12, color: "#475569", fontWeight: 600 }}>
+          VendorPay is the current payment path for vendor-submitted orders.
         </div>
       </section>
 

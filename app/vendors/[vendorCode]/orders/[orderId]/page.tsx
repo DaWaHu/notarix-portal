@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import OrderDocumentUpload from "./OrderDocumentUpload";
+import VendorOrderDocumentUpload from "./VendorOrderDocumentUpload";
 
 function nice(value: string | null | undefined) {
   const v = String(value || "").trim();
@@ -23,13 +23,31 @@ function formatDateTime(value: Date | string | null | undefined) {
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminOrderDetailPage({
-  params,
-}: {
-  params: { orderId: string };
-}) {
-  const order = await prisma.vendorOrder.findUnique({
-    where: { id: params.orderId },
+type PageProps = {
+  params: Promise<{ vendorCode: string; orderId: string }>;
+};
+
+export default async function VendorOrderDetailPage({ params }: PageProps) {
+  const { vendorCode, orderId } = await params;
+
+  const vendor = await prisma.vendor.findUnique({
+    where: { vendorcode: vendorCode },
+    select: {
+      id: true,
+      companyName: true,
+      vendorcode: true,
+    },
+  });
+
+  if (!vendor) {
+    notFound();
+  }
+
+  const order = await prisma.vendorOrder.findFirst({
+    where: {
+      id: orderId,
+      vendorId: vendor.id,
+    },
     select: {
       id: true,
       createdAt: true,
@@ -54,12 +72,13 @@ export default async function AdminOrderDetailPage({
       serviceType: true,
       specialInstructions: true,
       notes: true,
-      vendor: {
-        select: {
-          companyName: true,
-          vendorcode: true,
-        },
-      },
+      feeAmount: true,
+      paymentMethod: true,
+      paymentDueStatus: true,
+      paymentDueDate: true,
+      paymentPaid: true,
+      paymentPaidDate: true,
+      paymentNotes: true,
       documents: {
         select: {
           id: true,
@@ -67,7 +86,7 @@ export default async function AdminOrderDetailPage({
           storageKey: true,
           documentType: true,
           visibility: true,
-          },
+        },
       },
     },
   });
@@ -112,29 +131,27 @@ export default async function AdminOrderDetailPage({
                 fontWeight: 600,
               }}
             >
-              Review order details and attached documents.
+              Review your submitted notary order details.
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <a
-              href="/admin/orders"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#fff",
-                color: "#0F172A",
-                textDecoration: "none",
-                borderRadius: 10,
-                padding: "12px 16px",
-                fontWeight: 900,
-                border: "1px solid #CBD5E1",
-              }}
-            >
-              Back to Orders
-            </a>
-          </div>
+          <a
+            href={`/vendors/${vendorCode}/orders`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#fff",
+              color: "#0F172A",
+              textDecoration: "none",
+              borderRadius: 10,
+              padding: "12px 16px",
+              fontWeight: 900,
+              border: "1px solid #CBD5E1",
+            }}
+          >
+            Back to Orders
+          </a>
         </div>
 
         <div
@@ -158,8 +175,8 @@ export default async function AdminOrderDetailPage({
             <div style={{ display: "grid", gap: 10 }}>
               <div><strong>Order Number:</strong> {nice(order.orderNumber)}</div>
               <div><strong>Status:</strong> {nice(order.status)}</div>
-              <div><strong>Vendor:</strong> {nice(order.vendor?.companyName)}</div>
-              <div><strong>Vendor Code:</strong> {nice(order.vendor?.vendorcode)}</div>
+              <div><strong>Vendor:</strong> {nice(vendor.companyName)}</div>
+              <div><strong>Vendor Code:</strong> {nice(vendor.vendorcode)}</div>
               <div><strong>Service Type:</strong> {nice(order.serviceType)}</div>
               <div><strong>RON:</strong> {order.isRON ? "Yes" : "No"}</div>
               <div><strong>Created:</strong> {formatDateTime(order.createdAt)}</div>
@@ -200,7 +217,7 @@ export default async function AdminOrderDetailPage({
               boxShadow: "0 8px 22px rgba(15, 23, 42, 0.05)",
             }}
           >
-            <h2 style={{ marginTop: 0, color: "#0F172A" }}>Signing Details</h2>
+            <h2 style={{ marginTop: 0, color: "#0F172A" }}>Signing & Payment</h2>
 
             <div style={{ display: "grid", gap: 10 }}>
               <div><strong>Signing Date:</strong> {formatDate(order.signingDate)}</div>
@@ -208,6 +225,13 @@ export default async function AdminOrderDetailPage({
               <div><strong>Estimated Pages:</strong> {order.estimatedPages ?? "—"}</div>
               <div><strong>Paper Size:</strong> {nice(order.paperSize)}</div>
               <div><strong>Required Ink:</strong> {nice(order.preferredInk)}</div>
+              <div><strong>Fee Amount:</strong> {order.feeAmount?.toString() ?? "—"}</div>
+              <div><strong>Payment Method:</strong> {nice(order.paymentMethod)}</div>
+              <div><strong>Payment Due Status:</strong> {nice(order.paymentDueStatus)}</div>
+              <div><strong>Payment Due Date:</strong> {formatDate(order.paymentDueDate)}</div>
+              <div><strong>Payment Paid:</strong> {order.paymentPaid ? "Yes" : "No"}</div>
+              <div><strong>Payment Paid Date:</strong> {formatDate(order.paymentPaidDate)}</div>
+              <div><strong>Payment Notes:</strong> {nice(order.paymentNotes)}</div>
               <div><strong>Special Instructions:</strong> {nice(order.specialInstructions)}</div>
               <div><strong>Notes:</strong> {nice(order.notes)}</div>
             </div>
@@ -224,7 +248,7 @@ export default async function AdminOrderDetailPage({
           >
             <h2 style={{ marginTop: 0, color: "#0F172A" }}>Documents</h2>
 
-            <OrderDocumentUpload orderId={order.id} />
+            <VendorOrderDocumentUpload orderId={order.id} />
 
             {order.documents.length === 0 ? (
               <div style={{ color: "#475569", fontWeight: 600 }}>
@@ -262,7 +286,6 @@ export default async function AdminOrderDetailPage({
                         Download document
                       </a>
                     </div>
-
                   </div>
                 ))}
               </div>

@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import VendorOrderForm from "./VendorOrderForm";
 
 type PageProps = {
@@ -6,6 +7,32 @@ type PageProps = {
 
 export default async function VendorNewOrderPage({ params }: PageProps) {
   const { vendorCode } = await params;
+
+  const vendor = await prisma.vendor.findUnique({
+    where: { vendorcode: vendorCode },
+    select: {
+      vendorcode: true,
+      companyName: true,
+      companyType: true,
+      companyLogoUrl: true,
+      address1: true,
+      address2: true,
+      city: true,
+      state: true,
+      zip: true,
+      website: true,
+      primaryPhone: true,
+      secondaryPhone: true,
+      primaryContactName: true,
+      primaryContactEmail: true,
+      primaryContactPhone: true,
+      secondaryContactName: true,
+      secondaryContactEmail: true,
+      secondaryContactPhone: true,
+      approvalStatus: true,
+      isActive: true,
+    },
+  });
 
   return (
     <main
@@ -90,7 +117,7 @@ export default async function VendorNewOrderPage({ params }: PageProps) {
           </div>
         </div>
 
-        <VendorOrderForm vendorCode={vendorCode} />
+        <VendorOrderForm vendorCode={vendorCode} vendor={vendor} />
       </div>
     </main>
   );
