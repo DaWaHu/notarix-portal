@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import OrderDocumentUpload from "./OrderDocumentUpload";
+import OrderStatusPanel from "./components/OrderStatusPanel";
 
 function nice(value: string | null | undefined) {
   const v = String(value || "").trim();
@@ -60,6 +61,18 @@ export default async function AdminOrderDetailPage({
           vendorcode: true,
         },
       },
+      statusHistory: {
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          fromStatus: true,
+          toStatus: true,
+          reason: true,
+          createdAt: true,
+        },
+      },
+
       documents: {
         select: {
           id: true,
@@ -67,7 +80,7 @@ export default async function AdminOrderDetailPage({
           storageKey: true,
           documentType: true,
           visibility: true,
-          },
+        },
       },
     },
   });
@@ -112,7 +125,7 @@ export default async function AdminOrderDetailPage({
                 fontWeight: 600,
               }}
             >
-              Review order details and attached documents.
+              Review order details, status workflow, and attached documents.
             </div>
           </div>
 
@@ -144,6 +157,15 @@ export default async function AdminOrderDetailPage({
             gap: 18,
           }}
         >
+          <OrderStatusPanel
+            orderId={order.id}
+            currentStatus={order.status}
+            history={order.statusHistory.map((item) => ({
+              ...item,
+              createdAt: item.createdAt.toISOString(),
+            }))}
+          />
+
           <section
             style={{
               background: "#fff",
@@ -262,7 +284,6 @@ export default async function AdminOrderDetailPage({
                         Download document
                       </a>
                     </div>
-
                   </div>
                 ))}
               </div>

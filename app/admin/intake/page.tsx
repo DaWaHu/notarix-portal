@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -8,315 +9,1064 @@ type Props = {
 };
 
 const STATUS_OPTIONS = ["ALL", "NEW", "REVIEW", "APPROVED", "ARCHIVED"] as const;
+type StatusOption = (typeof STATUS_OPTIONS)[number];
 
-function normalizeStatus(value?: string) {
+function normalizeStatus(value?: string): StatusOption {
   const upper = String(value || "ALL").toUpperCase();
-  return STATUS_OPTIONS.includes(upper as (typeof STATUS_OPTIONS)[number])
-    ? upper
+  return STATUS_OPTIONS.includes(upper as StatusOption)
+    ? (upper as StatusOption)
     : "ALL";
 }
 
-function badgeClasses(status: string) {
-  switch (status.toUpperCase()) {
+function normalizeDbStatus(status: string) {
+  const normalized = String(status || "").toUpperCase();
+  if (normalized === "REVIEWING") return "REVIEW";
+  if (normalized === "CLOSED") return "ARCHIVED";
+  return normalized;
+}
+
+function mapUiStatusToDb(status: string) {
+  const normalized = String(status || "").toUpperCase();
+  if (normalized === "REVIEW") return "REVIEWING";
+  if (normalized === "ARCHIVED") return "CLOSED";
+  return normalized;
+}
+
+function getStatusLabel(status: string) {
+  const normalized = normalizeDbStatus(status);
+
+  switch (normalized) {
     case "NEW":
-      return "bg-blue-100 text-blue-700";
+      return "New";
     case "REVIEW":
-      return "bg-amber-100 text-amber-700";
+      return "In Review";
     case "APPROVED":
-      return "bg-green-100 text-green-700";
+      return "Approved";
     case "ARCHIVED":
-      return "bg-slate-200 text-slate-700";
+      return "Archived";
+    case "REJECTED":
+      return "Rejected";
     default:
-      return "bg-slate-100 text-slate-700";
+      return normalized || "Unknown";
   }
+}
+
+function statusMatchesFilter(itemStatus: string, selectedStatus: StatusOption) {
+  const normalized = normalizeDbStatus(itemStatus);
+  if (selectedStatus === "ALL") return true;
+  return normalized === selectedStatus;
 }
 
 function formatPhone(phone?: string | null) {
   if (!phone) return "—";
   const cleaned = String(phone).replace(/\D/g, "");
   const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
-  if (match) {
-    return `(${match[1]}) ${match[2]}-${match[3]}`;
-  }
+  if (match) return `(${match[1]}) ${match[2]}-${match[3]}`;
   return phone;
+}
+
+function formatDate(date: Date | string) {
+  return new Date(date).toLocaleString();
+}
+
+function getDetailsObject(value: unknown): Record<string, unknown> {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+}
+
+function countForStatus(items: Array<{ status: string }>, status: StatusOption) {
+  if (status === "ALL") return items.length;
+  return items.filter((item) => normalizeDbStatus(item.status) === status).length;
+}
+
+function getStatusPillStyle(status: string): React.CSSProperties {
+  switch (normalizeDbStatus(status)) {
+    case "NEW":
+      return {
+        border: "1px solid #BFDBFE",
+        background: "#EFF6FF",
+        color: "#1D4ED8",
+      };
+    case "REVIEW":
+      return {
+        border: "1px solid #FCD34D",
+        background: "#FFFBEB",
+        color: "#B45309",
+      };
+    case "APPROVED":
+      return {
+        border: "1px solid #A7F3D0",
+        background: "#ECFDF5",
+        color: "#047857",
+      };
+    case "ARCHIVED":
+      return {
+        border: "1px solid #CBD5E1",
+        background: "#F8FAFC",
+        color: "#475569",
+      };
+    case "REJECTED":
+      return {
+        border: "1px solid #FDA4AF",
+        background: "#FFF1F2",
+        color: "#BE123C",
+      };
+    default:
+      return {
+        border: "1px solid #CBD5E1",
+        background: "#F8FAFC",
+        color: "#475569",
+      };
+  }
+}
+
+function getRolePillStyle(role: string): React.CSSProperties {
+  switch (String(role || "").toUpperCase()) {
+    case "CLIENT":
+      return {
+        border: "1px solid #BFDBFE",
+        background: "#EFF6FF",
+        color: "#1D4ED8",
+      };
+    case "NOTARY":
+      return {
+        border: "1px solid #C7D2FE",
+        background: "#EEF2FF",
+        color: "#4338CA",
+      };
+    case "GENERAL":
+      return {
+        border: "1px solid #CBD5E1",
+        background: "#F8FAFC",
+        color: "#475569",
+      };
+    default:
+      return {
+        border: "1px solid #CBD5E1",
+        background: "#F8FAFC",
+        color: "#475569",
+      };
+  }
+}
+
+async function updateIntakeStatus(formData: FormData) {
+  "use server";
+
+  const id = String(formData.get("id") || "");
+  const nextStatus = String(formData.get("status") || "").toUpperCase();
+
+  if (!id) return;
+  if (!["REVIEW", "APPROVED", "ARCHIVED"].includes(nextStatus)) return;
+
+  await prisma.intakeSubmission.update({
+    where: { id },
+    data: {
+      status: mapUiStatusToDb(nextStatus),
+    },
+  });
+
+  revalidatePath("/admin/intake");
+}
+
+function FilterChip({
+  href,
+  active,
+  label,
+  count,
+}: {
+  href: string;
+  active: boolean;
+  label: string;
+  count: number;
+}) {
+  return (
+    <Link
+      href={href}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        textDecoration: "none",
+        borderRadius: 999,
+        padding: "10px 14px",
+        fontSize: 14,
+        fontWeight: 800,
+        border: active ? "1px solid #1D4ED8" : "1px solid #CBD5E1",
+        background: active ? "#1D4ED8" : "#FFFFFF",
+        color: active ? "#FFFFFF" : "#334155",
+        boxShadow: active ? "0 8px 18px rgba(29, 78, 216, 0.18)" : "none",
+      }}
+    >
+      <span>{label}</span>
+      <span
+        style={{
+          borderRadius: 999,
+          padding: "2px 8px",
+          fontSize: 11,
+          fontWeight: 900,
+          background: active ? "rgba(255,255,255,0.18)" : "#F1F5F9",
+          color: active ? "#FFFFFF" : "#475569",
+        }}
+      >
+        {count}
+      </span>
+    </Link>
+  );
+}
+
+function HeroMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) {
+  return (
+    <div
+      style={{
+        border: "1px solid rgba(255,255,255,0.12)",
+        background: "rgba(255,255,255,0.08)",
+        borderRadius: 18,
+        padding: "16px 16px",
+        backdropFilter: "blur(4px)",
+        WebkitBackdropFilter: "blur(4px)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 900,
+          textTransform: "uppercase",
+          letterSpacing: "0.18em",
+          color: "#DBEAFE",
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          marginTop: 8,
+          fontSize: 32,
+          fontWeight: 950,
+          lineHeight: 1,
+          color: "#FFFFFF",
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function QueueMetric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number | string;
+  tone: "blue" | "amber" | "slate";
+}) {
+  const style =
+    tone === "blue"
+      ? { border: "1px solid #BFDBFE", background: "#EFF6FF", color: "#1D4ED8" }
+      : tone === "amber"
+        ? { border: "1px solid #FCD34D", background: "#FFFBEB", color: "#B45309" }
+        : { border: "1px solid #CBD5E1", background: "#F8FAFC", color: "#475569" };
+
+  return (
+    <div
+      style={{
+        ...style,
+        borderRadius: 20,
+        padding: "16px 16px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 900,
+          textTransform: "uppercase",
+          letterSpacing: "0.16em",
+          opacity: 0.85,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          marginTop: 8,
+          fontSize: 32,
+          fontWeight: 950,
+          lineHeight: 1,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function DetailCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div
+      style={{
+        border: "1px solid #E2E8F0",
+        background: "#F8FAFC",
+        borderRadius: 18,
+        padding: "16px 16px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 900,
+          textTransform: "uppercase",
+          letterSpacing: "0.16em",
+          color: "#64748B",
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          marginTop: 8,
+          fontSize: 14,
+          fontWeight: 700,
+          lineHeight: 1.6,
+          color: "#0F172A",
+          wordBreak: "break-word",
+        }}
+      >
+        {value || "—"}
+      </div>
+    </div>
+  );
+}
+
+function ActionFormButton({
+  id,
+  status,
+  label,
+  style,
+}: {
+  id: string;
+  status: "REVIEW" | "APPROVED" | "ARCHIVED";
+  label: string;
+  style: {
+    border: string;
+    background: string;
+    color: string;
+  };
+}) {
+  return (
+    <form action={updateIntakeStatus}>
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="status" value={status} />
+      <button
+        type="submit"
+        style={{
+          width: "100%",
+          borderRadius: 14,
+          padding: "12px 16px",
+          border: style.border,
+          background: style.background,
+          color: style.color,
+          fontSize: 14,
+          fontWeight: 800,
+          cursor: "pointer",
+        }}
+      >
+        {label}
+      </button>
+    </form>
+  );
 }
 
 export default async function AdminIntakePage({ searchParams }: Props) {
   const params = (await searchParams) || {};
   const selectedStatus = normalizeStatus(params.status);
 
-  const submissions = await prisma.intakeSubmission.findMany({
-  where:
-    selectedStatus === "ALL"
-      ? {}
-      : {
-          status: selectedStatus as
-            | "NEW"
-            | "REVIEWING"
-            | "APPROVED"
-            | "REJECTED"
-            | "CLOSED",
-        },
-  orderBy: {
-    createdAt: "desc",
-  },
-});
-
-  const counts = await prisma.intakeSubmission.groupBy({
-    by: ["status"],
-    _count: {
-      status: true,
-    },
+  const allSubmissions = await prisma.intakeSubmission.findMany({
+    orderBy: { createdAt: "desc" },
   });
 
-  const countMap = counts.reduce<Record<string, number>>((acc, row) => {
-    acc[row.status.toUpperCase()] = row._count.status;
-    return acc;
-  }, {});
+  const submissions = allSubmissions.filter((item) =>
+    statusMatchesFilter(item.status, selectedStatus)
+  );
 
-  const totalCount =
-    selectedStatus === "ALL"
-      ? Object.values(countMap).reduce((sum, n) => sum + n, 0)
-      : submissions.length;
+  const totalCount = allSubmissions.length;
+  const newCount = countForStatus(allSubmissions, "NEW");
+  const reviewCount = countForStatus(allSubmissions, "REVIEW");
+  const approvedCount = countForStatus(allSubmissions, "APPROVED");
+  const archivedCount = countForStatus(allSubmissions, "ARCHIVED");
 
   return (
-    <div className="min-h-screen bg-slate-100 px-6 py-10">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-500 px-8 py-8 text-white shadow-xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-100">
-            NOTARIX™
-          </p>
-
-          <h1 className="mt-2 text-4xl font-bold">Admin Intake</h1>
-
-          <p className="mt-3 max-w-3xl text-base text-blue-100">
-            Review incoming contact requests, vendor approval submissions, demo
-            inquiries, and platform access requests.
-          </p>
-        </div>
-
-        <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+    <main
+      style={{
+        minHeight: "100vh",
+        background:
+          "linear-gradient(180deg, #F4F7FC 0%, #F8FAFC 44%, #FCFDFE 100%)",
+        fontFamily:
+          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        color: "#0F172A",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 1280,
+          margin: "0 auto",
+          padding: "8px 18px 32px",
+        }}
+      >
+        <section
+          style={{
+            overflow: "hidden",
+            borderRadius: 30,
+            border: "1px solid #DBEAFE",
+            background:
+              "linear-gradient(135deg, #0F4FD6 0%, #1D4ED8 45%, #1E3A8A 100%)",
+            color: "#FFFFFF",
+            boxShadow: "0 16px 34px rgba(49, 74, 159, 0.14)",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.15fr 0.85fr",
+              gap: 22,
+              padding: "26px 28px",
+              alignItems: "start",
+            }}
+          >
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">
-                Intake Filters
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Quickly sort incoming inquiries by workflow status.
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  borderRadius: 999,
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: "rgba(255,255,255,0.12)",
+                  padding: "7px 12px",
+                  fontSize: 11,
+                  fontWeight: 900,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.18em",
+                  color: "#DBEAFE",
+                }}
+              >
+                Internal Intake Workspace
+              </div>
+
+              <div
+                style={{
+                  marginTop: 18,
+                  fontSize: 12,
+                  fontWeight: 950,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.24em",
+                  color: "#DBEAFE",
+                }}
+              >
+                Notarix™
+              </div>
+
+              <h1
+                style={{
+                  marginTop: 8,
+                  marginBottom: 0,
+                  fontSize: 48,
+                  fontWeight: 950,
+                  lineHeight: 0.95,
+                  letterSpacing: -1.2,
+                }}
+              >
+                Admin Intake
+              </h1>
+
+              <p
+                style={{
+                  marginTop: 18,
+                  marginBottom: 0,
+                  maxWidth: 760,
+                  fontSize: 15,
+                  lineHeight: 1.7,
+                  color: "#EFF6FF",
+                  fontWeight: 500,
+                }}
+              >
+                Review client onboarding, notary review, support inquiries, demos,
+                and portal access requests through a production-grade internal intake queue.
               </p>
             </div>
 
-            <div className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
-              Showing {totalCount} submission{totalCount === 1 ? "" : "s"}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 12,
+              }}
+            >
+              <HeroMetric label="Total Records" value={totalCount} />
+              <HeroMetric label="New" value={newCount} />
+              <HeroMetric label="In Review" value={reviewCount} />
+              <HeroMetric label="Approved" value={approvedCount} />
+            </div>
+          </div>
+        </section>
+
+        <section
+          style={{
+            marginTop: 22,
+            display: "grid",
+            gridTemplateColumns: "1.3fr 0.7fr",
+            gap: 16,
+            alignItems: "start",
+          }}
+        >
+          <div
+            style={{
+              border: "1px solid #E2E8F0",
+              background: "#F3F6FA",
+              borderRadius: 24,
+              padding: "20px 20px",
+              boxShadow: "0 12px 34px rgba(15, 23, 42, 0.05)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "end",
+                justifyContent: "space-between",
+                gap: 16,
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 900,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.18em",
+                    color: "#1D4ED8",
+                  }}
+                >
+                  Queue Controls
+                </div>
+                <h2
+                  style={{
+                    margin: "8px 0 0",
+                    fontSize: 32,
+                    fontWeight: 950,
+                    lineHeight: 1,
+                    letterSpacing: -0.6,
+                    color: "#0F172A",
+                  }}
+                >
+                  Intake Filters
+                </h2>
+                <p
+                  style={{
+                    marginTop: 10,
+                    marginBottom: 0,
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                    color: "#475569",
+                    fontWeight: 600,
+                  }}
+                >
+                  Filter the queue by workflow state and review clearly separated intake records.
+                </p>
+              </div>
+
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  borderRadius: 12,
+                  border: "1px solid #DBEAFE",
+                  background: "#EFF6FF",
+                  padding: "10px 14px",
+                  fontSize: 14,
+                  fontWeight: 800,
+                  color: "#1D4ED8",
+                }}
+              >
+                Showing {submissions.length} submission{submissions.length === 1 ? "" : "s"}
+              </div>
+            </div>
+
+            <div
+              style={{
+                marginTop: 18,
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 10,
+              }}
+            >
+              <FilterChip
+                href="/admin/intake"
+                label="All"
+                count={totalCount}
+                active={selectedStatus === "ALL"}
+              />
+              <FilterChip
+                href="/admin/intake?status=NEW"
+                label="New"
+                count={newCount}
+                active={selectedStatus === "NEW"}
+              />
+              <FilterChip
+                href="/admin/intake?status=REVIEW"
+                label="Review"
+                count={reviewCount}
+                active={selectedStatus === "REVIEW"}
+              />
+              <FilterChip
+                href="/admin/intake?status=APPROVED"
+                label="Approved"
+                count={approvedCount}
+                active={selectedStatus === "APPROVED"}
+              />
+              <FilterChip
+                href="/admin/intake?status=ARCHIVED"
+                label="Archived"
+                count={archivedCount}
+                active={selectedStatus === "ARCHIVED"}
+              />
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-3">
-            {STATUS_OPTIONS.map((status) => {
-              const isActive = selectedStatus === status;
-              const count =
-                status === "ALL"
-                  ? Object.values(countMap).reduce((sum, n) => sum + n, 0)
-                  : countMap[status] || 0;
-
-              return (
-                <Link
-                  key={status}
-                  href={status === "ALL" ? "/admin/intake" : `/admin/intake?status=${status}`}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    isActive
-                      ? "bg-blue-600 text-white shadow"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
-                >
-                  {status} ({count})
-                </Link>
-              );
-            })}
+          <div
+            style={{
+              display: "grid",
+              gap: 14,
+            }}
+          >
+            <QueueMetric label="Archived" value={archivedCount} tone="slate" />
+            <QueueMetric label="Active Queue" value={newCount + reviewCount} tone="amber" />
+            <QueueMetric label="Visible Results" value={submissions.length} tone="blue" />
           </div>
-        </div>
+        </section>
 
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
-          <div className="border-b border-slate-200 px-6 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Intake Submissions
-            </h2>
-          </div>
-
+        <section style={{ marginTop: 24 }}>
           {submissions.length === 0 ? (
-            <div className="px-6 py-10 text-sm text-slate-600">
-              No intake submissions found for this filter.
+            <div
+              style={{
+                border: "1px solid #E2E8F0",
+                background: "#F3F6FA",
+                borderRadius: 24,
+                padding: "70px 24px",
+                boxShadow: "0 12px 36px rgba(15, 23, 42, 0.05)",
+              }}
+            >
+              <div
+                style={{
+                  border: "1px dashed #CBD5E1",
+                  background: "#F8FAFC",
+                  borderRadius: 18,
+                  padding: "40px 24px",
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 24,
+                    fontWeight: 950,
+                    letterSpacing: -0.4,
+                    color: "#0F172A",
+                  }}
+                >
+                  No intake submissions found
+                </div>
+                <p
+                  style={{
+                    marginTop: 8,
+                    fontSize: 14,
+                    color: "#64748B",
+                    fontWeight: 600,
+                  }}
+                >
+                  There are no records for the selected workflow filter.
+                </p>
+              </div>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-700">
-                  <tr>
-                    <th className="px-6 py-4 font-semibold">Created</th>
-                    <th className="px-6 py-4 font-semibold">Name</th>
-                    <th className="px-6 py-4 font-semibold">Phone</th>
-                    <th className="px-6 py-4 font-semibold">Email</th>
-                    <th className="px-6 py-4 font-semibold">Role</th>
-                    <th className="px-6 py-4 font-semibold">Status</th>
-                    <th className="px-6 py-4 font-semibold">Details</th>
-                    <th className="px-6 py-4 font-semibold">Actions</th>
-                  </tr>
-                </thead>
+            <div style={{ display: "grid", gap: 22 }}>
+              {submissions.map((item, index) => {
+                const details = getDetailsObject(item.details);
+                const normalizedStatus = normalizeDbStatus(item.status);
 
-                <tbody>
-                  {submissions.map((item) => {
-                    const details =
-                      item.details && typeof item.details === "object"
-                        ? (item.details as Record<string, unknown>)
-                        : {};
-
-                    return (
-                      <tr
-                        key={item.id}
-                        className="border-t border-slate-200 align-top"
+                return (
+                  <article
+                    key={item.id}
+                    style={{
+                      overflow: "hidden",
+                      borderRadius: 26,
+                      border: "2px solid #475569",
+                      background: "#F3F6FA",
+                      boxShadow: "0 10px 24px rgba(15, 23, 42, 0.05)",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        borderBottom: "1px solid #E2E8F0",
+                        background:
+                          "linear-gradient(180deg, #FFFFFF 0%, #F8FBFF 100%)",
+                        padding: "22px 24px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "start",
+                          justifyContent: "space-between",
+                          gap: 22,
+                          flexWrap: "wrap",
+                        }}
                       >
-                        <td className="whitespace-nowrap px-6 py-4 text-slate-600">
-                          {new Date(item.createdAt).toLocaleString()}
-                        </td>
-
-                        <td className="px-6 py-4">
-                          <div className="font-semibold text-slate-900">
-                            {item.fullName}
-                          </div>
-                        </td>
-
-                        <td className="px-6 py-4 text-slate-700">
-                          {item.phone ? (
-                            <a
-                              href={`tel:${item.phone}`}
-                              className="font-medium text-blue-700 hover:underline"
-                            >
-                              {formatPhone(item.phone)}
-                            </a>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-
-                        <td className="px-6 py-4 text-slate-700">
-                          {item.email ? (
-                            <a
-                              href={`mailto:${item.email}`}
-                              className="font-medium text-blue-700 hover:underline"
-                            >
-                              {item.email}
-                            </a>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-
-                        <td className="px-6 py-4 text-slate-700">
-                          {item.role}
-                        </td>
-
-                        <td className="px-6 py-4">
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClasses(
-                              item.status
-                            )}`}
+                        <div style={{ flex: "1 1 760px", minWidth: 0 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 8,
+                              alignItems: "center",
+                            }}
                           >
-                            {item.status}
-                          </span>
-                        </td>
+                            <span
+                              style={{
+                                border: "1px solid #DBEAFE",
+                                background: "#EFF6FF",
+                                color: "#1D4ED8",
+                                borderRadius: 999,
+                                padding: "6px 12px",
+                                fontSize: 11,
+                                fontWeight: 900,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.16em",
+                              }}
+                            >
+                              Record {index + 1}
+                            </span>
 
-                        <td className="px-6 py-4 text-slate-700">
-                          <div className="space-y-1">
-                            {"company" in details && details.company ? (
-                              <div>
-                                <span className="font-semibold">Company:</span>{" "}
-                                {String(details.company)}
-                              </div>
-                            ) : null}
+                            <span
+                              style={{
+                                border: "1px solid #E2E8F0",
+                                background: "#F3F6FA",
+                                color: "#475569",
+                                borderRadius: 999,
+                                padding: "6px 12px",
+                                fontSize: 11,
+                                fontWeight: 800,
+                              }}
+                            >
+                              {formatDate(item.createdAt)}
+                            </span>
 
-                            {"contactType" in details && details.contactType ? (
-                              <div>
-                                <span className="font-semibold">Contact Type:</span>{" "}
-                                {String(details.contactType)}
-                              </div>
-                            ) : null}
+                            <span
+                              style={{
+                                ...getStatusPillStyle(item.status),
+                                borderRadius: 999,
+                                padding: "6px 12px",
+                                fontSize: 12,
+                                fontWeight: 800,
+                              }}
+                            >
+                              {getStatusLabel(item.status)}
+                            </span>
 
-                            {"requestType" in details && details.requestType ? (
-                              <div>
-                                <span className="font-semibold">Request Type:</span>{" "}
-                                {String(details.requestType)}
-                              </div>
-                            ) : null}
-
-                            {"coverageArea" in details && details.coverageArea ? (
-                              <div>
-                                <span className="font-semibold">Coverage:</span>{" "}
-                                {String(details.coverageArea)}
-                              </div>
-                            ) : null}
-
-                            {item.message ? (
-                              <div className="pt-2 text-slate-600">
-                                <span className="font-semibold text-slate-800">
-                                  Message:
-                                </span>{" "}
-                                {item.message}
-                              </div>
-                            ) : null}
                           </div>
-                        </td>
 
-                        <td className="px-6 py-4">
-                          <div className="flex min-w-[180px] flex-col gap-2">
-                            <a
-                              href={`mailto:${item.email}`}
-                              className="rounded-lg bg-slate-900 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-slate-800"
-                            >
-                              Email
-                            </a>
+                          <h3
+                            style={{
+                              marginTop: 18,
+                              marginBottom: 0,
+                              fontSize: 34,
+                              fontWeight: 950,
+                              lineHeight: 1,
+                              letterSpacing: -0.8,
+                              color: "#0F172A",
+                            }}
+                          >
+                            {item.fullName}
+                          </h3>
 
-                            <a
-                              href={item.phone ? `tel:${item.phone}` : "#"}
-                              className={`rounded-lg px-3 py-2 text-center text-xs font-semibold ${
-                                item.phone
-                                  ? "bg-blue-600 text-white hover:bg-blue-700"
-                                  : "cursor-not-allowed bg-slate-200 text-slate-500"
-                              }`}
+                          <div
+                            style={{
+                              marginTop: 18,
+                              display: "grid",
+                              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                              gap: 12,
+                            }}
+                          >
+                            <div
+                              style={{
+                                border: "1px solid #E2E8F0",
+                                background: "#F8FAFC",
+                                borderRadius: 18,
+                                padding: "16px 16px",
+                              }}
                             >
-                              Call
-                            </a>
+                              <div
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 900,
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.16em",
+                                  color: "#64748B",
+                                }}
+                              >
+                                Email
+                              </div>
+                              <div
+                                style={{
+                                  marginTop: 8,
+                                  fontSize: 14,
+                                  fontWeight: 700,
+                                  lineHeight: 1.6,
+                                  color: "#0F172A",
+                                  wordBreak: "break-word",
+                                }}
+                              >
+                                {item.email ? (
+                                  <a
+                                    href={`mailto:${item.email}`}
+                                    style={{
+                                      color: "#1D4ED8",
+                                      textDecoration: "underline",
+                                      textUnderlineOffset: 2,
+                                    }}
+                                  >
+                                    {item.email}
+                                  </a>
+                                ) : (
+                                  "—"
+                                )}
+                              </div>
+                            </div>
 
-                            <button
-                              type="button"
-                              className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-center text-xs font-semibold text-amber-700 hover:bg-amber-100"
+                            <div
+                              style={{
+                                border: "1px solid #E2E8F0",
+                                background: "#F8FAFC",
+                                borderRadius: 18,
+                                padding: "16px 16px",
+                              }}
                             >
-                              Review
-                            </button>
-
-                            <button
-                              type="button"
-                              className="rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-center text-xs font-semibold text-green-700 hover:bg-green-100"
-                            >
-                              Approve
-                            </button>
-
-                            <button
-                              type="button"
-                              className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                            >
-                              Archive
-                            </button>
+                              <div
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 900,
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.16em",
+                                  color: "#64748B",
+                                }}
+                              >
+                                Phone
+                              </div>
+                              <div
+                                style={{
+                                  marginTop: 8,
+                                  fontSize: 14,
+                                  fontWeight: 700,
+                                  lineHeight: 1.6,
+                                  color: "#0F172A",
+                                }}
+                              >
+                                {item.phone ? formatPhone(item.phone) : "—"}
+                              </div>
+                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        </div>
+
+                        <div
+                          style={{
+                            width: 260,
+                            display: "grid",
+                            gap: 10,
+                          }}
+                        >
+                          <a
+                            href={`mailto:${item.email}`}
+                            style={{
+                              textDecoration: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              borderRadius: 14,
+                              padding: "12px 16px",
+                              background: "#0F172A",
+                              color: "#FFFFFF",
+                              fontSize: 14,
+                              fontWeight: 800,
+                            }}
+                          >
+                            Email
+                          </a>
+
+                          {normalizedStatus === "NEW" ? (
+                            <ActionFormButton
+                              id={item.id}
+                              status="REVIEW"
+                              label="Review"
+                              style={{
+                                border: "1px solid #FCD34D",
+                                background: "#FFFBEB",
+                                color: "#B45309",
+                              }}
+                            />
+                          ) : null}
+
+                          {normalizedStatus !== "APPROVED" && normalizedStatus !== "ARCHIVED" ? (
+                            <ActionFormButton
+                              id={item.id}
+                              status="APPROVED"
+                              label="Approve"
+                              style={{
+                                border: "1px solid #A7F3D0",
+                                background: "#ECFDF5",
+                                color: "#047857",
+                              }}
+                            />
+                          ) : null}
+
+                          {normalizedStatus !== "ARCHIVED" ? (
+                            <ActionFormButton
+                              id={item.id}
+                              status="ARCHIVED"
+                              label="Archive"
+                              style={{
+                                border: "1px solid #CBD5E1",
+                                background: "#F8FAFC",
+                                color: "#475569",
+                              }}
+                            />
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1.05fr 0.95fr",
+                      }}
+                    >
+                      <div
+                        style={{
+                          borderRight: "1px solid #E2E8F0",
+                          background: "#F3F6FA",
+                          padding: "22px 24px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 900,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.18em",
+                            color: "#1D4ED8",
+                          }}
+                        >
+                          Intake Details
+                        </div>
+
+                        <div
+                          style={{
+                            marginTop: 16,
+                            display: "grid",
+                            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                            gap: 12,
+                          }}
+                        >
+                          <DetailCard
+                            label="Company"
+                            value={
+                              "company" in details ? String(details.company || "—") : "—"
+                            }
+                          />
+                          <DetailCard
+                            label="Contact Type"
+                            value={
+                              "contactType" in details
+                                ? String(details.contactType || "—")
+                                : "—"
+                            }
+                          />
+                          <DetailCard
+                            label="Request Type"
+                            value={
+                              "requestType" in details
+                                ? String(details.requestType || "—")
+                                : "—"
+                            }
+                          />
+                          <DetailCard
+                            label="Coverage Area"
+                            value={
+                              "coverageArea" in details
+                                ? String(details.coverageArea || "—")
+                                : "—"
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          background: "#F8FAFC",
+                          padding: "22px 24px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 900,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.18em",
+                            color: "#1D4ED8",
+                          }}
+                        >
+                          Submission Message
+                        </div>
+
+                        <div
+                          style={{
+                            marginTop: 16,
+                            minHeight: 220,
+                            borderRadius: 18,
+                            border: "1px solid #E2E8F0",
+                            background: "#F3F6FA",
+                            padding: "18px 18px",
+                            fontSize: 14,
+                            lineHeight: 1.8,
+                            color: "#475569",
+                            boxShadow: "0 2px 8px rgba(15, 23, 42, 0.03)",
+                          }}
+                        >
+                          {item.message ? item.message : "No message provided."}
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

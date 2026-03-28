@@ -1,33 +1,42 @@
-import Image from "next/image";
 import type { ReactNode } from "react";
+import Image from "next/image";
+import Link from "next/link";
 
-export default function AdminLayout({
-  children,
-}: {
+type Props = {
   children: ReactNode;
-}) {
+};
+
+export default function AdminLayout({ children }: Props) {
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "#EEF3F9",
+        background:
+          "linear-gradient(180deg, #EFF4FF 0%, #F8FAFC 46%, #FFFFFF 100%)",
+        fontFamily:
+          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        color: "#0F172A",
       }}
     >
-      <header
+      <section
         style={{
-          background: "#0B1533",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          padding: "14px 24px",
+          maxWidth: 1280,
+          margin: "0 auto",
+          padding: "16px 18px 10px",
         }}
       >
         <div
           style={{
-            maxWidth: 1280,
-            margin: "0 auto",
+            background: "#FFFFFF",
+            border: "1px solid #DBEAFE",
+            borderRadius: 20,
+            padding: "14px 18px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: 16,
+            gap: 14,
+            flexWrap: "wrap",
+            boxShadow: "0 10px 28px rgba(30, 64, 175, 0.08)",
           }}
         >
           <div
@@ -35,45 +44,56 @@ export default function AdminLayout({
               display: "flex",
               alignItems: "center",
               gap: 14,
+              minWidth: 0,
             }}
           >
             <div
               style={{
                 width: 42,
                 height: 42,
-                borderRadius: 10,
+                borderRadius: 12,
                 background: "#FFFFFF",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 overflow: "hidden",
+                boxShadow: "0 4px 14px rgba(15, 23, 42, 0.10)",
+                flexShrink: 0,
               }}
             >
               <Image
                 src="/notarix-logo.png"
-                alt="Notarix logo"
-                width={32}
-                height={32}
-                style={{ objectFit: "contain" }}
+                alt="Notarix™"
+                width={28}
+                height={28}
+                style={{
+                  width: 28,
+                  height: 28,
+                  objectFit: "contain",
+                  display: "block",
+                }}
               />
             </div>
 
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div
                 style={{
-                  color: "#FFFFFF",
-                  fontWeight: 900,
-                  fontSize: 16,
-                  lineHeight: 1.1,
+                  fontWeight: 950,
+                  fontSize: 20,
+                  lineHeight: 1.05,
+                  letterSpacing: -0.2,
+                  color: "#1E3A8A",
                 }}
               >
                 Notarix Staff Portal
               </div>
+
               <div
                 style={{
-                  color: "rgba(255,255,255,0.72)",
-                  fontSize: 13,
-                  fontWeight: 600,
+                  fontSize: 12,
+                  color: "#64748B",
+                  fontWeight: 700,
+                  lineHeight: 1.25,
                   marginTop: 2,
                 }}
               >
@@ -83,54 +103,46 @@ export default function AdminLayout({
           </div>
 
           <nav
+            aria-label="Admin navigation"
             style={{
               display: "flex",
+              alignItems: "center",
               gap: 10,
               flexWrap: "wrap",
             }}
           >
-            <a
-              href="/admin"
-              style={navLinkStyle}
-            >
+            <Link href="/admin" style={navButtonStyle}>
               Home
-            </a>
-            <a
-              href="/admin/orders"
-              style={navLinkStyle}
-            >
+            </Link>
+            <Link href="/admin/orders" style={navButtonStyle}>
               Orders
-            </a>
-            <a
-              href="/admin/orders/new"
-              style={navLinkStyle}
-            >
+            </Link>
+            <Link href="/admin/orders/new" style={navButtonStyle}>
               Create Order
-            </a>
-            <a
-              href="/admin/vendors/new"
-              style={navLinkStyle}
-            >
+            </Link>
+            <Link href="/admin/vendors/new" style={navButtonStyle}>
               Create Vendor
-            </a>
+            </Link>
           </nav>
         </div>
-      </header>
+      </section>
 
       <div>{children}</div>
     </div>
   );
 }
 
-const navLinkStyle = {
+const navButtonStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   textDecoration: "none",
+  background: "#1D4ED8",
   color: "#FFFFFF",
-  background: "rgba(255,255,255,0.10)",
   borderRadius: 12,
   padding: "10px 14px",
-  fontWeight: 800,
+  fontWeight: 900,
   fontSize: 14,
+  lineHeight: 1,
+  boxShadow: "0 8px 18px rgba(29, 78, 216, 0.14)",
 };

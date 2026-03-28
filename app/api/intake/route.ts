@@ -12,6 +12,68 @@ const ses = new SESClient({
   },
 });
 
+type IntakeRole = "CLIENT" | "NOTARY" | "GENERAL";
+
+function normalizeRole(contactType: unknown): IntakeRole {
+  const raw = String(contactType || "").trim().toLowerCase();
+
+  if (!raw) {
+    return "GENERAL";
+  }
+
+  const clientTypes = new Set([
+    "client",
+    "title company",
+    "signing service",
+    "attorney / law firm",
+    "attorney",
+    "law firm",
+    "lender / mortgage company",
+    "lender",
+    "mortgage company",
+    "real estate professional",
+    "vendor / service provider",
+    "vendor",
+    "service provider",
+  ]);
+
+  const notaryTypes = new Set([
+    "notary",
+    "notary signing agent",
+  ]);
+
+  const generalTypes = new Set([
+    "general",
+    "general inquiry",
+    "technology / integration partner",
+    "technology partner",
+    "integration partner",
+    "other",
+  ]);
+
+  if (clientTypes.has(raw)) {
+    return "CLIENT";
+  }
+
+  if (notaryTypes.has(raw)) {
+    return "NOTARY";
+  }
+
+  if (generalTypes.has(raw)) {
+    return "GENERAL";
+  }
+
+  return "GENERAL";
+}
+
+function normalizeDisplayContactType(contactType: unknown): string {
+  const role = normalizeRole(contactType);
+
+  if (role === "CLIENT") return "Client";
+  if (role === "NOTARY") return "Notary";
+  return "General";
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -25,7 +87,7 @@ export async function POST(req: Request) {
       requestType,
       coverageArea,
       message,
-    } = body;
+    } = body ?? {};
 
     if (!name || !email || !contactType || !requestType) {
       return NextResponse.json(
@@ -37,19 +99,23 @@ export async function POST(req: Request) {
       );
     }
 
+    const normalizedRole = normalizeRole(contactType);
+    const normalizedContactType = normalizeDisplayContactType(contactType);
+
     const submission = await prisma.intakeSubmission.create({
       data: {
-        role: contactType || "GENERAL",
-        fullName: name,
-        email,
-        phone: phone || null,
-        message: message || "",
+        role: normalizedRole,
+        fullName: String(name).trim(),
+        email: String(email).trim(),
+        phone: phone ? String(phone).trim() : null,
+        message: message ? String(message).trim() : "",
         status: "NEW",
         details: {
-          company: company || "",
-          contactType: contactType || "",
-          requestType: requestType || "",
-          coverageArea: coverageArea || "",
+          company: company ? String(company).trim() : "",
+          contactType: normalizedContactType,
+          originalContactType: contactType ? String(contactType).trim() : "",
+          requestType: requestType ? String(requestType).trim() : "",
+          coverageArea: coverageArea ? String(coverageArea).trim() : "",
           source: "contact-form",
         },
       },
@@ -57,10 +123,10 @@ export async function POST(req: Request) {
 
     const createdAt = new Date(submission.createdAt).toLocaleString();
 
-    const subject = `New NOTARIX intake request: ${requestType}`;
+    const subject = `New Notarix™ intake request: ${requestType}`;
 
     const textBody = `
-A new NOTARIX intake request has been submitted.
+A new Notarix™ intake request has been submitted.
 
 Submission ID: ${submission.id}
 Created: ${createdAt}
@@ -69,7 +135,9 @@ Name: ${name}
 Email: ${email}
 Phone: ${phone || "N/A"}
 Company: ${company || "N/A"}
-Contact Type: ${contactType || "N/A"}
+Contact Type: ${normalizedContactType}
+Original Contact Type: ${contactType || "N/A"}
+Stored Role: ${normalizedRole}
 Request Type: ${requestType || "N/A"}
 Coverage Area: ${coverageArea || "N/A"}
 
@@ -79,9 +147,9 @@ ${message || "No message provided."}
 
     const htmlBody = `
       <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
-        <h2 style="margin-bottom: 8px;">New NOTARIX intake request</h2>
+        <h2 style="margin-bottom: 8px;">New Notarix™ intake request</h2>
         <p style="margin-top: 0; color: #475569;">
-          A new inquiry was submitted through the NOTARIX contact form.
+          A new inquiry was submitted through the Notarix™ contact form.
         </p>
 
         <table style="border-collapse: collapse; width: 100%; margin-top: 16px;">
@@ -92,7 +160,9 @@ ${message || "No message provided."}
             <tr><td style="padding: 8px; font-weight: 700;">Email</td><td style="padding: 8px;">${email}</td></tr>
             <tr><td style="padding: 8px; font-weight: 700;">Phone</td><td style="padding: 8px;">${phone || "N/A"}</td></tr>
             <tr><td style="padding: 8px; font-weight: 700;">Company</td><td style="padding: 8px;">${company || "N/A"}</td></tr>
-            <tr><td style="padding: 8px; font-weight: 700;">Contact Type</td><td style="padding: 8px;">${contactType || "N/A"}</td></tr>
+            <tr><td style="padding: 8px; font-weight: 700;">Contact Type</td><td style="padding: 8px;">${normalizedContactType}</td></tr>
+            <tr><td style="padding: 8px; font-weight: 700;">Original Contact Type</td><td style="padding: 8px;">${contactType || "N/A"}</td></tr>
+            <tr><td style="padding: 8px; font-weight: 700;">Stored Role</td><td style="padding: 8px;">${normalizedRole}</td></tr>
             <tr><td style="padding: 8px; font-weight: 700;">Request Type</td><td style="padding: 8px;">${requestType || "N/A"}</td></tr>
             <tr><td style="padding: 8px; font-weight: 700;">Coverage Area</td><td style="padding: 8px;">${coverageArea || "N/A"}</td></tr>
           </tbody>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type VendorSnapshot = {
   vendorcode: string;
@@ -122,6 +122,26 @@ const initialState: FormState = {
   paymentMethod: "VendorPay",
 };
 
+function parseJsonSafe(text: string) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function formatBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "—";
+  const units = ["B", "KB", "MB", "GB"];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
+}
+
 export default function VendorOrderForm({ vendorCode, vendor }: Props) {
   function nice(value: string | null | undefined) {
     const v = String(value || "").trim();
@@ -129,11 +149,24 @@ export default function VendorOrderForm({ vendorCode, vendor }: Props) {
   }
 
   const [form, setForm] = useState<FormState>(initialState);
+  const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<string>("");
 
+  const minDate = useMemo(() => formatDateInput(new Date()), []);
+  const maxDate = useMemo(() => formatDateInput(addMonths(new Date(), 6)), []);
+
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function addFiles(next: FileList | null) {
+    if (!next?.length) return;
+    setFiles((prev) => [...prev, ...Array.from(next)]);
+  }
+
+  function removeFile(index: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -173,13 +206,56 @@ export default function VendorOrderForm({ vendorCode, vendor }: Props) {
         }),
       });
 
-      const json = await res.json();
+      const text = await res.text();
+      const json = parseJsonSafe(text);
 
-      if (!res.ok || !json?.ok) {
+      if (!res.ok || !json?.ok || !json?.order?.id) {
         throw new Error(json?.error || "Failed to submit order");
       }
 
-      window.location.href = `/vendors/${vendorCode}/orders/${json.order.id}`;
+      const orderId = json.order.id as string;
+
+      for (const file of files) {
+        setStatus(`Uploading ${file.name}...`);
+
+        const uploadData = new FormData();
+        uploadData.append("file", file);
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadData,
+        });
+
+        const uploadText = await uploadRes.text();
+        const uploadJson = parseJsonSafe(uploadText);
+
+        if (!uploadRes.ok || !uploadJson?.ok || !uploadJson?.key) {
+          throw new Error(uploadJson?.error || `Failed to upload ${file.name}`);
+        }
+
+        const attachRes = await fetch(`/api/orders/${orderId}/documents`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: uploadJson.originalName || file.name,
+            storageKey: uploadJson.key,
+            mimeType: file.type || "application/octet-stream",
+            fileSizeBytes: uploadJson.size ?? file.size,
+            documentType: "OTHER",
+            visibility: "INTERNAL",
+            notes: "Uploaded during vendor order creation",
+          }),
+        });
+
+        const attachText = await attachRes.text();
+        const attachJson = parseJsonSafe(attachText);
+
+        if (!attachRes.ok || !attachJson?.ok) {
+          throw new Error(attachJson?.error || `Failed to attach ${file.name}`);
+        }
+      }
+
+      window.location.href = `/vendors/${vendorCode}/orders/${orderId}`;
     } catch (error: any) {
       setStatus(error?.message || "Failed to submit order");
       setSubmitting(false);
@@ -304,41 +380,19 @@ export default function VendorOrderForm({ vendorCode, vendor }: Props) {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 16 }}>
           <Field label="Primary Borrower Name">
-            <input
-              style={inputStyle}
-              value={form.primaryBorrowerName}
-              onChange={(e) => update("primaryBorrowerName", e.target.value)}
-              placeholder="Full borrower name"
-              required
-            />
+            <input style={inputStyle} value={form.primaryBorrowerName} onChange={(e) => update("primaryBorrowerName", e.target.value)} placeholder="Full borrower name" required />
           </Field>
 
           <Field label="Secondary Borrower Name">
-            <input
-              style={inputStyle}
-              value={form.secondaryBorrowerName}
-              onChange={(e) => update("secondaryBorrowerName", e.target.value)}
-              placeholder="Optional"
-            />
+            <input style={inputStyle} value={form.secondaryBorrowerName} onChange={(e) => update("secondaryBorrowerName", e.target.value)} placeholder="Optional" />
           </Field>
 
           <Field label="Borrower Phone">
-            <input
-              style={inputStyle}
-              value={form.borrowerPhone}
-              onChange={(e) => update("borrowerPhone", e.target.value)}
-              placeholder="Phone number"
-            />
+            <input style={inputStyle} value={form.borrowerPhone} onChange={(e) => update("borrowerPhone", e.target.value)} placeholder="Phone number" />
           </Field>
 
           <Field label="Borrower Email">
-            <input
-              style={inputStyle}
-              type="email"
-              value={form.borrowerEmail}
-              onChange={(e) => update("borrowerEmail", e.target.value)}
-              placeholder="Email address"
-            />
+            <input style={inputStyle} type="email" value={form.borrowerEmail} onChange={(e) => update("borrowerEmail", e.target.value)} placeholder="Email address" />
           </Field>
         </div>
       </section>
@@ -358,41 +412,19 @@ export default function VendorOrderForm({ vendorCode, vendor }: Props) {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 16 }}>
           <Field label="Property Address 1">
-            <input
-              style={inputStyle}
-              value={form.propertyAddress1}
-              onChange={(e) => update("propertyAddress1", e.target.value)}
-              placeholder="Street address"
-              required
-            />
+            <input style={inputStyle} value={form.propertyAddress1} onChange={(e) => update("propertyAddress1", e.target.value)} placeholder="Street address" required />
           </Field>
 
           <Field label="Property Address 2">
-            <input
-              style={inputStyle}
-              value={form.propertyAddress2}
-              onChange={(e) => update("propertyAddress2", e.target.value)}
-              placeholder="Suite, unit, etc."
-            />
+            <input style={inputStyle} value={form.propertyAddress2} onChange={(e) => update("propertyAddress2", e.target.value)} placeholder="Suite, unit, etc." />
           </Field>
 
           <Field label="City">
-            <input
-              style={inputStyle}
-              value={form.propertyCity}
-              onChange={(e) => update("propertyCity", e.target.value)}
-              placeholder="City"
-              required
-            />
+            <input style={inputStyle} value={form.propertyCity} onChange={(e) => update("propertyCity", e.target.value)} placeholder="City" required />
           </Field>
 
           <Field label="State">
-            <select
-              style={inputStyle}
-              value={form.propertyState}
-              onChange={(e) => update("propertyState", e.target.value)}
-              required
-            >
+            <select style={inputStyle} value={form.propertyState} onChange={(e) => update("propertyState", e.target.value)} required>
               {US_STATE_OPTIONS.map((state) => (
                 <option key={state || "blank-state"} value={state}>
                   {state || "Select state"}
@@ -402,21 +434,15 @@ export default function VendorOrderForm({ vendorCode, vendor }: Props) {
           </Field>
 
           <Field label="ZIP">
-            <input
-              style={inputStyle}
-              value={form.propertyZip}
-              onChange={(e) => update("propertyZip", e.target.value)}
-              placeholder="ZIP code"
-              required
-            />
+            <input style={inputStyle} value={form.propertyZip} onChange={(e) => update("propertyZip", e.target.value)} placeholder="ZIP code" required />
           </Field>
 
           <Field label="Signing Date">
             <input
               style={inputStyle}
               type="date"
-              min={formatDateInput(new Date())}
-              max={formatDateInput(addMonths(new Date(), 6))}
+              min={minDate}
+              max={maxDate}
               value={form.signingDate}
               onChange={(e) => update("signingDate", e.target.value)}
               required
@@ -424,12 +450,7 @@ export default function VendorOrderForm({ vendorCode, vendor }: Props) {
           </Field>
 
           <Field label="Signing Time">
-            <select
-              style={inputStyle}
-              value={form.signingTimeLabel}
-              onChange={(e) => update("signingTimeLabel", e.target.value)}
-              required
-            >
+            <select style={inputStyle} value={form.signingTimeLabel} onChange={(e) => update("signingTimeLabel", e.target.value)} required>
               <option value="">Select signing time</option>
               {TIME_OPTIONS.map((time) => (
                 <option key={time} value={time}>
@@ -440,14 +461,7 @@ export default function VendorOrderForm({ vendorCode, vendor }: Props) {
           </Field>
 
           <Field label="Estimated Pages">
-            <input
-              style={inputStyle}
-              type="number"
-              min="0"
-              value={form.estimatedPages}
-              onChange={(e) => update("estimatedPages", e.target.value)}
-              placeholder="Page count"
-            />
+            <input style={inputStyle} type="number" min="0" value={form.estimatedPages} onChange={(e) => update("estimatedPages", e.target.value)} placeholder="Page count" />
           </Field>
         </div>
       </section>
@@ -467,11 +481,7 @@ export default function VendorOrderForm({ vendorCode, vendor }: Props) {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 16 }}>
           <Field label="Paper Size">
-            <select
-              style={inputStyle}
-              value={form.paperSize}
-              onChange={(e) => update("paperSize", e.target.value)}
-            >
+            <select style={inputStyle} value={form.paperSize} onChange={(e) => update("paperSize", e.target.value)}>
               {PAPER_SIZE_OPTIONS.map((size) => (
                 <option key={size || "blank-paper"} value={size}>
                   {size || "Select paper size"}
@@ -481,11 +491,7 @@ export default function VendorOrderForm({ vendorCode, vendor }: Props) {
           </Field>
 
           <Field label="Preferred Ink">
-            <select
-              style={inputStyle}
-              value={form.preferredInk}
-              onChange={(e) => update("preferredInk", e.target.value)}
-            >
+            <select style={inputStyle} value={form.preferredInk} onChange={(e) => update("preferredInk", e.target.value)}>
               {INK_OPTIONS.map((ink) => (
                 <option key={ink || "blank-ink"} value={ink}>
                   {ink || "Select ink preference"}
@@ -495,13 +501,7 @@ export default function VendorOrderForm({ vendorCode, vendor }: Props) {
           </Field>
 
           <Field label="Service Type">
-            <input
-              style={inputStyle}
-              value={form.serviceType}
-              onChange={(e) => update("serviceType", e.target.value)}
-              placeholder="Purchase, Refinance, Seller Package, etc."
-              required
-            />
+            <input style={inputStyle} value={form.serviceType} onChange={(e) => update("serviceType", e.target.value)} placeholder="Purchase, Refinance, Seller Package, etc." required />
           </Field>
 
           <Field label="RON">
@@ -513,12 +513,7 @@ export default function VendorOrderForm({ vendorCode, vendor }: Props) {
                 gap: 10,
               }}
             >
-              <input
-                id="vendor-ron"
-                type="checkbox"
-                checked={form.isRON}
-                onChange={(e) => update("isRON", e.target.checked)}
-              />
+              <input id="vendor-ron" type="checkbox" checked={form.isRON} onChange={(e) => update("isRON", e.target.checked)} />
               <label htmlFor="vendor-ron" style={{ fontWeight: 700 }}>
                 Remote Online Notarization
               </label>
@@ -569,16 +564,87 @@ export default function VendorOrderForm({ vendorCode, vendor }: Props) {
           </Field>
 
           <Field label="Payment Method">
-            <input
-              style={inputStyle}
-              value={form.paymentMethod}
-              readOnly
-            />
+            <input style={inputStyle} value={form.paymentMethod} readOnly />
           </Field>
         </div>
 
         <div style={{ marginTop: 12, color: "#475569", fontWeight: 600 }}>
           VendorPay is the current payment path for vendor-submitted orders.
+        </div>
+      </section>
+
+      <section
+        style={{
+          background: "#fff",
+          border: "1px solid #E5E7EB",
+          borderRadius: 16,
+          padding: 24,
+          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
+        }}
+      >
+        <h2 style={{ marginTop: 0, marginBottom: 18, color: "#0F172A" }}>
+          Documents
+        </h2>
+
+        <div
+          style={{
+            border: "1px solid #E5E7EB",
+            borderRadius: 14,
+            background: "#F8FAFC",
+            padding: 16,
+          }}
+        >
+          <input
+            type="file"
+            multiple
+            accept=".pdf,application/pdf"
+            onChange={(e) => addFiles(e.target.files)}
+          />
+
+          {files.length > 0 ? (
+            <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
+              {files.map((file, index) => (
+                <div
+                  key={`${file.name}-${file.size}-${index}`}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 12,
+                    border: "1px solid #E5E7EB",
+                    borderRadius: 10,
+                    padding: 12,
+                    background: "#fff",
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 800, color: "#0F172A" }}>{file.name}</div>
+                    <div style={{ color: "#475569", marginTop: 4 }}>{formatBytes(file.size)}</div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => removeFile(index)}
+                    style={{
+                      border: "1px solid #CBD5E1",
+                      borderRadius: 10,
+                      padding: "8px 12px",
+                      background: "#fff",
+                      color: "#0F172A",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ marginTop: 12, color: "#475569", fontWeight: 600 }}>
+              No documents selected yet.
+            </div>
+          )}
         </div>
       </section>
 
