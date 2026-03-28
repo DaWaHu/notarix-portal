@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import type { IntakeStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -25,11 +26,15 @@ function normalizeDbStatus(status: string) {
   return normalized;
 }
 
-function mapUiStatusToDb(status: string) {
+function mapUiStatusToDb(status: string): IntakeStatus {
   const normalized = String(status || "").toUpperCase();
+
   if (normalized === "REVIEW") return "REVIEWING";
   if (normalized === "ARCHIVED") return "CLOSED";
-  return normalized;
+  if (normalized === "APPROVED") return "APPROVED";
+  if (normalized === "NEW") return "NEW";
+
+  return "NEW";
 }
 
 function getStatusLabel(status: string) {
