@@ -4,13 +4,13 @@ export default function AdminNewOrderPage() {
   return (
     <main
       style={{
-        padding: 28,
+        padding: 16,
         minHeight: "100vh",
       }}
     >
       <div
         style={{
-          maxWidth: 1200,
+          maxWidth: 1280,
           margin: "0 auto",
         }}
       >
@@ -18,39 +18,42 @@ export default function AdminNewOrderPage() {
           style={{
             background: "#FFFFFF",
             border: "1px solid #D6DEE8",
-            borderRadius: 20,
-            padding: 32,
-            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)"
+            borderRadius: 16,
+            padding: 20,
+            boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
           }}
         >
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "center",
+              alignItems: "flex-start",
               gap: 12,
               flexWrap: "wrap",
-              marginBottom: 24,
+              marginBottom: 16,
             }}
           >
             <div>
               <h1
                 style={{
                   margin: 0,
-                  fontSize: 40,
-                  lineHeight: 1.1,
-                  fontWeight: 950,
+                  fontSize: 28,
+                  lineHeight: 1.05,
+                  fontWeight: 900,
                   color: "#0F172A",
                 }}
               >
                 Create New Order
               </h1>
+
               <div
                 style={{
-                  marginTop: 8,
+                  marginTop: 6,
                   color: "#475569",
                   fontWeight: 600,
-                  fontSize: 15,
+                  fontSize: 14,
+                  lineHeight: 1.35,
+                  maxWidth: 760,
                 }}
               >
                 Staff order intake form for title companies, law firms, and other approved clients.
@@ -66,8 +69,9 @@ export default function AdminNewOrderPage() {
                 textDecoration: "none",
                 border: "1px solid #CBD5E1",
                 borderRadius: 10,
-                padding: "12px 16px",
+                padding: "10px 14px",
                 fontWeight: 800,
+                fontSize: 14,
                 color: "#0F172A",
                 background: "#fff",
               }}
