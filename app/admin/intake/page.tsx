@@ -899,7 +899,33 @@ export default async function AdminIntakePage({ searchParams }: Props) {
                           }}
                         >
                           <a
-                            href={`mailto:${item.email}`}
+                            href={`mailto:support@notarix.live?subject=${encodeURIComponent(
+                              `Notarix Intake Follow-Up: ${item.fullName}`
+                            )}&body=${encodeURIComponent(
+                              `Hello ${item.fullName},
+
+This is a follow-up regarding your Notarix intake submission.
+
+Name: ${item.fullName}
+Email: ${item.email || "N/A"}
+Phone: ${item.phone ? formatPhone(item.phone) : "N/A"}
+Status: ${getStatusLabel(item.status)}
+
+Request Type: ${"requestType" in details ? String(details.requestType || "N/A") : "N/A"
+                              }
+Contact Type: ${"contactType" in details ? String(details.contactType || "N/A") : "N/A"
+                              }
+Company: ${"company" in details ? String(details.company || "N/A") : "N/A"
+                              }
+Coverage Area: ${"coverageArea" in details ? String(details.coverageArea || "N/A") : "N/A"
+                              }
+
+Original message:
+${item.message || "No message provided."}
+
+Best,
+Notarix`
+                            )}`}
                             style={{
                               textDecoration: "none",
                               display: "inline-flex",
@@ -907,7 +933,7 @@ export default async function AdminIntakePage({ searchParams }: Props) {
                               justifyContent: "center",
                               borderRadius: 14,
                               padding: "12px 16px",
-                              background: "#0F172A",
+                              background: "#162033",
                               color: "#FFFFFF",
                               fontSize: 14,
                               fontWeight: 800,
