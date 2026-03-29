@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 import type { IntakeStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -127,33 +128,36 @@ function getStatusPillStyle(status: string): React.CSSProperties {
   }
 }
 
-function getRolePillStyle(role: string): React.CSSProperties {
-  switch (String(role || "").toUpperCase()) {
-    case "CLIENT":
-      return {
-        border: "1px solid #BFDBFE",
-        background: "#EFF6FF",
-        color: "#1D4ED8",
-      };
-    case "NOTARY":
-      return {
-        border: "1px solid #C7D2FE",
-        background: "#EEF2FF",
-        color: "#4338CA",
-      };
-    case "GENERAL":
-      return {
-        border: "1px solid #CBD5E1",
-        background: "#F8FAFC",
-        color: "#475569",
-      };
-    default:
-      return {
-        border: "1px solid #CBD5E1",
-        background: "#F8FAFC",
-        color: "#475569",
-      };
+function extractStateCode(details: Record<string, unknown>) {
+  const rawCoverage = String(details.coverageArea || "").trim().toUpperCase();
+  const directMatch = rawCoverage.match(/\b([A-Z]{2})\b/);
+  if (directMatch) return directMatch[1];
+
+  const lettersOnly = rawCoverage.replace(/[^A-Z]/g, "");
+  if (lettersOnly.length >= 2) return lettersOnly.slice(0, 2);
+
+  return "NC";
+}
+
+async function generateClientCode(stateCode: string) {
+  const yy = String(new Date().getFullYear()).slice(-2);
+  const suffix = stateCode.slice(0, 2).toUpperCase();
+
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    const middle = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+    const vendorCode = `${yy}${middle}${suffix}`;
+
+    const existing = await prisma.vendor.findUnique({
+      where: { vendorcode: vendorCode },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      return vendorCode;
+    }
   }
+
+  throw new Error("Unable to generate a unique client code.");
 }
 
 async function updateIntakeStatus(formData: FormData) {
@@ -163,12 +167,109 @@ async function updateIntakeStatus(formData: FormData) {
   const nextStatus = String(formData.get("status") || "").toUpperCase();
 
   if (!id) return;
-  if (!["REVIEW", "APPROVED", "ARCHIVED"].includes(nextStatus)) return;
+  if (!["REVIEW", "ARCHIVED"].includes(nextStatus)) return;
 
   await prisma.intakeSubmission.update({
     where: { id },
     data: {
       status: mapUiStatusToDb(nextStatus),
+    },
+  });
+
+  revalidatePath("/admin/intake");
+}
+
+async function approveIntakeAndCreateProfile(formData: FormData) {
+  "use server";
+
+  const id = String(formData.get("id") || "");
+  if (!id) return;
+
+  const submission = await prisma.intakeSubmission.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      role: true,
+      fullName: true,
+      email: true,
+      phone: true,
+      status: true,
+      details: true,
+      vendor: {
+        select: {
+          id: true,
+          vendorcode: true,
+        },
+      },
+    },
+  });
+
+  if (!submission) {
+    throw new Error("Intake submission not found.");
+  }
+
+  const details = getDetailsObject(submission.details);
+
+  if (submission.vendor?.vendorcode) {
+    await prisma.intakeSubmission.update({
+      where: { id: submission.id },
+      data: { status: "APPROVED" },
+    });
+
+    revalidatePath("/admin/intake");
+    revalidatePath("/admin/vendors");
+    revalidatePath(`/vendors/${submission.vendor.vendorcode}`);
+    redirect(`/vendors/${submission.vendor.vendorcode}`);
+  }
+
+  const role = String(submission.role || "").toUpperCase();
+
+  if (role === "CLIENT" || role === "VENDOR") {
+    const stateCode = extractStateCode(details);
+    const vendorCode = await generateClientCode(stateCode);
+
+    const companyName =
+      String(details.company || "").trim() || submission.fullName;
+
+    const companyType =
+      String(details.contactType || "").trim() || "Client Organization";
+
+    const created = await prisma.vendor.create({
+      data: {
+        vendorcode: vendorCode,
+        companyName,
+        companyType,
+        primaryPhone: submission.phone || null,
+        primaryContactName: submission.fullName || null,
+        primaryContactEmail: submission.email || null,
+        primaryContactPhone: submission.phone || null,
+        approvalStatus: "PENDING",
+        profilePageCreated: true,
+        intakeSubmissionId: submission.id,
+      },
+      select: {
+        vendorcode: true,
+      },
+    });
+
+    await prisma.intakeSubmission.update({
+      where: { id: submission.id },
+      data: {
+        status: "APPROVED",
+      },
+    });
+
+    revalidatePath("/admin/intake");
+    revalidatePath("/admin/vendors");
+    revalidatePath(`/vendors/${created.vendorcode}`);
+
+    redirect(`/vendors/${created.vendorcode}`);
+  }
+
+  await prisma.intakeSubmission.update({
+    where: { id: submission.id },
+    data: {
+      status: "APPROVED",
     },
   });
 
@@ -276,10 +377,10 @@ function QueueMetric({
 }) {
   const style =
     tone === "blue"
-      ? { border: "1px solid #BFDBFE", background: "#EFF6FF", color: "#1D4ED8" }
+      ? { border: "1px solid #D7E4FA", background: "#F3F7FD", color: "#3156B8" }
       : tone === "amber"
-        ? { border: "1px solid #FCD34D", background: "#FFFBEB", color: "#B45309" }
-        : { border: "1px solid #CBD5E1", background: "#F8FAFC", color: "#475569" };
+        ? { border: "1px solid #E8D79D", background: "#FCF8EC", color: "#9A5A18" }
+        : { border: "1px solid #E3E8EF", background: "#F7F9FC", color: "#566375" };
 
   return (
     <div
@@ -324,8 +425,8 @@ function DetailCard({
   return (
     <div
       style={{
-        border: "1px solid #E2E8F0",
-        background: "#F8FAFC",
+        border: "1px solid #E7EDF5",
+        background: "#F6F8FB",
         borderRadius: 18,
         padding: "16px 16px",
       }}
@@ -358,11 +459,13 @@ function DetailCard({
 }
 
 function ActionFormButton({
+  action,
   id,
   status,
   label,
   style,
 }: {
+  action: (formData: FormData) => Promise<void>;
   id: string;
   status: "REVIEW" | "APPROVED" | "ARCHIVED";
   label: string;
@@ -373,7 +476,7 @@ function ActionFormButton({
   };
 }) {
   return (
-    <form action={updateIntakeStatus}>
+    <form action={action}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="status" value={status} />
       <button
@@ -402,6 +505,14 @@ export default async function AdminIntakePage({ searchParams }: Props) {
 
   const allSubmissions = await prisma.intakeSubmission.findMany({
     orderBy: { createdAt: "desc" },
+    include: {
+      vendor: {
+        select: {
+          id: true,
+          vendorcode: true,
+        },
+      },
+    },
   });
 
   const submissions = allSubmissions.filter((item) =>
@@ -439,7 +550,7 @@ export default async function AdminIntakePage({ searchParams }: Props) {
             borderRadius: 30,
             border: "1px solid #DBEAFE",
             background:
-              "linear-gradient(135deg, #0F4FD6 0%, #1D4ED8 45%, #1E3A8A 100%)",
+              "linear-gradient(135deg, #2F5FCC 0%, #3E63C9 45%, #314A9F 100%)",
             color: "#FFFFFF",
             boxShadow: "0 16px 34px rgba(49, 74, 159, 0.14)",
           }}
@@ -540,8 +651,8 @@ export default async function AdminIntakePage({ searchParams }: Props) {
         >
           <div
             style={{
-              border: "1px solid #E2E8F0",
-              background: "#F3F6FA",
+              border: "1px solid #E7EDF5",
+              background: "#FCFDFE",
               borderRadius: 24,
               padding: "20px 20px",
               boxShadow: "0 12px 34px rgba(15, 23, 42, 0.05)",
@@ -668,8 +779,8 @@ export default async function AdminIntakePage({ searchParams }: Props) {
           {submissions.length === 0 ? (
             <div
               style={{
-                border: "1px solid #E2E8F0",
-                background: "#F3F6FA",
+                border: "1px solid #E7EDF5",
+                background: "#FCFDFE",
                 borderRadius: 24,
                 padding: "70px 24px",
                 boxShadow: "0 12px 36px rgba(15, 23, 42, 0.05)",
@@ -678,7 +789,7 @@ export default async function AdminIntakePage({ searchParams }: Props) {
               <div
                 style={{
                   border: "1px dashed #CBD5E1",
-                  background: "#F8FAFC",
+                  background: "#F6F8FB",
                   borderRadius: 18,
                   padding: "40px 24px",
                   textAlign: "center",
@@ -726,9 +837,9 @@ export default async function AdminIntakePage({ searchParams }: Props) {
                   >
                     <div
                       style={{
-                        borderBottom: "1px solid #E2E8F0",
+                        borderBottom: "1px solid #94A3B8",
                         background:
-                          "linear-gradient(180deg, #FFFFFF 0%, #F8FBFF 100%)",
+                          "linear-gradient(180deg, #F6F8FB 0%, #EEF3F8 100%)",
                         padding: "22px 24px",
                       }}
                     >
@@ -791,7 +902,6 @@ export default async function AdminIntakePage({ searchParams }: Props) {
                             >
                               {getStatusLabel(item.status)}
                             </span>
-
                           </div>
 
                           <h3
@@ -818,8 +928,8 @@ export default async function AdminIntakePage({ searchParams }: Props) {
                           >
                             <div
                               style={{
-                                border: "1px solid #E2E8F0",
-                                background: "#F8FAFC",
+                                border: "1px solid #E7EDF5",
+                                background: "#F6F8FB",
                                 borderRadius: 18,
                                 padding: "16px 16px",
                               }}
@@ -864,8 +974,8 @@ export default async function AdminIntakePage({ searchParams }: Props) {
 
                             <div
                               style={{
-                                border: "1px solid #E2E8F0",
-                                background: "#F8FAFC",
+                                border: "1px solid #E7EDF5",
+                                background: "#F6F8FB",
                                 borderRadius: 18,
                                 padding: "16px 16px",
                               }}
@@ -916,14 +1026,10 @@ Email: ${item.email || "N/A"}
 Phone: ${item.phone ? formatPhone(item.phone) : "N/A"}
 Status: ${getStatusLabel(item.status)}
 
-Request Type: ${"requestType" in details ? String(details.requestType || "N/A") : "N/A"
-                              }
-Contact Type: ${"contactType" in details ? String(details.contactType || "N/A") : "N/A"
-                              }
-Company: ${"company" in details ? String(details.company || "N/A") : "N/A"
-                              }
-Coverage Area: ${"coverageArea" in details ? String(details.coverageArea || "N/A") : "N/A"
-                              }
+Request Type: ${"requestType" in details ? String(details.requestType || "N/A") : "N/A"}
+Contact Type: ${"contactType" in details ? String(details.contactType || "N/A") : "N/A"}
+Company: ${"company" in details ? String(details.company || "N/A") : "N/A"}
+Coverage Area: ${"coverageArea" in details ? String(details.coverageArea || "N/A") : "N/A"}
 
 Original message:
 ${item.message || "No message provided."}
@@ -949,6 +1055,7 @@ Notarix`
 
                           {normalizedStatus === "NEW" ? (
                             <ActionFormButton
+                              action={updateIntakeStatus}
                               id={item.id}
                               status="REVIEW"
                               label="Review"
@@ -962,6 +1069,7 @@ Notarix`
 
                           {normalizedStatus !== "APPROVED" && normalizedStatus !== "ARCHIVED" ? (
                             <ActionFormButton
+                              action={approveIntakeAndCreateProfile}
                               id={item.id}
                               status="APPROVED"
                               label="Approve"
@@ -973,8 +1081,30 @@ Notarix`
                             />
                           ) : null}
 
+                          {normalizedStatus === "APPROVED" && item.vendor?.vendorcode ? (
+                            <Link
+                              href={`/vendors/${item.vendor.vendorcode}`}
+                              style={{
+                                textDecoration: "none",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                borderRadius: 14,
+                                padding: "12px 16px",
+                                border: "1px solid #BFDBFE",
+                                background: "#EFF6FF",
+                                color: "#1D4ED8",
+                                fontSize: 14,
+                                fontWeight: 800,
+                              }}
+                            >
+                              Open Client Portal
+                            </Link>
+                          ) : null}
+
                           {normalizedStatus !== "ARCHIVED" ? (
                             <ActionFormButton
+                              action={updateIntakeStatus}
                               id={item.id}
                               status="ARCHIVED"
                               label="Archive"
@@ -997,7 +1127,7 @@ Notarix`
                     >
                       <div
                         style={{
-                          borderRight: "1px solid #E2E8F0",
+                          borderRight: "1px solid #94A3B8",
                           background: "#F3F6FA",
                           padding: "22px 24px",
                         }}
@@ -1057,7 +1187,7 @@ Notarix`
 
                       <div
                         style={{
-                          background: "#F8FAFC",
+                          background: "#EEF3F8",
                           padding: "22px 24px",
                         }}
                       >
@@ -1078,8 +1208,8 @@ Notarix`
                             marginTop: 16,
                             minHeight: 220,
                             borderRadius: 18,
-                            border: "1px solid #E2E8F0",
-                            background: "#F3F6FA",
+                            border: "1px solid #E7EDF5",
+                            background: "#F9FBFD",
                             padding: "18px 18px",
                             fontSize: 14,
                             lineHeight: 1.8,

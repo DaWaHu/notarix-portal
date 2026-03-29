@@ -53,12 +53,8 @@ async function createVendor(formData: FormData) {
 
   if (!vendorCodePattern.test(vendorCode)) {
     throw new Error(
-      "Vendor code must use format YYVVVVST, for example 265000NC."
+      "Client code must use format YYVVVVST, for example 265000NC."
     );
-  }
-
-  if (!vendorCode) {
-    throw new Error("Vendor code is required.");
   }
 
   const existingVendor = await prisma.vendor.findUnique({
@@ -67,7 +63,7 @@ async function createVendor(formData: FormData) {
   });
 
   if (existingVendor) {
-    throw new Error("That vendor code already exists.");
+    throw new Error("That client code already exists.");
   }
 
   await prisma.vendor.create({
@@ -75,23 +71,26 @@ async function createVendor(formData: FormData) {
       companyType: companyType || null,
       companyName,
       vendorcode: vendorCode,
+      companyLogoUrl: logoUrl || null,
       primaryContactName: primaryContactName || null,
       primaryContactEmail: primaryContactEmail || null,
       primaryContactPhone: primaryContactPhone || null,
       secondaryContactName: secondaryContactName || null,
       secondaryContactEmail: secondaryContactEmail || null,
       secondaryContactPhone: secondaryContactPhone || null,
+      approvalStatus: "APPROVED",
+      profilePageCreated: true,
     },
   });
 
   revalidatePath("/admin");
-  revalidatePath("/admin/orders");
+  revalidatePath("/admin/vendors");
   revalidatePath("/vendors");
 
   redirect("/admin/vendors");
 }
 
-export default function AdminCreateVendorPage() {
+export default function AdminCreateClientPage() {
   return (
     <main
       style={{
@@ -129,7 +128,7 @@ export default function AdminCreateVendorPage() {
                   color: "#0F172A",
                 }}
               >
-                Create Vendor
+                Create Client
               </h1>
               <div
                 style={{
@@ -159,7 +158,7 @@ export default function AdminCreateVendorPage() {
                 background: "#fff",
               }}
             >
-              Back to Vendors
+              Back to Clients
             </a>
           </div>
 
@@ -206,11 +205,11 @@ export default function AdminCreateVendorPage() {
                   />
                 </Field>
 
-                <Field label="Vendor Code">
+                <Field label="Client Code">
                   <input
                     name="vendorCode"
                     style={inputStyle}
-                    placeholder="Example: 2601AB010"
+                    placeholder="Example: 265000NC"
                     required
                   />
                 </Field>
@@ -334,7 +333,7 @@ export default function AdminCreateVendorPage() {
                   cursor: "pointer",
                 }}
               >
-                Create Vendor
+                Create Client
               </button>
 
               <a

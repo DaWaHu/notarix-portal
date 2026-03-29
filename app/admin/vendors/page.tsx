@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminVendorsPage() {
+export default async function AdminClientsPage() {
   const vendors = await prisma.vendor.findMany({
     orderBy: { createdAt: "desc" },
     select: {
@@ -12,62 +12,135 @@ export default async function AdminVendorsPage() {
       primaryContactName: true,
       primaryContactEmail: true,
       createdAt: true,
+      approvalStatus: true,
     },
     take: 200,
   });
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Vendors</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            This is the list of vendor profiles saved in the system.
-          </p>
-        </div>
-
-        <a
-          href="/admin/vendors/new"
-          className="rounded bg-black px-4 py-2 text-sm font-medium text-white"
+    <main
+      style={{
+        minHeight: "100vh",
+        padding: 28,
+      }}
+    >
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <div
+          style={{
+            background: "#FFFFFF",
+            border: "1px solid #E5E7EB",
+            borderRadius: 16,
+            padding: 28,
+            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+          }}
         >
-          + Create Vendor
-        </a>
-      </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 16,
+              flexWrap: "wrap",
+              marginBottom: 24,
+            }}
+          >
+            <div>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: 40,
+                  lineHeight: 1.05,
+                  fontWeight: 950,
+                  color: "#0F172A",
+                }}
+              >
+                Clients
+              </h1>
+              <div
+                style={{
+                  marginTop: 8,
+                  color: "#475569",
+                  fontWeight: 600,
+                  fontSize: 15,
+                }}
+              >
+                Client organization profiles saved in the system.
+              </div>
+            </div>
 
-      <div className="mt-6 overflow-hidden rounded-lg border">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50">
-            <tr className="text-gray-700">
-              <th className="px-4 py-3">Vendor Code</th>
-              <th className="px-4 py-3">Company</th>
-              <th className="px-4 py-3">Primary Contact</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {vendors.length === 0 ? (
-              <tr>
-                <td className="px-4 py-4 text-gray-600" colSpan={5}>
-                  No vendors found yet. Click “Create Vendor” to add one.
-                </td>
-              </tr>
-            ) : (
-              vendors.map((v: any) => (
-                <tr key={v.id} className="border-t">
-                  <td className="px-4 py-3 font-mono">{v.vendorcode}</td>
-                  <td className="px-4 py-3">{v.companyName}</td>
-                  <td className="px-4 py-3">{v.primaryContactName}</td>
-                  <td className="px-4 py-3">{v.primaryContactEmail}</td>
-                  <td className="px-4 py-3">
-                    {new Date(v.createdAt).toLocaleString()}
-                  </td>
+            <a
+              href="/admin/vendors/new"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textDecoration: "none",
+                borderRadius: 10,
+                padding: "12px 16px",
+                background: "#1D4ED8",
+                color: "#FFFFFF",
+                fontWeight: 900,
+              }}
+            >
+              + Create Client
+            </a>
+          </div>
+
+          <div
+            style={{
+              overflow: "hidden",
+              borderRadius: 14,
+              border: "1px solid #E5E7EB",
+              background: "#FFFFFF",
+            }}
+          >
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+              <thead style={{ background: "#F8FAFC" }}>
+                <tr style={{ color: "#334155", textAlign: "left" }}>
+                  <th style={{ padding: "14px 16px" }}>Client Code</th>
+                  <th style={{ padding: "14px 16px" }}>Company</th>
+                  <th style={{ padding: "14px 16px" }}>Primary Contact</th>
+                  <th style={{ padding: "14px 16px" }}>Email</th>
+                  <th style={{ padding: "14px 16px" }}>Status</th>
+                  <th style={{ padding: "14px 16px" }}>Created</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {vendors.length === 0 ? (
+                  <tr>
+                    <td
+                      style={{ padding: "16px", color: "#64748B" }}
+                      colSpan={6}
+                    >
+                      No client profiles found yet. Click “Create Client” to add one.
+                    </td>
+                  </tr>
+                ) : (
+                  vendors.map((v) => (
+                    <tr key={v.id} style={{ borderTop: "1px solid #E5E7EB" }}>
+                      <td style={{ padding: "14px 16px", fontFamily: "monospace", fontWeight: 800 }}>
+                        <a
+                          href={`/vendors/${v.vendorcode}`}
+                          style={{ color: "#1D4ED8", textDecoration: "underline" }}
+                        >
+                          {v.vendorcode}
+                        </a>
+                      </td>
+                      <td style={{ padding: "14px 16px", fontWeight: 700 }}>{v.companyName}</td>
+                      <td style={{ padding: "14px 16px" }}>{v.primaryContactName || "—"}</td>
+                      <td style={{ padding: "14px 16px" }}>{v.primaryContactEmail || "—"}</td>
+                      <td style={{ padding: "14px 16px" }}>{v.approvalStatus}</td>
+                      <td style={{ padding: "14px 16px" }}>
+                        {new Date(v.createdAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
