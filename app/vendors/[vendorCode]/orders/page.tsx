@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { notFound } from "next/navigation";
 
 type PageProps = {
   params: Promise<{ vendorCode: string }>;
@@ -28,24 +30,26 @@ export default async function VendorOrdersPage({ params }: PageProps) {
     },
   });
 
-  const orders = vendor
-    ? await prisma.vendorOrder.findMany({
-        where: { vendorId: vendor.id },
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          orderNumber: true,
-          primaryBorrowerName: true,
-          propertyAddress1: true,
-          propertyCity: true,
-          propertyState: true,
-          status: true,
-          signingDate: true,
-          signingTimeLabel: true,
-          createdAt: true,
-        },
-      })
-    : [];
+  if (!vendor) {
+    notFound();
+  }
+
+  const orders = await prisma.vendorOrder.findMany({
+    where: { vendorId: vendor.id },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      orderNumber: true,
+      primaryBorrowerName: true,
+      propertyAddress1: true,
+      propertyCity: true,
+      propertyState: true,
+      status: true,
+      signingDate: true,
+      signingTimeLabel: true,
+      createdAt: true,
+    },
+  });
 
   return (
     <main
@@ -65,6 +69,20 @@ export default async function VendorOrdersPage({ params }: PageProps) {
             marginBottom: 20,
           }}
         >
+
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: "#64748B",
+              marginBottom: 6,
+              textTransform: "uppercase",
+              letterSpacing: 0.04,
+            }}
+          >
+            Client Portal
+          </div>
+
           <h1
             style={{
               margin: 0,
@@ -74,7 +92,7 @@ export default async function VendorOrdersPage({ params }: PageProps) {
               color: "#0F172A",
             }}
           >
-            Vendor Orders
+            Client Orders
           </h1>
 
           <div
@@ -85,7 +103,7 @@ export default async function VendorOrdersPage({ params }: PageProps) {
               fontSize: 15,
             }}
           >
-            Order activity for approved client organizations.
+            Order activity for this client organization.
           </div>
         </div>
 
@@ -109,7 +127,7 @@ export default async function VendorOrdersPage({ params }: PageProps) {
                 letterSpacing: 0.4,
               }}
             >
-              Vendor
+              Client
             </div>
             <div
               style={{
@@ -119,12 +137,12 @@ export default async function VendorOrdersPage({ params }: PageProps) {
                 color: "#0F172A",
               }}
             >
-              {vendor?.companyName || vendorCode}
+              {vendor.companyName || vendorCode}
             </div>
           </div>
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <a
+            <Link
               href={`/vendors/${vendorCode}/orders/new`}
               style={{
                 display: "inline-flex",
@@ -140,7 +158,8 @@ export default async function VendorOrdersPage({ params }: PageProps) {
               }}
             >
               New Order
-            </a>
+            </Link>
+
           </div>
         </div>
 
@@ -155,7 +174,7 @@ export default async function VendorOrdersPage({ params }: PageProps) {
               fontWeight: 600,
             }}
           >
-            No orders found for this vendor yet.
+            No orders found for this client yet.
           </div>
         ) : (
           <div
@@ -166,7 +185,7 @@ export default async function VendorOrdersPage({ params }: PageProps) {
             }}
           >
             {orders.map((order) => (
-              <a
+              <Link
                 key={order.id}
                 href={`/vendors/${vendorCode}/orders/${order.id}`}
                 style={{
@@ -254,11 +273,11 @@ export default async function VendorOrdersPage({ params }: PageProps) {
                 >
                   Created: {formatDate(order.createdAt)}
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         )}
       </div>
-    </main>
+    </main >
   );
 }

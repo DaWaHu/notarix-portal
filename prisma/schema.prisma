@@ -110,6 +110,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  notaryCode String? @unique
   email        String  @unique
   passwordHash String?
   firstName    String?
@@ -129,7 +130,7 @@ model User {
   uploadedDocuments   Document[]                 @relation("DocumentUploadedBy")
   createdAppointments Appointment[]              @relation("AppointmentCreatedBy")
   orderStatusChanges  VendorOrderStatusHistory[] @relation("OrderStatusChangedBy")
-
+  orderCommunications VendorOrderCommunication[]
   @@index([email])
 }
 
@@ -273,20 +274,43 @@ model NotaryProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  notaryCode          String?   @unique
   userId              String    @unique
+
+  fullName            String?
+  email               String?
+  phone               String?
+  photoUrl            String?
+
+  address1            String?
+  address2            String?
+  city                String?
+  state               String?
+  zip                 String?
+
   commissionNumber    String?
   commissionState     String?
   commissionExpiresAt DateTime?
+
   isRONApproved       Boolean   @default(false)
   isActive            Boolean   @default(true)
+
   coverageAreas       String?
+  travelRadiusMiles   Int?
+  specialties         String?
+  eoCoverageAmount    String?
+  backgroundCheckDate DateTime?
+  paymentMethod       String?
+  paymentNotes        String?
   notes               String?
 
   user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   assignedOrders VendorOrder[] @relation("OrderAssignedNotary")
+  documents      Document[]
 
   @@index([isActive])
   @@index([commissionState])
+  @@index([state])
 }
 
 model VendorOrder {
@@ -352,6 +376,7 @@ model VendorOrder {
   documents     Document[]
   auditLogs     AuditLog[]
   statusHistory VendorOrderStatusHistory[]
+  communications VendorOrderCommunication[]
 
   @@index([vendorId])
   @@index([clientId])
@@ -378,6 +403,27 @@ model VendorOrderStatusHistory {
   @@index([changedByUserId])
   @@index([createdAt])
   @@index([toStatus])
+}
+
+model VendorOrderCommunication {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  vendorOrderId String
+  authorUserId  String?
+
+  channel       String?
+  direction     String?
+  subject       String?
+  message       String
+
+  vendorOrder   VendorOrder @relation(fields: [vendorOrderId], references: [id], onDelete: Cascade)
+  authorUser    User?       @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
+
+  @@index([vendorOrderId])
+  @@index([authorUserId])
+  @@index([createdAt])
 }
 
 model Appointment {
@@ -419,6 +465,7 @@ model Document {
 
   vendorOrderId String?
   vendorId      String?
+  notaryId      String?
 
   fileName      String
   storageKey    String             @unique
@@ -432,12 +479,14 @@ model Document {
   uploadedAt       DateTime @default(now())
   notes            String?
 
-  vendorOrder    VendorOrder? @relation(fields: [vendorOrderId], references: [id], onDelete: Restrict)
-  vendor         Vendor?      @relation(fields: [vendorId], references: [id], onDelete: Restrict)
-  uploadedByUser User?        @relation("DocumentUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  vendorOrder    VendorOrder?   @relation(fields: [vendorOrderId], references: [id], onDelete: Restrict)
+  vendor         Vendor?        @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  notary         NotaryProfile? @relation(fields: [notaryId], references: [id], onDelete: Restrict)
+  uploadedByUser User?          @relation("DocumentUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
 
   @@index([vendorOrderId])
   @@index([vendorId])
+  @@index([notaryId])
   @@index([documentType])
   @@index([visibility])
   @@index([uploadedByUserId])

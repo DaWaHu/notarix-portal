@@ -114,16 +114,23 @@ export default function AdminLayout({ children }: Props) {
             <Link href="/admin" style={navButtonStyle}>
               Home
             </Link>
+            <Link href="/vendors" style={navButtonStyle}>
+              Client List
+            </Link>
+            <Link href="/admin/vendors/new" style={navButtonStyle}>
+              Create Client
+            </Link>
             <Link href="/admin/orders" style={navButtonStyle}>
               Orders
             </Link>
             <Link href="/admin/orders/new" style={navButtonStyle}>
               Create Order
             </Link>
-            <Link href="/admin/vendors/new" style={navButtonStyle}>
-              Create Vendor
+            <Link href="/" style={navButtonStyle}>
+              Log Off
             </Link>
           </nav>
+
         </div>
       </section>
 

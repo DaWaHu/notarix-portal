@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { formatPhone } from "@/lib/formatPhone";
+import { generateSequentialOrderNumber } from "@/lib/generateOrderNumber";
 
 export const runtime = "nodejs";
 
@@ -32,14 +34,6 @@ function jsonError(message: string, status: number) {
   return NextResponse.json({ ok: false, error: message }, { status });
 }
 
-function makeOrderNumber(date = new Date()) {
-  const yy = String(date.getFullYear()).slice(-2);
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  const random = Math.floor(Math.random() * 9000) + 1000;
-  return `${yy}${mm}${dd}${random}`;
-}
-
 export async function POST(req: Request) {
   try {
     const parsed = bodySchema.safeParse(await req.json());
@@ -62,16 +56,7 @@ export async function POST(req: Request) {
       return jsonError("Vendor not found", 404);
     }
 
-    let orderNumber = makeOrderNumber();
-    for (let i = 0; i < 5; i += 1) {
-      const existing = await prisma.vendorOrder.findUnique({
-        where: { orderNumber },
-        select: { id: true },
-      });
-
-      if (!existing) break;
-      orderNumber = makeOrderNumber();
-    }
+    const orderNumber = await generateSequentialOrderNumber();
 
     const order = await prisma.vendorOrder.create({
       data: {
@@ -79,7 +64,7 @@ export async function POST(req: Request) {
         orderNumber,
         primaryBorrowerName: data.primaryBorrowerName,
         secondaryBorrowerName: data.secondaryBorrowerName ?? undefined,
-        borrowerPhone: data.borrowerPhone ?? undefined,
+        borrowerPhone: formatPhone(data.borrowerPhone) ?? undefined,
         borrowerEmail: data.borrowerEmail ?? undefined,
         propertyAddress1: data.propertyAddress1,
         propertyAddress2: data.propertyAddress2 ?? undefined,

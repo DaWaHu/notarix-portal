@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import OrderDocumentUpload from "./OrderDocumentUpload";
 import OrderStatusPanel from "./components/OrderStatusPanel";
+import OrderCommunicationsPanel from "./components/OrderCommunicationsPanel";
+import OrderSigningDetailsPanel from "./components/OrderSigningDetailsPanel";
+import OrderActivityPanel from "./components/OrderActivityPanel";
 
 function nice(value: string | null | undefined) {
   const v = String(value || "").trim();
@@ -72,7 +75,18 @@ export default async function AdminOrderDetailPage({
           createdAt: true,
         },
       },
-
+      communications: {
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          createdAt: true,
+          channel: true,
+          direction: true,
+          subject: true,
+          message: true,
+        },
+      },
       documents: {
         select: {
           id: true,
@@ -80,6 +94,7 @@ export default async function AdminOrderDetailPage({
           storageKey: true,
           documentType: true,
           visibility: true,
+          createdAt: true,
         },
       },
     },
@@ -125,7 +140,7 @@ export default async function AdminOrderDetailPage({
                 fontWeight: 600,
               }}
             >
-              Review order details, status workflow, and attached documents.
+              Review order details, status workflow, communications, and attached documents.
             </div>
           </div>
 
@@ -166,6 +181,29 @@ export default async function AdminOrderDetailPage({
             }))}
           />
 
+          <OrderCommunicationsPanel
+            orderId={order.id}
+            communications={order.communications.map((item) => ({
+              ...item,
+              createdAt: item.createdAt.toISOString(),
+            }))}
+          />
+
+          <OrderActivityPanel
+            statusHistory={order.statusHistory.map((item) => ({
+              ...item,
+              createdAt: item.createdAt.toISOString(),
+            }))}
+            communications={order.communications.map((item) => ({
+              ...item,
+              createdAt: item.createdAt.toISOString(),
+            }))}
+            documents={order.documents.map((doc) => ({
+              ...doc,
+              createdAt: doc.createdAt.toISOString(),
+            }))}
+          />
+
           <section
             style={{
               background: "#fff",
@@ -178,14 +216,30 @@ export default async function AdminOrderDetailPage({
             <h2 style={{ marginTop: 0, color: "#0F172A" }}>Order Summary</h2>
 
             <div style={{ display: "grid", gap: 10 }}>
-              <div><strong>Order Number:</strong> {nice(order.orderNumber)}</div>
-              <div><strong>Status:</strong> {nice(order.status)}</div>
-              <div><strong>Vendor:</strong> {nice(order.vendor?.companyName)}</div>
-              <div><strong>Vendor Code:</strong> {nice(order.vendor?.vendorcode)}</div>
-              <div><strong>Service Type:</strong> {nice(order.serviceType)}</div>
-              <div><strong>RON:</strong> {order.isRON ? "Yes" : "No"}</div>
-              <div><strong>Created:</strong> {formatDateTime(order.createdAt)}</div>
-              <div><strong>Updated:</strong> {formatDateTime(order.updatedAt)}</div>
+              <div>
+                <strong>Order Number:</strong> {nice(order.orderNumber)}
+              </div>
+              <div>
+                <strong>Status:</strong> {nice(order.status)}
+              </div>
+              <div>
+                <strong>Vendor:</strong> {nice(order.vendor?.companyName)}
+              </div>
+              <div>
+                <strong>Vendor Code:</strong> {nice(order.vendor?.vendorcode)}
+              </div>
+              <div>
+                <strong>Service Type:</strong> {nice(order.serviceType)}
+              </div>
+              <div>
+                <strong>RON:</strong> {order.isRON ? "Yes" : "No"}
+              </div>
+              <div>
+                <strong>Created:</strong> {formatDateTime(order.createdAt)}
+              </div>
+              <div>
+                <strong>Updated:</strong> {formatDateTime(order.updatedAt)}
+              </div>
             </div>
           </section>
 
@@ -201,39 +255,46 @@ export default async function AdminOrderDetailPage({
             <h2 style={{ marginTop: 0, color: "#0F172A" }}>Borrower & Property</h2>
 
             <div style={{ display: "grid", gap: 10 }}>
-              <div><strong>Primary Borrower:</strong> {nice(order.primaryBorrowerName)}</div>
-              <div><strong>Secondary Borrower:</strong> {nice(order.secondaryBorrowerName)}</div>
-              <div><strong>Borrower Phone:</strong> {nice(order.borrowerPhone)}</div>
-              <div><strong>Borrower Email:</strong> {nice(order.borrowerEmail)}</div>
-              <div><strong>Address 1:</strong> {nice(order.propertyAddress1)}</div>
-              <div><strong>Address 2:</strong> {nice(order.propertyAddress2)}</div>
-              <div><strong>City:</strong> {nice(order.propertyCity)}</div>
-              <div><strong>State:</strong> {nice(order.propertyState)}</div>
-              <div><strong>Zip:</strong> {nice(order.propertyZip)}</div>
+              <div>
+                <strong>Primary Borrower:</strong> {nice(order.primaryBorrowerName)}
+              </div>
+              <div>
+                <strong>Secondary Borrower:</strong> {nice(order.secondaryBorrowerName)}
+              </div>
+              <div>
+                <strong>Borrower Phone:</strong> {nice(order.borrowerPhone)}
+              </div>
+              <div>
+                <strong>Borrower Email:</strong> {nice(order.borrowerEmail)}
+              </div>
+              <div>
+                <strong>Address 1:</strong> {nice(order.propertyAddress1)}
+              </div>
+              <div>
+                <strong>Address 2:</strong> {nice(order.propertyAddress2)}
+              </div>
+              <div>
+                <strong>City:</strong> {nice(order.propertyCity)}
+              </div>
+              <div>
+                <strong>State:</strong> {nice(order.propertyState)}
+              </div>
+              <div>
+                <strong>Zip:</strong> {nice(order.propertyZip)}
+              </div>
             </div>
           </section>
 
-          <section
-            style={{
-              background: "#fff",
-              border: "1px solid #E5E7EB",
-              borderRadius: 14,
-              padding: 20,
-              boxShadow: "0 8px 22px rgba(15, 23, 42, 0.05)",
-            }}
-          >
-            <h2 style={{ marginTop: 0, color: "#0F172A" }}>Signing Details</h2>
-
-            <div style={{ display: "grid", gap: 10 }}>
-              <div><strong>Signing Date:</strong> {formatDate(order.signingDate)}</div>
-              <div><strong>Signing Time:</strong> {nice(order.signingTimeLabel)}</div>
-              <div><strong>Estimated Pages:</strong> {order.estimatedPages ?? "—"}</div>
-              <div><strong>Paper Size:</strong> {nice(order.paperSize)}</div>
-              <div><strong>Required Ink:</strong> {nice(order.preferredInk)}</div>
-              <div><strong>Special Instructions:</strong> {nice(order.specialInstructions)}</div>
-              <div><strong>Notes:</strong> {nice(order.notes)}</div>
-            </div>
-          </section>
+          <OrderSigningDetailsPanel
+            orderId={order.id}
+            paperSize={order.paperSize}
+            preferredInk={order.preferredInk}
+            specialInstructions={order.specialInstructions}
+            signingDate={order.signingDate ? order.signingDate.toISOString() : null}
+            signingTimeLabel={order.signingTimeLabel}
+            estimatedPages={order.estimatedPages}
+            notes={order.notes}
+          />
 
           <section
             style={{
@@ -272,9 +333,18 @@ export default async function AdminOrderDetailPage({
                     <div style={{ color: "#475569", marginTop: 4 }}>
                       Visibility: {doc.visibility}
                     </div>
+                    <div style={{ color: "#64748B", marginTop: 4 }}>
+                      Uploaded: {formatDateTime(doc.createdAt)}
+                    </div>
+                    <div style={{ color: "#64748B", marginTop: 4 }}>
+                      Uploaded: {formatDateTime(doc.createdAt)}
+                    </div>
                     <div style={{ marginTop: 10 }}>
                       <a
-                        href={"/api/documents/download?key=" + encodeURIComponent(doc.storageKey)}
+                        href={
+                          "/api/documents/download?key=" +
+                          encodeURIComponent(doc.storageKey)
+                        }
                         style={{
                           color: "#2563EB",
                           fontWeight: 700,
@@ -291,6 +361,6 @@ export default async function AdminOrderDetailPage({
           </section>
         </div>
       </div>
-    </main>
+    </main >
   );
 }

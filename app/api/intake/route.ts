@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { formatPhone } from "@/lib/formatPhone";
 
 export const runtime = "nodejs";
 
@@ -101,13 +102,14 @@ export async function POST(req: Request) {
 
     const normalizedRole = normalizeRole(contactType);
     const normalizedContactType = normalizeDisplayContactType(contactType);
+    const formattedPhone = formatPhone(phone);
 
     const submission = await prisma.intakeSubmission.create({
       data: {
         role: normalizedRole,
         fullName: String(name).trim(),
         email: String(email).trim(),
-        phone: phone ? String(phone).trim() : null,
+        phone: formattedPhone,
         message: message ? String(message).trim() : "",
         status: "NEW",
         details: {
@@ -133,7 +135,7 @@ Created: ${createdAt}
 
 Name: ${name}
 Email: ${email}
-Phone: ${phone || "N/A"}
+Phone: ${formattedPhone || "N/A"}
 Company: ${company || "N/A"}
 Contact Type: ${normalizedContactType}
 Original Contact Type: ${contactType || "N/A"}
@@ -158,7 +160,7 @@ ${message || "No message provided."}
             <tr><td style="padding: 8px; font-weight: 700;">Created</td><td style="padding: 8px;">${createdAt}</td></tr>
             <tr><td style="padding: 8px; font-weight: 700;">Name</td><td style="padding: 8px;">${name}</td></tr>
             <tr><td style="padding: 8px; font-weight: 700;">Email</td><td style="padding: 8px;">${email}</td></tr>
-            <tr><td style="padding: 8px; font-weight: 700;">Phone</td><td style="padding: 8px;">${phone || "N/A"}</td></tr>
+            <tr><td style="padding: 8px; font-weight: 700;">Phone</td><td style="padding: 8px;">${formattedPhone || "N/A"}</td></tr>
             <tr><td style="padding: 8px; font-weight: 700;">Company</td><td style="padding: 8px;">${company || "N/A"}</td></tr>
             <tr><td style="padding: 8px; font-weight: 700;">Contact Type</td><td style="padding: 8px;">${normalizedContactType}</td></tr>
             <tr><td style="padding: 8px; font-weight: 700;">Original Contact Type</td><td style="padding: 8px;">${contactType || "N/A"}</td></tr>

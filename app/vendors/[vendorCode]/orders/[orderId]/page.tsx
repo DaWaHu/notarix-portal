@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import VendorOrderDocumentUpload from "./VendorOrderDocumentUpload";
+import Link from "next/link";
+import { formatPhone } from "@/lib/formatPhone";
 
 function nice(value: string | null | undefined) {
   const v = String(value || "").trim();
@@ -135,7 +137,7 @@ export default async function VendorOrderDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          <a
+          <Link
             href={`/vendors/${vendorCode}/orders`}
             style={{
               display: "inline-flex",
@@ -151,7 +153,7 @@ export default async function VendorOrderDetailPage({ params }: PageProps) {
             }}
           >
             Back to Orders
-          </a>
+          </Link>
         </div>
 
         <div
@@ -175,9 +177,8 @@ export default async function VendorOrderDetailPage({ params }: PageProps) {
             <div style={{ display: "grid", gap: 10 }}>
               <div><strong>Order Number:</strong> {nice(order.orderNumber)}</div>
               <div><strong>Status:</strong> {nice(order.status)}</div>
-              <div><strong>Vendor:</strong> {nice(vendor.companyName)}</div>
-              <div><strong>Vendor Code:</strong> {nice(vendor.vendorcode)}</div>
-              <div><strong>Service Type:</strong> {nice(order.serviceType)}</div>
+              <div><strong>Client:</strong> {nice(vendor.companyName)}</div>
+              <div><strong>Client Code:</strong> {nice(vendor.vendorcode)}</div>              <div><strong>Service Type:</strong> {nice(order.serviceType)}</div>
               <div><strong>RON:</strong> {order.isRON ? "Yes" : "No"}</div>
               <div><strong>Created:</strong> {formatDateTime(order.createdAt)}</div>
               <div><strong>Updated:</strong> {formatDateTime(order.updatedAt)}</div>
@@ -198,7 +199,7 @@ export default async function VendorOrderDetailPage({ params }: PageProps) {
             <div style={{ display: "grid", gap: 10 }}>
               <div><strong>Primary Borrower:</strong> {nice(order.primaryBorrowerName)}</div>
               <div><strong>Secondary Borrower:</strong> {nice(order.secondaryBorrowerName)}</div>
-              <div><strong>Borrower Phone:</strong> {nice(order.borrowerPhone)}</div>
+              <div><strong>Borrower Phone:</strong> {formatPhone(order.borrowerPhone) || "—"}</div>
               <div><strong>Borrower Email:</strong> {nice(order.borrowerEmail)}</div>
               <div><strong>Address 1:</strong> {nice(order.propertyAddress1)}</div>
               <div><strong>Address 2:</strong> {nice(order.propertyAddress2)}</div>

@@ -181,7 +181,7 @@ export default async function AdminOrdersPage() {
                 border: "1px solid #CBD5E1",
               }}
             >
-              + Create Vendor
+              + Create Client
             </a>
 
             <a

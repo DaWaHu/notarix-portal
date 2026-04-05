@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { formatPhone } from "@/lib/formatPhone";
 
 /**
  * This schema matches what your FORM sends from /admin/vendors/new
@@ -60,15 +61,6 @@ export async function POST(req: Request) {
 
     const data = parsed.data;
 
-    /**
-     * IMPORTANT: These field names MUST match your Prisma schema exactly.
-     * From your prisma/schema.prisma Vendor model:
-     * - vendorcode
-     * - companyLogoUrl
-     * - primaryPhone, secondaryPhone
-     * - primaryContactName, primaryContactEmail, primaryContactPhone
-     * - secondaryContactName, secondaryContactEmail, secondaryContactPhone
-     */
     const created = await prisma.vendor.create({
       data: {
         vendorcode: data.vendorCode,
@@ -82,16 +74,16 @@ export async function POST(req: Request) {
         state: data.state || "",
         zip: data.zip || "",
 
-        primaryPhone: data.primaryPhone || "",
-        secondaryPhone: data.secondaryPhone,
+        primaryPhone: formatPhone(data.primaryPhone) || "",
+        secondaryPhone: formatPhone(data.secondaryPhone),
 
         primaryContactName: data.primaryName.trim(),
         primaryContactEmail: data.primaryEmail.trim().toLowerCase(),
-        primaryContactPhone: data.primaryPhone || "",
+        primaryContactPhone: formatPhone(data.primaryPhone) || "",
 
         secondaryContactName: data.secondaryName,
         secondaryContactEmail: data.secondaryEmail ? data.secondaryEmail.trim().toLowerCase() : null,
-        secondaryContactPhone: data.secondaryPhone,
+        secondaryContactPhone: formatPhone(data.secondaryPhone),
 
         // notes is not in Vendor model currently, so we do not store it here yet.
       },
@@ -108,19 +100,18 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (err: any) {
-    // Print the REAL error in your terminal:
     console.error("VENDOR CREATE ERROR:", err);
 
-    // If this is a Prisma error, it often has code/meta:
     const prismaCode = err?.code;
     const prismaMeta = err?.meta;
-
-    // Show more detail in development only:
     const isDev = process.env.NODE_ENV !== "production";
 
-    // Duplicate vendor code unique constraint often shows as P2002
     if (prismaCode === "P2002") {
-      return jsonError("That vendor code already exists. Please use a different vendor code.", 409, isDev ? prismaMeta : undefined);
+      return jsonError(
+        "That vendor code already exists. Please use a different vendor code.",
+        409,
+        isDev ? prismaMeta : undefined
+      );
     }
 
     return jsonError(

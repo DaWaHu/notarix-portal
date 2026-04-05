@@ -1,11 +1,10 @@
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ReactNode } from "react";
+import { prisma } from "@/lib/prisma";
 import { formatPhone } from "@/lib/formatPhone";
 import { generateEntityCode } from "@/lib/generateEntityCode";
-import PhoneInput from "@/app/components/phoneInput";
-import { sendVendorOnboardingEmail } from "@/lib/ses";
+import { sendNotaryOnboardingEmail } from "@/lib/ses";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -19,98 +18,107 @@ const inputStyle: React.CSSProperties = {
   boxSizing: "border-box",
 };
 
-async function createVendor(formData: FormData) {
+async function createNotary(formData: FormData) {
   "use server";
 
-  const companyType = String(formData.get("companyType") || "").trim();
-  const companyName = String(formData.get("companyName") || "").trim();
-  const onboardingState = String(formData.get("onboardingState") || "")
+  const fullName = String(formData.get("fullName") || "").trim();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const phone = formatPhone(String(formData.get("phone") || "").trim());
+
+  const address1 = String(formData.get("address1") || "").trim();
+  const address2 = String(formData.get("address2") || "").trim();
+  const city = String(formData.get("city") || "").trim();
+  const state = String(formData.get("state") || "").trim().toUpperCase();
+  const zip = String(formData.get("zip") || "").trim();
+
+  const commissionNumber = String(formData.get("commissionNumber") || "").trim();
+  const commissionState = String(formData.get("commissionState") || "")
     .trim()
     .toUpperCase();
+  const coverageAreas = String(formData.get("coverageAreas") || "").trim();
+  const notes = String(formData.get("notes") || "").trim();
 
-  const primaryContactName = String(
-    formData.get("primaryContactName") || ""
-  ).trim();
-  const primaryContactEmail = String(
-    formData.get("primaryContactEmail") || ""
-  ).trim();
-  const primaryContactPhone = formatPhone(
-    String(formData.get("primaryContactPhone") || "").trim()
-  );
-
-  const secondaryContactName = String(
-    formData.get("secondaryContactName") || ""
-  ).trim();
-  const secondaryContactEmail = String(
-    formData.get("secondaryContactEmail") || ""
-  ).trim();
-  const secondaryContactPhone = formatPhone(
-    String(formData.get("secondaryContactPhone") || "").trim()
-  );
-
-  if (!companyName) {
-    throw new Error("Company name is required.");
+  if (!fullName) {
+    throw new Error("Full name is required.");
   }
 
-  if (!/^[A-Z]{2}$/.test(onboardingState)) {
-    throw new Error("Primary business state must be a 2-letter state code.");
+  if (!email) {
+    throw new Error("Email is required.");
   }
 
-  const vendorCode = await generateEntityCode({
-    role: "CLIENT",
-    state: onboardingState,
+  if (!/^[A-Z]{2}$/.test(commissionState)) {
+    throw new Error("Commission state must be a 2-letter state code.");
+  }
+
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, notaryProfile: { select: { id: true } } },
   });
 
-  const existingVendor = await prisma.vendor.findUnique({
-    where: { vendorcode: vendorCode },
-    select: { id: true },
-  });
-
-  if (existingVendor) {
-    throw new Error("A generated client code conflict occurred. Please try again.");
+  if (existingUser?.notaryProfile) {
+    throw new Error("A notary profile already exists for that email.");
   }
 
-  await prisma.vendor.create({
+  const notaryCode = await generateEntityCode({
+    role: "NOTARY",
+    state: commissionState,
+  });
+
+  const user =
+    existingUser ||
+    (await prisma.user.create({
+      data: {
+        email,
+        firstName: fullName.split(" ").slice(0, 1).join(" ") || null,
+        lastName: fullName.split(" ").slice(1).join(" ") || null,
+        phone: phone || null,
+        isActive: true,
+      },
+      select: { id: true },
+    }));
+
+  await prisma.notaryProfile.create({
     data: {
-      companyType: companyType || null,
-      companyName,
-      vendorcode: vendorCode,
-      companyLogoUrl: null,
-      state: onboardingState,
-      primaryContactName: primaryContactName || null,
-      primaryContactEmail: primaryContactEmail || null,
-      primaryContactPhone: primaryContactPhone || null,
-      secondaryContactName: secondaryContactName || null,
-      secondaryContactEmail: secondaryContactEmail || null,
-      secondaryContactPhone: secondaryContactPhone || null,
-      approvalStatus: "APPROVED",
-      profilePageCreated: true,
+      userId: user.id,
+      notaryCode,
+      fullName,
+      email,
+      phone: phone || null,
+      address1: address1 || null,
+      address2: address2 || null,
+      city: city || null,
+      state: state || null,
+      zip: zip || null,
+      commissionNumber: commissionNumber || null,
+      commissionState,
+      coverageAreas: coverageAreas || null,
+      notes: notes || null,
+      isActive: true,
+      isRONApproved: false,
     },
   });
 
   const appUrl = process.env.APP_URL || "http://localhost:3000";
-  const profileUrl = `${appUrl}/vendors/${vendorCode}`;
+  const profileUrl = `${appUrl}/notaries/${notaryCode}`;
 
-  if (primaryContactEmail) {
-    try {
-      await sendVendorOnboardingEmail({
-        to: primaryContactEmail,
-        vendorCode,
-        profileUrl,
-      });
-    } catch (error) {
-      console.error("Failed to send client onboarding email", error);
-    }
+  try {
+    await sendNotaryOnboardingEmail({
+      to: email,
+      notaryCode,
+      profileUrl,
+    });
+  } catch (error) {
+    console.error("Failed to send notary onboarding email", error);
   }
 
   revalidatePath("/admin");
-  revalidatePath("/admin/vendors");
-  revalidatePath("/vendors");
+  revalidatePath("/admin/notaries");
+  revalidatePath("/notaries");
 
-  redirect("/admin/vendors");
+  redirect("/admin/notaries");
 }
 
-export default function AdminCreateClientPage() {
+export default function AdminCreateNotaryPage() {
   return (
     <main
       style={{
@@ -148,7 +156,7 @@ export default function AdminCreateClientPage() {
                   color: "#0F172A",
                 }}
               >
-                Create Client
+                Create Notary
               </h1>
               <div
                 style={{
@@ -158,13 +166,12 @@ export default function AdminCreateClientPage() {
                   fontSize: 15,
                 }}
               >
-                Add a new title company, law firm, lender, escrow company, or
-                other approved client organization.
+                Create a notary record with an automatically generated notary code and profile foundation.
               </div>
             </div>
 
             <a
-              href="/admin/vendors"
+              href="/admin"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -178,11 +185,11 @@ export default function AdminCreateClientPage() {
                 background: "#fff",
               }}
             >
-              Back to Clients
+              Back to Admin
             </a>
           </div>
 
-          <form action={createVendor} style={{ display: "grid", gap: 28 }}>
+          <form action={createNotary} style={{ display: "grid", gap: 28 }}>
             <section>
               <div
                 style={{
@@ -192,7 +199,7 @@ export default function AdminCreateClientPage() {
                   marginBottom: 16,
                 }}
               >
-                Company Information
+                Identity
               </div>
 
               <div
@@ -202,189 +209,158 @@ export default function AdminCreateClientPage() {
                   gap: 16,
                 }}
               >
-                <Field label="Company Type">
-                  <select style={inputStyle} name="companyType" defaultValue="">
-                    <option value="" disabled>
-                      Select company type
-                    </option>
-                    <option>Title Company</option>
-                    <option>Law Firm</option>
-                    <option>Lender</option>
-                    <option>Escrow Company</option>
-                    <option>Real Estate Office</option>
-                    <option>Other Client Organization</option>
-                  </select>
-                </Field>
-
-                <Field label="Company Name">
+                <Field label="Full Name">
                   <input
-                    name="companyName"
+                    name="fullName"
                     style={inputStyle}
-                    placeholder="Enter company name"
+                    placeholder="Enter full legal name"
                     required
                   />
                 </Field>
 
-                <Field label="Primary Business State">
+                <Field label="Email">
                   <input
-                    name="onboardingState"
+                    name="email"
+                    type="email"
+                    style={inputStyle}
+                    placeholder="name@email.com"
+                    required
+                  />
+                </Field>
+
+                <Field label="Phone">
+                  <input
+                    name="phone"
+                    style={inputStyle}
+                    placeholder="123-456-7890"
+                  />
+                </Field>
+
+                <div
+                  style={{
+                    border: "1px solid #E2E8F0",
+                    borderRadius: 10,
+                    padding: "12px 14px",
+                    background: "#F8FAFC",
+                    display: "grid",
+                    alignContent: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 800,
+                      color: "#0F172A",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Notary Code
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: "#475569",
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    Generated automatically using the format NYYNNNNST when the record is created.
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <div
+                style={{
+                  fontSize: 20,
+                  fontWeight: 900,
+                  color: "#0F172A",
+                  marginBottom: 16,
+                }}
+              >
+                Address
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: 16,
+                }}
+              >
+                <Field label="Address Line 1">
+                  <input name="address1" style={inputStyle} />
+                </Field>
+
+                <Field label="Address Line 2">
+                  <input name="address2" style={inputStyle} />
+                </Field>
+
+                <Field label="City">
+                  <input name="city" style={inputStyle} />
+                </Field>
+
+                <Field label="State">
+                  <input
+                    name="state"
                     style={inputStyle}
                     placeholder="Example: NC"
+                    maxLength={2}
+                  />
+                </Field>
+
+                <Field label="ZIP Code">
+                  <input name="zip" style={inputStyle} />
+                </Field>
+              </div>
+            </section>
+
+            <section>
+              <div
+                style={{
+                  fontSize: 20,
+                  fontWeight: 900,
+                  color: "#0F172A",
+                  marginBottom: 16,
+                }}
+              >
+                Commission & Coverage
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: 16,
+                }}
+              >
+                <Field label="Commission Number">
+                  <input name="commissionNumber" style={inputStyle} />
+                </Field>
+
+                <Field label="Commission State">
+                  <input
+                    name="commissionState"
+                    style={inputStyle}
+                    placeholder="Example: AZ"
                     maxLength={2}
                     required
                   />
                 </Field>
 
-                <div
-                  style={{
-                    border: "1px solid #E2E8F0",
-                    borderRadius: 10,
-                    padding: "12px 14px",
-                    background: "#F8FAFC",
-                    display: "grid",
-                    alignContent: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 800,
-                      color: "#0F172A",
-                      marginBottom: 6,
-                    }}
-                  >
-                    Client Code
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      color: "#475569",
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    Generated automatically using the format CYYNNNNST when the record is created.
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    border: "1px solid #E2E8F0",
-                    borderRadius: 10,
-                    padding: "12px 14px",
-                    background: "#F8FAFC",
-                    display: "grid",
-                    alignContent: "center",
-                    gridColumn: "span 2",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 800,
-                      color: "#0F172A",
-                      marginBottom: 6,
-                    }}
-                  >
-                    Company Logo
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      color: "#475569",
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    Upload the company logo from the client portal after the client record is created.
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <div
-                style={{
-                  fontSize: 20,
-                  fontWeight: 900,
-                  color: "#0F172A",
-                  marginBottom: 16,
-                }}
-              >
-                Primary Contact
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                  gap: 16,
-                }}
-              >
-                <Field label="Primary Contact Name">
+                <Field label="Coverage Areas">
                   <input
-                    name="primaryContactName"
+                    name="coverageAreas"
                     style={inputStyle}
-                    placeholder="Enter full name"
+                    placeholder="Example: Maricopa County, Pima County"
                   />
                 </Field>
 
-                <Field label="Primary Contact Email">
+                <Field label="Notes">
                   <input
-                    name="primaryContactEmail"
+                    name="notes"
                     style={inputStyle}
-                    placeholder="name@company.com"
-                  />
-                </Field>
-
-                <Field label="Primary Contact Phone">
-                  <PhoneInput
-                    name="primaryContactPhone"
-                    style={inputStyle}
-                    placeholder="123-456-7890"
-                  />
-                </Field>
-              </div>
-            </section>
-
-            <section>
-              <div
-                style={{
-                  fontSize: 20,
-                  fontWeight: 900,
-                  color: "#0F172A",
-                  marginBottom: 16,
-                }}
-              >
-                Secondary Contact
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                  gap: 16,
-                }}
-              >
-                <Field label="Secondary Contact Name">
-                  <input
-                    name="secondaryContactName"
-                    style={inputStyle}
-                    placeholder="Enter full name"
-                  />
-                </Field>
-
-                <Field label="Secondary Contact Email">
-                  <input
-                    name="secondaryContactEmail"
-                    style={inputStyle}
-                    placeholder="name@company.com"
-                  />
-                </Field>
-
-                <Field label="Secondary Contact Phone">
-                  <PhoneInput
-                    name="secondaryContactPhone"
-                    style={inputStyle}
-                    placeholder="123-456-7890"
+                    placeholder="Optional administrative note"
                   />
                 </Field>
               </div>
@@ -409,11 +385,11 @@ export default function AdminCreateClientPage() {
                   cursor: "pointer",
                 }}
               >
-                Create Client
+                Create Notary
               </button>
 
               <a
-                href="/admin/vendors"
+                href="/admin"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",

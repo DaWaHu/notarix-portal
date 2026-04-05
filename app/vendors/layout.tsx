@@ -1,142 +1,205 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
-export default function VendorLayout({
+const PAGE_BG = "#FFFFFF";
+const SHELL_WIDTH = 1180;
+const BODY_WIDTH = 1120;
+const HEADER_BG = "#F3F3F3";
+const HEADER_BORDER = "#D7D7D7";
+const CARD_GRAY = "#F1F1F1";
+const BORDER = "#C7CFDB";
+const PRIMARY_BLUE = "#3B59F4";
+const TEXT_DARK = "#141722";
+const TEXT_MID = "#666666";
+
+export default async function VendorLayout({
   children,
+  params,
 }: {
   children: ReactNode;
+  params: Promise<{ vendorCode?: string }>;
 }) {
+  const resolvedParams = await params;
+  const vendorCode = String(resolvedParams?.vendorCode || "")
+    .trim()
+    .toUpperCase();
+
+  const homeHref = vendorCode ? `/vendors/${vendorCode}` : "/";
+  const clientListHref = "/vendors";
+  const createClientHref = "/admin/vendors/new";
+  const ordersHref = vendorCode ? `/vendors/${vendorCode}/orders` : "/vendors/orders";
+  const createOrderHref = vendorCode
+    ? `/vendors/${vendorCode}/orders/new`
+    : "/vendors/orders/new";
+
   return (
     <div
       style={{
         minHeight: "100vh",
-        background:
-          "linear-gradient(180deg, #EFF4FF 0%, #F8FAFC 46%, #FFFFFF 100%)",
+        background: PAGE_BG,
         fontFamily:
-          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-        color: "#0F172A",
+          'Inter, "Open Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        color: TEXT_DARK,
       }}
     >
-      <section
+      <div
         style={{
-          maxWidth: 1280,
+          maxWidth: SHELL_WIDTH,
           margin: "0 auto",
-          padding: "16px 18px 10px",
+          padding: "8px 10px 0",
+          boxSizing: "border-box",
         }}
       >
-        <div
-          style={{
-            background: "#FFFFFF",
-            border: "1px solid #DBEAFE",
-            borderRadius: 20,
-            padding: "14px 18px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 14,
-            flexWrap: "wrap",
-            boxShadow: "0 10px 28px rgba(30, 64, 175, 0.08)",
-          }}
-        >
+        <header>
           <div
             style={{
+              background: HEADER_BG,
+              border: `1px solid ${HEADER_BORDER}`,
+              borderRadius: 18,
+              padding: "6px 8px",
               display: "flex",
               alignItems: "center",
-              gap: 14,
-              minWidth: 0,
+              justifyContent: "space-between",
+              gap: 20,
+              flexWrap: "wrap",
+              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
             }}
           >
             <div
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 12,
-                background: "#FFFFFF",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                boxShadow: "0 4px 14px rgba(15, 23, 42, 0.10)",
-                flexShrink: 0,
+                gap: 18,
+                minWidth: 0,
               }}
             >
-              <Image
-                src="/notarix-logo.png"
-                alt="Notarix™"
-                width={28}
-                height={28}
-                style={{
-                  width: 28,
-                  height: 28,
-                  objectFit: "contain",
-                  display: "block",
-                }}
-              />
-            </div>
-
-            <div style={{ minWidth: 0 }}>
               <div
                 style={{
-                  fontWeight: 950,
-                  fontSize: 20,
-                  lineHeight: 1.05,
-                  letterSpacing: -0.2,
-                  color: "#1E3A8A",
+                  width: 120,
+                  height: 120,
+                  borderRadius: 22,
+                  background: "#FFFFFF",
+                  border: `1px solid ${HEADER_BORDER}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
+                  flexShrink: 0,
                 }}
               >
-                Notarix Client Portal
+                <Image
+                  src="/notarix-logo.png"
+                  alt="Notarix™"
+                  width={76}
+                  height={76}
+                  style={{
+                    width: 76,
+                    height: 76,
+                    objectFit: "contain",
+                    display: "block",
+                  }}
+                  priority
+                />
               </div>
 
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "#64748B",
-                  fontWeight: 700,
-                  lineHeight: 1.25,
-                  marginTop: 2,
-                }}
-              >
-                Approved client workspace
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontWeight: 950,
+                    fontSize: 16,
+                    lineHeight: 1.1,
+                    letterSpacing: -0.3,
+                    color: "#333333",
+                  }}
+                >
+                  Notarix™
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: TEXT_MID,
+                    fontWeight: 600,
+                    lineHeight: 1.3,
+                    marginTop: 8,
+                  }}
+                >
+                  Professional Signing Coordination Platform
+                </div>
               </div>
             </div>
+
+            <nav
+              aria-label="Client portal navigation"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <Link href={homeHref} style={primaryLinkStyle}>
+                Home
+              </Link>
+              <Link href={clientListHref} style={primaryLinkStyle}>
+                Client List
+              </Link>
+              <Link href={createClientHref} style={primaryLinkStyle}>
+                Create Client
+              </Link>
+              <Link href={ordersHref} style={primaryLinkStyle}>
+                Orders
+              </Link>
+              <Link href={createOrderHref} style={primaryLinkStyle}>
+                Create Order
+              </Link>
+              <Link href="/" style={primaryLinkStyle}>
+                Log Off
+              </Link>
+            </nav>
           </div>
+        </header>
+      </div>
 
-          <nav
-            aria-label="Client portal navigation"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              flexWrap: "wrap",
-            }}
-          >
-            <Link href="/" style={navButtonStyle}>
-              Home
-            </Link>
-            <Link href="/vendors" style={navButtonStyle}>
-              Clients
-            </Link>
-          </nav>
+      <main
+        style={{
+          maxWidth: BODY_WIDTH,
+          margin: "0 auto",
+          padding: "22px 20px 28px",
+          boxSizing: "border-box",
+        }}
+      >
+        <div
+          style={{
+            background: CARD_GRAY,
+            border: `1px solid ${BORDER}`,
+            borderRadius: 24,
+            padding: "22px 22px 24px",
+            boxShadow: "0 1px 2px rgba(20, 23, 34, 0.03)",
+          }}
+        >
+          {children}
         </div>
-      </section>
-
-      <div>{children}</div>
+      </main>
     </div>
   );
 }
 
-const navButtonStyle: React.CSSProperties = {
+const primaryLinkStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   textDecoration: "none",
-  background: "#1D4ED8",
-  color: "#FFFFFF",
   borderRadius: 12,
-  padding: "10px 14px",
-  fontWeight: 900,
-  fontSize: 14,
-  lineHeight: 1,
-  boxShadow: "0 8px 18px rgba(29, 78, 216, 0.14)",
+  padding: "10px 16px",
+  background: PRIMARY_BLUE,
+  color: "#FFFFFF",
+  fontSize: 15,
+  fontWeight: 700,
+  lineHeight: 1.3,
+  boxShadow: "0 6px 14px rgba(59, 89, 244, 0.18)",
+  whiteSpace: "nowrap",
 };

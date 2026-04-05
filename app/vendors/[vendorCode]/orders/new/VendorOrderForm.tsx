@@ -64,15 +64,70 @@ const inputStyle: React.CSSProperties = {
 };
 
 const US_STATE_OPTIONS = [
-  "", "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
-  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
-  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
-  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
-  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+  "",
+  "AL",
+  "AK",
+  "AZ",
+  "AR",
+  "CA",
+  "CO",
+  "CT",
+  "DE",
+  "FL",
+  "GA",
+  "HI",
+  "ID",
+  "IL",
+  "IN",
+  "IA",
+  "KS",
+  "KY",
+  "LA",
+  "ME",
+  "MD",
+  "MA",
+  "MI",
+  "MN",
+  "MS",
+  "MO",
+  "MT",
+  "NE",
+  "NV",
+  "NH",
+  "NJ",
+  "NM",
+  "NY",
+  "NC",
+  "ND",
+  "OH",
+  "OK",
+  "OR",
+  "PA",
+  "RI",
+  "SC",
+  "SD",
+  "TN",
+  "TX",
+  "UT",
+  "VT",
+  "VA",
+  "WA",
+  "WV",
+  "WI",
+  "WY",
 ] as const;
 
 const PAPER_SIZE_OPTIONS = ["", "Both", "Letter", "Legal"] as const;
 const INK_OPTIONS = ["", "Blue", "Black"] as const;
+
+function formatPhoneDisplay(value: string | null | undefined) {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 10);
+
+  if (!digits) return "—";
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
 
 function formatDateInput(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -287,16 +342,23 @@ export default function VendorOrderForm({ vendorCode, vendor }: Props) {
               alignItems: "start",
             }}
           >
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 16 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 16,
+              }}
+            >
               <div><strong>Vendor Code:</strong> {nice(vendor.vendorcode)}</div>
               <div><strong>Company Name:</strong> {nice(vendor.companyName)}</div>
               <div><strong>Company Type:</strong> {nice(vendor.companyType)}</div>
               <div><strong>Approval Status:</strong> {nice(vendor.approvalStatus)}</div>
               <div><strong>Primary Contact:</strong> {nice(vendor.primaryContactName)}</div>
               <div><strong>Primary Contact Email:</strong> {nice(vendor.primaryContactEmail)}</div>
-              <div><strong>Primary Contact Phone:</strong> {nice(vendor.primaryContactPhone)}</div>
-              <div><strong>Primary Phone:</strong> {nice(vendor.primaryPhone)}</div>
-              <div><strong>Secondary Phone:</strong> {nice(vendor.secondaryPhone)}</div>
+              <div><strong>Primary Contact Phone:</strong> {formatPhoneDisplay(vendor.primaryContactPhone)}</div>
+              <div><strong>Primary Phone:</strong> {formatPhoneDisplay(vendor.primaryPhone)}</div>
+              <div><strong>Secondary Phone:</strong> {formatPhoneDisplay(vendor.secondaryPhone)}</div>
+              <div><strong>Secondary Contact Phone:</strong> {formatPhoneDisplay(vendor.secondaryContactPhone)}</div>
               <div><strong>Website:</strong> {nice(vendor.website)}</div>
               <div><strong>Address 1:</strong> {nice(vendor.address1)}</div>
               <div><strong>Address 2:</strong> {nice(vendor.address2)}</div>

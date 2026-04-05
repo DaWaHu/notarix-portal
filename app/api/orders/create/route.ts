@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { formatPhone } from "@/lib/formatPhone";
+import { generateSequentialOrderNumber } from "@/lib/generateOrderNumber";
 
 export const runtime = "nodejs";
 
@@ -55,43 +57,6 @@ function parseOptionalDate(value?: string | null) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-async function generateOrderNumber(): Promise<string> {
-  const now = new Date();
-  const y = now.getFullYear().toString().slice(-2);
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  const prefix = `${y}${m}${d}`;
-
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-
-  const todayOrders = await prisma.vendorOrder.findMany({
-    where: {
-      createdAt: {
-        gte: startOfDay,
-        lte: endOfDay,
-      },
-    },
-    select: {
-      orderNumber: true,
-    },
-  });
-
-  let maxSequence = 0;
-
-  for (const order of todayOrders) {
-    const value = String(order.orderNumber || "");
-    if (!value.startsWith(prefix)) continue;
-    const last4 = value.slice(-4);
-    const sequenceNum = Number(last4);
-    if (!Number.isNaN(sequenceNum) && sequenceNum > maxSequence) {
-      maxSequence = sequenceNum;
-    }
-  }
-
-  return `${prefix}${String(maxSequence + 1).padStart(4, "0")}`;
-}
-
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null);
@@ -124,7 +89,7 @@ export async function POST(req: Request) {
     const created = await prisma.vendorOrder.create({
       data: {
         vendorId: vendor.id,
-        orderNumber: await generateOrderNumber(),
+        orderNumber: await generateSequentialOrderNumber(),
         status: "DRAFT",
 
         primaryBorrowerName: data.primaryBorrowerName.trim(),
@@ -136,7 +101,7 @@ export async function POST(req: Request) {
         propertyState: data.propertyState.trim(),
         propertyZip: data.propertyZip.trim(),
 
-        borrowerPhone: data.borrowerPhone?.trim() || null,
+        borrowerPhone: formatPhone(data.borrowerPhone),
         borrowerEmail: data.borrowerEmail?.trim().toLowerCase() || null,
 
         signingDate: parseOptionalDate(data.signingDate),
@@ -164,7 +129,7 @@ export async function POST(req: Request) {
         signerCity: data.propertyCity.trim(),
         signerState: data.propertyState.trim(),
         signerZip: data.propertyZip.trim(),
-        signerPhone: data.borrowerPhone?.trim() || "",
+        signerPhone: formatPhone(data.borrowerPhone) || "",
         notes: data.specialInstructions?.trim() || null,
       },
       select: {
