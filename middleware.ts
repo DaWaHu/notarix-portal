@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const siteLocked = process.env.SITE_LOCKED === "true";
+  const siteLocked = process.env.SITE_LOCKED === "false";
   const { pathname } = req.nextUrl;
 
   if (!siteLocked) {
