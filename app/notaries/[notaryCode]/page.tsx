@@ -222,100 +222,106 @@ function getDisplayReadiness(args: {
 async function updateNotaryProfile(formData: FormData) {
   "use server";
 
-  const notaryCode = String(formData.get("notaryCode") || "")
-    .trim()
-    .toUpperCase();
+  try {
+    const notaryCode = String(formData.get("notaryCode") || "")
+      .trim()
+      .toUpperCase();
 
-  if (!notaryCode) {
-    throw new Error("Notary code is required.");
-  }
+    if (!notaryCode) {
+      throw new Error("Notary code is required.");
+    }
 
-  const fullName = String(formData.get("fullName") || "").trim();
-  const email = String(formData.get("email") || "").trim().toLowerCase();
-  const phone = normalizePhoneForStorage(String(formData.get("phone") || ""));
+    const fullName = String(formData.get("fullName") || "").trim();
+    const email = String(formData.get("email") || "").trim().toLowerCase();
+    const phone = normalizePhoneForStorage(String(formData.get("phone") || ""));
 
-  const address1 = String(formData.get("address1") || "").trim();
-  const address2 = String(formData.get("address2") || "").trim();
-  const city = String(formData.get("city") || "").trim();
-  const state = String(formData.get("state") || "").trim().toUpperCase();
-  const zip = String(formData.get("zip") || "").trim();
+    const address1 = String(formData.get("address1") || "").trim();
+    const address2 = String(formData.get("address2") || "").trim();
+    const city = String(formData.get("city") || "").trim();
+    const state = String(formData.get("state") || "").trim().toUpperCase();
+    const zip = String(formData.get("zip") || "").trim();
 
-  const commissionNumber = String(formData.get("commissionNumber") || "").trim();
-  const commissionState = String(formData.get("commissionState") || "")
-    .trim()
-    .toUpperCase();
-  const commissionExpiresAtRaw = String(
-    formData.get("commissionExpiresAt") || ""
-  ).trim();
+    const commissionNumber = String(formData.get("commissionNumber") || "")
+      .replace(/\s+/g, "")
+      .trim();
 
-  const coverageAreas = String(formData.get("coverageAreas") || "").trim();
-  const travelRadiusMilesRaw = String(
-    formData.get("travelRadiusMiles") || ""
-  ).trim();
-  const specialties = String(formData.get("specialties") || "").trim();
-  const eoCoverageAmount = String(formData.get("eoCoverageAmount") || "").trim();
-  const backgroundCheckDateRaw = String(
-    formData.get("backgroundCheckDate") || ""
-  ).trim();
-  const paymentMethod = String(formData.get("paymentMethod") || "").trim();
-  const paymentNotes = String(formData.get("paymentNotes") || "").trim();
-  const notes = String(formData.get("notes") || "").trim();
-  const isRONApproved = String(formData.get("isRONApproved") || "") === "true";
+    const commissionState = String(formData.get("commissionState") || "")
+      .trim()
+      .toUpperCase();
 
-  const commissionExpiresAt = commissionExpiresAtRaw
-    ? new Date(`${commissionExpiresAtRaw}T00:00:00`)
-    : null;
+    const commissionExpiresAtRaw = String(
+      formData.get("commissionExpiresAt") || ""
+    ).trim();
 
-  const backgroundCheckDate = backgroundCheckDateRaw
-    ? new Date(`${backgroundCheckDateRaw}T00:00:00`)
-    : null;
+    const coverageAreas = String(formData.get("coverageAreas") || "").trim();
+    const travelRadiusMilesRaw = String(
+      formData.get("travelRadiusMiles") || ""
+    ).trim();
+    const specialties = String(formData.get("specialties") || "").trim();
+    const eoCoverageAmount = String(formData.get("eoCoverageAmount") || "").trim();
+    const backgroundCheckDateRaw = String(
+      formData.get("backgroundCheckDate") || ""
+    ).trim();
+    const paymentMethod = String(formData.get("paymentMethod") || "").trim();
+    const paymentNotes = String(formData.get("paymentNotes") || "").trim();
+    const notes = String(formData.get("notes") || "").trim();
+    const isRONApproved = String(formData.get("isRONApproved") || "") === "true";
 
-  const travelRadiusMiles =
-    travelRadiusMilesRaw && !Number.isNaN(Number(travelRadiusMilesRaw))
-      ? Number(travelRadiusMilesRaw)
+    const commissionExpiresAt = commissionExpiresAtRaw
+      ? new Date(`${commissionExpiresAtRaw}T00:00:00`)
       : null;
 
-  if (!fullName) {
-    throw new Error("Full name is required.");
+    const backgroundCheckDate = backgroundCheckDateRaw
+      ? new Date(`${backgroundCheckDateRaw}T00:00:00`)
+      : null;
+
+    const travelRadiusMiles =
+      travelRadiusMilesRaw && !Number.isNaN(Number(travelRadiusMilesRaw))
+        ? Number(travelRadiusMilesRaw)
+        : null;
+
+    if (!fullName) {
+      throw new Error("Full name is required.");
+    }
+
+    if (!email) {
+      throw new Error("Email is required.");
+    }
+
+    await prisma.notaryProfile.update({
+      where: { notaryCode },
+      data: {
+        fullName,
+        email,
+        phone,
+        address1: address1 || null,
+        address2: address2 || null,
+        city: city || null,
+        state: state || null,
+        zip: zip || null,
+        commissionNumber: commissionNumber || null,
+        commissionState: commissionState || null,
+        commissionExpiresAt:
+          commissionExpiresAt && !Number.isNaN(commissionExpiresAt.getTime())
+            ? commissionExpiresAt
+            : null,
+        coverageAreas: coverageAreas || null,
+        travelRadiusMiles,
+        specialties: specialties || null,
+        eoCoverageAmount: eoCoverageAmount || null,
+        backgroundCheckDate:
+          backgroundCheckDate && !Number.isNaN(backgroundCheckDate.getTime())
+            ? backgroundCheckDate
+            : null,
+        isRONApproved,
+      },
+    });
+
+    revalidatePath(`/notaries/${notaryCode}`);
+  } catch (error) {
+    console.error("Failed to update notary profile", error);
+    throw error;
   }
-
-  if (!email) {
-    throw new Error("Email is required.");
-  }
-
-  await prisma.notaryProfile.update({
-    where: { notaryCode },
-    data: {
-      fullName,
-      email,
-      phone,
-      address1: address1 || null,
-      address2: address2 || null,
-      city: city || null,
-      state: state || null,
-      zip: zip || null,
-      commissionNumber: commissionNumber || null,
-      commissionState: commissionState || null,
-      commissionExpiresAt:
-        commissionExpiresAt && !Number.isNaN(commissionExpiresAt.getTime())
-          ? commissionExpiresAt
-          : null,
-      coverageAreas: coverageAreas || null,
-      travelRadiusMiles,
-      specialties: specialties || null,
-      eoCoverageAmount: eoCoverageAmount || null,
-      backgroundCheckDate:
-        backgroundCheckDate && !Number.isNaN(backgroundCheckDate.getTime())
-          ? backgroundCheckDate
-          : null,
-      paymentMethod: paymentMethod || null,
-      paymentNotes: paymentNotes || null,
-      notes: notes || null,
-      isRONApproved,
-    },
-  });
-
-  revalidatePath(`/notaries/${notaryCode}`);
 }
 
 export default async function NotaryProfilePage({ params }: PageProps) {
@@ -584,8 +590,8 @@ export default async function NotaryProfilePage({ params }: PageProps) {
                     alt={`${nice(notary.fullName)} photo`}
                     style={{
                       maxWidth: "100%",
-                      maxHeight: 98,
-                      objectFit: "contain",
+                      maxHeight: "100%",
+                      objectFit: "cover",
                       display: "block",
                     }}
                   />
@@ -708,8 +714,6 @@ export default async function NotaryProfilePage({ params }: PageProps) {
                 "Commission Certificate / Record",
                 "E&O Certificate",
                 "Background Check",
-                "Government ID",
-                "Void Check / ACH Setup",
               ]}
               emptyMessage="All required documents are on file."
             />
@@ -720,18 +724,34 @@ export default async function NotaryProfilePage({ params }: PageProps) {
           id="notary-profile-form"
           style={{ ...panelStyle, marginTop: 16, scrollMarginTop: 24 }}
         >
-          <div style={eyebrowStyle}>Notary profile</div>
-          <h2
+          <div
             style={{
-              margin: "8px 0 0",
-              fontSize: 24,
-              lineHeight: 1.1,
-              fontWeight: 800,
-              color: TEXT_DARK,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 16,
+              flexWrap: "wrap",
             }}
           >
-            Professional and contact details
-          </h2>
+            <div>
+              <div style={eyebrowStyle}>Notary profile</div>
+              <h2
+                style={{
+                  margin: "8px 0 0",
+                  fontSize: 24,
+                  lineHeight: 1.1,
+                  fontWeight: 800,
+                  color: TEXT_DARK,
+                }}
+              >
+                Professional and contact details
+              </h2>
+            </div>
+
+            <button type="submit" style={primaryButtonStyle}>
+              Save Notary Profile
+            </button>
+          </div>
 
           <form
             action={updateNotaryProfile}
@@ -926,31 +946,18 @@ export default async function NotaryProfilePage({ params }: PageProps) {
             </section>
 
             <section>
-              <SectionSubhead>Payment and Administrative Notes</SectionSubhead>
+              <SectionSubhead>Payment Details</SectionSubhead>
               <div style={twoColGridStyle}>
-                <Field label="Payment Method">
-                  <input
-                    name="paymentMethod"
-                    defaultValue={notary.paymentMethod || ""}
-                    style={inputStyle}
-                    placeholder="Example: ACH, Check"
-                  />
+                <Field label="Routing Number">
+                  <input name="routingNumber" style={inputStyle} />
                 </Field>
 
-                <Field label="Payment Notes">
-                  <input
-                    name="paymentNotes"
-                    defaultValue={notary.paymentNotes || ""}
-                    style={inputStyle}
-                  />
+                <Field label="Account Number">
+                  <input name="accountNumber" style={inputStyle} />
                 </Field>
 
-                <Field label="Notes">
-                  <textarea
-                    name="notes"
-                    defaultValue={notary.notes || ""}
-                    style={{ ...inputStyle, minHeight: 110, resize: "vertical" }}
-                  />
+                <Field label="Banking Institution">
+                  <input name="bankName" style={inputStyle} />
                 </Field>
               </div>
             </section>
@@ -971,11 +978,6 @@ export default async function NotaryProfilePage({ params }: PageProps) {
               </div>
             </section>
 
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <button type="submit" style={primaryButtonStyle}>
-                Save Notary Profile
-              </button>
-            </div>
           </form>
         </section>
 
@@ -1007,29 +1009,26 @@ export default async function NotaryProfilePage({ params }: PageProps) {
           <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
             {[
               {
-                name: "W-9",
-                description: "Current federal tax form used for payment processing.",
+                name: "NNA Membership Expiration",
+                description: "National Notary Association membership expiration documentation.",
+              },
+              {
+                name: "Errors & Omissions Insurance",
+                description: "E&O coverage documentation showing active policy.",
+              },
+              {
+                name: "Background Screening",
+                description: "Background screening documentation and expiration date.",
               },
               {
                 name: "Commission Certificate / Record",
                 description: "Commission record or supporting commission documentation.",
               },
               {
-                name: "E&O Certificate",
-                description: "Errors & omissions certificate or equivalent coverage proof.",
-              },
-              {
-                name: "Background Check",
-                description: "Background screening documentation used for compliance review.",
-              },
-              {
                 name: "Government ID",
                 description: "Valid identification document used for credential verification.",
               },
-              {
-                name: "Void Check / ACH Setup",
-                description: "Payment setup document used for notary payout processing.",
-              },
+
             ].map((item) => {
               const existing = notary.documents.find(
                 (doc) => String(doc.notes || "").trim() === item.name

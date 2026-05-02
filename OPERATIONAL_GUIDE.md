@@ -85,3 +85,103 @@ Quick check:
 -“Created reusable header component: app/components/TopBar.tsx”
 -"Documents page now uses <TopBar /> to avoid duplicate headers and keep pages consistent.”
 -Added the Home-style sticky top bar to app/documents/page.tsx so Documents matches the site layout.
+
+11. Role-based portal surface definition
+
+Public routes
+- /
+- /contact
+- any intentionally public marketing/informational pages
+
+Notary portal routes
+- /notary/dashboard
+- /notary/orders
+- /notary/profile
+- /notary/banking
+- /notary/credentials
+- /notary/business-rules
+- /notary/support
+
+Notary portal nav
+- Home
+- Dashboard
+- Assigned Orders
+- Profile
+- Banking Information
+- Credentials
+- Business Rules
+- Support / Need Help
+- Log Off
+
+Client/vendor portal routes
+- /vendors/dashboard
+- /vendors/orders
+- /vendors/profile
+- /vendors/create-order
+- /vendors/business-rules
+- /vendors/support
+
+Client/vendor portal nav
+- Home
+- Dashboard
+- Orders
+- Profile
+- Create Order
+- Business Rules
+- Support / Need Help
+- Log Off
+
+Access boundary intent
+- Notary can access public pages plus notary-only routes
+- Client/vendor can access public pages plus vendor-only routes
+- Admin remains separate
+- Notary must not see admin or vendor/client portal pages
+- Client/vendor must not see admin or notary portal pages
+
+Notes entered 8 April 2026 at 7:32am;  12. Final production notary identity and access model
+
+Production rule:
+- No notary portal route may depend on a hardcoded notaryCode.
+- No final production route may depend on a manual redirect to /notaries/{notaryCode}.
+- The notary portal must resolve the current notary from authenticated account context.
+
+Final onboarding flow:
+- Admin creates notary
+- Onboarding email is sent
+- Email contains one-time account setup link
+- Notary completes password setup
+- Authenticated session is established
+- Notary portal routes resolve that signed-in notary automatically
+
+Final notary portal rule:
+- /notary/dashboard
+- /notary/profile
+- /notary/orders
+- /notary/banking
+- /notary/credentials
+
+All must resolve from authenticated notary identity, not from a hardcoded route value.
+
+26 April 2026 7:33am; 12. Final production notary identity and access model
+
+Production rule
+- No notary portal route may depend on a hardcoded notaryCode.
+- No final production route may depend on a manual redirect to /notaries/{notaryCode}.
+- The notary portal must resolve the current notary from authenticated account context.
+
+Final onboarding flow
+- Admin creates notary
+- Onboarding email is sent
+- Email contains one-time account setup link
+- Notary completes password setup
+- Authenticated session is established
+- Notary portal routes resolve that signed-in notary automatically
+
+Final notary portal rule
+- /notary/dashboard
+- /notary/profile
+- /notary/orders
+- /notary/banking
+- /notary/credentials
+
+All must resolve from authenticated notary identity, not from a hardcoded route value.

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { formatPhone } from "@/lib/formatPhone";
+import { sendVendorOnboardingEmail } from "@/lib/ses";
 
 /**
  * This schema matches what your FORM sends from /admin/vendors/new
@@ -95,8 +96,41 @@ export async function POST(req: Request) {
       },
     });
 
+    const appUrl = process.env.APP_URL || "http://localhost:3000";
+    const profileUrl = `${appUrl}/vendors/${created.vendorcode}`;
+    const primaryEmail = data.primaryEmail.trim().toLowerCase();
+
+    let onboardingEmailSent = false;
+    let onboardingEmailError: string | null = null;
+
+    try {
+      await sendVendorOnboardingEmail({
+        to: primaryEmail,
+        vendorCode: created.vendorcode,
+        profileUrl,
+      });
+      onboardingEmailSent = true;
+    } catch (error: any) {
+      onboardingEmailError = error?.message || "Unknown email send failure";
+
+      console.error("Failed to send vendor onboarding email", {
+        vendorCode: created.vendorcode,
+        email: primaryEmail,
+        profileUrl,
+        error,
+      });
+    }
+
     return NextResponse.json(
-      { ok: true, vendorCode: created.vendorcode, vendor: created },
+      {
+        ok: true,
+        vendorCode: created.vendorcode,
+        vendor: created,
+        onboardingEmailSent,
+        ...(process.env.NODE_ENV !== "production" && onboardingEmailError
+          ? { onboardingEmailError }
+          : {}),
+      },
       { status: 200 }
     );
   } catch (err: any) {
@@ -119,10 +153,10 @@ export async function POST(req: Request) {
       500,
       isDev
         ? {
-            message: err?.message,
-            code: prismaCode,
-            meta: prismaMeta,
-          }
+          message: err?.message,
+          code: prismaCode,
+          meta: prismaMeta,
+        }
         : undefined
     );
   }

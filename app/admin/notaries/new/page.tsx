@@ -5,7 +5,52 @@ import { prisma } from "@/lib/prisma";
 import { formatPhone } from "@/lib/formatPhone";
 import { generateEntityCode } from "@/lib/generateEntityCode";
 import { sendNotaryOnboardingEmail } from "@/lib/ses";
+import Script from "next/script";
 
+function phoneFormatterScript() {
+  return `
+    (function () {
+      function formatPhone(value) {
+        const digits = String(value || "").replace(/\\D/g, "").slice(0, 10);
+        if (digits.length > 6) {
+          return digits.slice(0, 3) + "-" + digits.slice(3, 6) + "-" + digits.slice(6);
+        }
+        if (digits.length > 3) {
+          return digits.slice(0, 3) + "-" + digits.slice(3);
+        }
+        return digits;
+      }
+
+      function bindPhoneInput(input) {
+        if (!input || input.dataset.phoneBound === "true") return;
+        input.dataset.phoneBound = "true";
+
+        input.addEventListener("input", function () {
+          const digitsBefore = input.value.replace(/\\D/g, "").slice(0, 10);
+          input.value = formatPhone(digitsBefore);
+        });
+
+        input.addEventListener("blur", function () {
+          input.value = formatPhone(input.value);
+        });
+
+        input.value = formatPhone(input.value);
+      }
+
+      function init() {
+        document
+          .querySelectorAll('input[data-phone-format="true"]')
+          .forEach(bindPhoneInput);
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+      } else {
+        init();
+      }
+    })();
+  `;
+}
 const inputStyle: React.CSSProperties = {
   width: "100%",
   border: "1px solid #CBD5E1",
@@ -31,12 +76,9 @@ async function createNotary(formData: FormData) {
   const state = String(formData.get("state") || "").trim().toUpperCase();
   const zip = String(formData.get("zip") || "").trim();
 
-  const commissionNumber = String(formData.get("commissionNumber") || "").trim();
   const commissionState = String(formData.get("commissionState") || "")
     .trim()
     .toUpperCase();
-  const coverageAreas = String(formData.get("coverageAreas") || "").trim();
-  const notes = String(formData.get("notes") || "").trim();
 
   if (!fullName) {
     throw new Error("Full name is required.");
@@ -89,17 +131,15 @@ async function createNotary(formData: FormData) {
       city: city || null,
       state: state || null,
       zip: zip || null,
-      commissionNumber: commissionNumber || null,
-      commissionState,
-      coverageAreas: coverageAreas || null,
-      notes: notes || null,
       isActive: true,
       isRONApproved: false,
     },
   });
 
   const appUrl = process.env.APP_URL || "http://localhost:3000";
-  const profileUrl = `${appUrl}/notaries/${notaryCode}`;
+  const profileUrl = `${appUrl}/notary/setup-account`;
+
+  let onboardingEmailSent = false;
 
   try {
     await sendNotaryOnboardingEmail({
@@ -107,15 +147,29 @@ async function createNotary(formData: FormData) {
       notaryCode,
       profileUrl,
     });
+    onboardingEmailSent = true;
   } catch (error) {
-    console.error("Failed to send notary onboarding email", error);
+    console.error("Failed to send notary onboarding email", {
+      email,
+      notaryCode,
+      profileUrl,
+      error,
+    });
   }
 
   revalidatePath("/admin");
   revalidatePath("/admin/notaries");
   revalidatePath("/notaries");
 
+  if (!onboardingEmailSent) {
+    console.warn("Notary created but onboarding email failed", {
+      email,
+      notaryCode,
+    });
+  }
+
   redirect("/admin/notaries");
+
 }
 
 export default function AdminCreateNotaryPage() {
@@ -233,6 +287,7 @@ export default function AdminCreateNotaryPage() {
                     name="phone"
                     style={inputStyle}
                     placeholder="123-456-7890"
+                    data-phone-format="true"
                   />
                 </Field>
 
@@ -324,7 +379,7 @@ export default function AdminCreateNotaryPage() {
                   marginBottom: 16,
                 }}
               >
-                Commission & Coverage
+                Commission State
               </div>
 
               <div
@@ -334,10 +389,6 @@ export default function AdminCreateNotaryPage() {
                   gap: 16,
                 }}
               >
-                <Field label="Commission Number">
-                  <input name="commissionNumber" style={inputStyle} />
-                </Field>
-
                 <Field label="Commission State">
                   <input
                     name="commissionState"
@@ -348,21 +399,7 @@ export default function AdminCreateNotaryPage() {
                   />
                 </Field>
 
-                <Field label="Coverage Areas">
-                  <input
-                    name="coverageAreas"
-                    style={inputStyle}
-                    placeholder="Example: Maricopa County, Pima County"
-                  />
-                </Field>
 
-                <Field label="Notes">
-                  <input
-                    name="notes"
-                    style={inputStyle}
-                    placeholder="Optional administrative note"
-                  />
-                </Field>
               </div>
             </section>
 
@@ -409,7 +446,11 @@ export default function AdminCreateNotaryPage() {
           </form>
         </div>
       </div>
+      <Script id="admin-notary-phone-format" strategy="afterInteractive">
+        {phoneFormatterScript()}
+      </Script>
     </main>
+
   );
 }
 

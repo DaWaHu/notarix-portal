@@ -25,13 +25,13 @@ export default async function VendorLayout({
     .trim()
     .toUpperCase();
 
-  const homeHref = vendorCode ? `/vendors/${vendorCode}` : "/";
-  const clientListHref = "/vendors";
+  const homeHref = "/";
+  const clientListHref = "/admin/vendors";
   const createClientHref = "/admin/vendors/new";
-  const ordersHref = vendorCode ? `/vendors/${vendorCode}/orders` : "/vendors/orders";
-  const createOrderHref = vendorCode
-    ? `/vendors/${vendorCode}/orders/new`
-    : "/vendors/orders/new";
+  const notaryListHref = "/admin/notaries";
+  const createNotaryHref = "/admin/notaries/new";
+  const ordersHref = "/admin/orders";
+  const createOrderHref = "/admin/orders/new";
 
   return (
     <div
@@ -149,6 +149,12 @@ export default async function VendorLayout({
               </Link>
               <Link href={createClientHref} style={primaryLinkStyle}>
                 Create Client
+              </Link>
+              <Link href={notaryListHref} style={primaryLinkStyle}>
+                Notary List
+              </Link>
+              <Link href={createNotaryHref} style={primaryLinkStyle}>
+                Create Notary
               </Link>
               <Link href={ordersHref} style={primaryLinkStyle}>
                 Orders

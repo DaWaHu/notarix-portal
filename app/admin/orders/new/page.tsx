@@ -7,7 +7,7 @@ export default function AdminNewOrderPage() {
         padding: 16,
         minHeight: "100vh",
       }}
-    >
+    >[o]
       <div
         style={{
           maxWidth: 1280,

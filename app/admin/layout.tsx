@@ -111,14 +111,20 @@ export default function AdminLayout({ children }: Props) {
               flexWrap: "wrap",
             }}
           >
-            <Link href="/admin" style={navButtonStyle}>
+            <Link href="/" style={navButtonStyle}>
               Home
             </Link>
-            <Link href="/vendors" style={navButtonStyle}>
+            <Link href="/admin/vendors" style={navButtonStyle}>
               Client List
             </Link>
             <Link href="/admin/vendors/new" style={navButtonStyle}>
               Create Client
+            </Link>
+            <Link href="/admin/notaries" style={navButtonStyle}>
+              Notary List
+            </Link>
+            <Link href="/admin/notaries/new" style={navButtonStyle}>
+              Create Notary
             </Link>
             <Link href="/admin/orders" style={navButtonStyle}>
               Orders
