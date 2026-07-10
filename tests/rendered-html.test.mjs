@@ -39,6 +39,12 @@ test("server-renders the Notarix Signings brand composition", async () => {
   assert.match(html, /Request Portal Access/);
   assert.match(html, /Request Access/);
   assert.match(html, /href="\/portal"/);
+  const landingAnchorHrefs = [...html.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map(
+    ([, href]) => href,
+  );
+  assert.deepEqual(landingAnchorHrefs, ["/portal", "/portal", "/portal"]);
+  assert.doesNotMatch(html, /href="#/);
+  assert.doesNotMatch(html, /href="\/"/);
   assert.match(html, /Privacy Policy/);
   assert.match(html, /RON Disclosure/);
   assert.match(html, /Electronic Communications Consent/);

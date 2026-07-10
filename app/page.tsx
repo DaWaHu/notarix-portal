@@ -39,11 +39,11 @@ export default function Home() {
     <main className="site-shell">
       <section className="hero">
         <header className="site-header">
-          <a className="brand" href="/">
+          <div className="brand" aria-label="Notarix Signings">
             <img src="/notarix-logo.png" alt="Notarix Signings" />
-          </a>
+          </div>
           <nav aria-label="Primary navigation">
-            <a href="#services">Services</a>
+            <span aria-disabled="true">Services</span>
             <a href="/portal">Request Portal Access</a>
             <a className="nav-cta" href="/portal">Request Access</a>
           </nav>

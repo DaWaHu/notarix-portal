@@ -86,10 +86,15 @@ a {
   gap: 28px;
 }
 
-.site-header nav a {
+.site-header nav a,
+.site-header nav span {
   font-size: 14px;
   font-weight: 500;
   line-height: 20px;
+}
+
+.site-header nav span {
+  cursor: default;
 }
 
 .site-header nav .nav-cta {
