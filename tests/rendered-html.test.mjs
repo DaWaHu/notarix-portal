@@ -1,0 +1,117 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+async function render(path = "/", headers = {}) {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+
+  return worker.fetch(
+    new Request(`http://localhost${path}`, {
+      headers: { accept: "text/html", ...headers },
+    }),
+    {
+      ASSETS: {
+        fetch: async () => new Response("Not found", { status: 404 }),
+      },
+    },
+    {
+      waitUntil() {},
+      passThroughOnException() {},
+    },
+  );
+}
+
+test("server-renders the Notarix Signings brand composition", async () => {
+  const response = await render();
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
+
+  const html = await response.text();
+  assert.match(html, /<title>Notarix Signings Portal<\/title>/i);
+  assert.match(html, /Notarix Signings/);
+  assert.match(html, /notarix-logo\.png/);
+  assert.match(html, /notarix-hero-notarial-session\.png/);
+  assert.match(html, /Notarial Services Made Simple/);
+  assert.match(html, /Remote Online Notary/);
+  assert.match(html, /Electronic Notary/);
+  assert.match(html, /Request Portal Access/);
+  assert.match(html, /Request Access/);
+  assert.match(html, /href="\/portal"/);
+  assert.match(html, /Privacy Policy/);
+  assert.match(html, /RON Disclosure/);
+  assert.match(html, /Electronic Communications Consent/);
+  assert.match(html, /aria-disabled="true" class="locked-link"/);
+  assert.match(html, /© Copyright Notarix Signings 2026/);
+  assert.doesNotMatch(html, /Estate Planning|Apostille Services|Translation/);
+  assert.doesNotMatch(html, /RON Session|Dec 31 2026|6:00 PM ET/);
+  assert.doesNotMatch(html, /NS<\/span><strong>Verified/);
+  assert.doesNotMatch(html, /codex-preview|SkeletonPreview|react-loading-skeleton/i);
+  assert.doesNotMatch(html, /Start Request/);
+});
+
+test("server-renders the portal access request workflow", async () => {
+  const response = await render("/portal");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /support@notarix\.live/);
+  assert.match(html, /action="mailto:support@notarix\.live"/);
+  assert.match(html, /Submit onboarding information to Notarix staff/);
+  assert.match(html, /555-123-4567/);
+  assert.match(html, /\[0-9\]\{3\}-\[0-9\]\{3\}-\[0-9\]\{4\}/);
+  assert.match(html, /Send Access Request/);
+  assert.doesNotMatch(html, /Client Portal Access|Notary Portal Access/);
+  assert.doesNotMatch(html, /Activation workflow|Pending Review|Invitation Sent/);
+});
+
+test("server-renders the staff access request queue", async () => {
+  const lockedResponse = await render("/staff/requests");
+  assert.equal(lockedResponse.status, 307);
+  assert.match(lockedResponse.headers.get("location") ?? "", /signin-with-chatgpt/);
+
+  const response = await render("/staff/requests", {
+    "oai-authenticated-user-email": "staff@example.com",
+  });
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Portal access requests/);
+  assert.match(html, /href="\/">Home<\/a>/);
+  assert.match(html, /Requests stay inactive until staff approval/);
+  assert.match(html, /Review client and notary access requests/);
+  assert.match(html, /Notarix Signings Request/);
+  assert.match(html, /NSR-1001/);
+  assert.doesNotMatch(html, /NAR-/);
+  assert.match(html, /Pending Review/);
+  assert.match(html, /Profile Completion Pending/);
+  assert.match(html, /Credential Verification/);
+  assert.match(html, /555-123-4567/);
+  assert.match(html, /Open Review/);
+  assert.match(html, /Send Invitation/);
+  assert.match(html, /Notarix Signings Staff Workspace/);
+  assert.match(html, /Authorized staff use only/);
+  assert.doesNotMatch(html, /\b\d{10,11}\b/);
+});
+
+test("keeps product rules in the local governance file", async () => {
+  const agents = await readFile(new URL("../AGENTS.md", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const packageJson = await readFile(
+    new URL("../package.json", import.meta.url),
+    "utf8",
+  );
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(agents, /Notarix Signings/);
+  assert.match(agents, /Dec 31 2026/);
+  assert.match(agents, /6:00 PM ET/);
+  assert.match(agents, /###-###-####/);
+  assert.match(agents, /RON access must be restricted/);
+  assert.match(page, /Notarial Services Made Simple/);
+  assert.match(layout, /Notarix Signings Portal/);
+  assert.match(css, /request-card:nth-child\(even\)/);
+  assert.doesNotMatch(packageJson, /react-loading-skeleton/);
+});
