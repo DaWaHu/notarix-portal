@@ -167,6 +167,10 @@ test("server-renders invited profile completion pages", async () => {
   assert.match(notaryHtml, /Commission Expiration Date/);
   assert.match(notaryHtml, /Remote online notary authorization/);
   assert.match(notaryHtml, /Approved by state/);
+  assert.match(notaryHtml, /Notary profile sections/);
+  assert.match(notaryHtml, /href="#background-check"/);
+  assert.match(notaryHtml, /href="#eo-insurance"/);
+  assert.match(notaryHtml, /href="#payment-ledger"/);
   assert.match(notaryHtml, /Address and company information/);
   assert.match(notaryHtml, /Company name/);
   assert.match(notaryHtml, /Website/);
@@ -179,8 +183,13 @@ test("server-renders invited profile completion pages", async () => {
   assert.match(notaryHtml, /Emergency Contact Name/);
   assert.match(notaryHtml, /Payable setup/);
   assert.match(notaryHtml, /VendorPay-style provider/);
-  assert.match(notaryHtml, /Credential upload center/);
-  assert.match(notaryHtml, /Background Check Report - National Notary Association preferred/);
+  assert.match(notaryHtml, /Credential completion overview/);
+  assert.match(notaryHtml, /Background check/);
+  assert.match(notaryHtml, /Background Check Provider/);
+  assert.match(notaryHtml, /Background Check Report Date/);
+  assert.match(notaryHtml, /Background Check Report/);
+  assert.match(notaryHtml, /E&amp;O insurance/);
+  assert.match(notaryHtml, /E&amp;O Policy Number/);
   assert.match(notaryHtml, /E&amp;O Insurance Declaration Page/);
   assert.match(notaryHtml, /ID Number/);
   assert.match(notaryHtml, /Verification Type/);

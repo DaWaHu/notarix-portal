@@ -17,22 +17,50 @@ const clientSections = [
 ];
 
 const notarySections = [
-  "Address, company, phone, and emergency contact verification",
-  "Payable setup and notary compensation controls",
-  "Credential uploads, identity verification, and expiration monitoring",
-  "NNA, commission, E&O, background check, and RON authorization records",
-  "Assigned order payment ledger with administrator-controlled adjustments",
+  "Address and contact",
+  "Phone verification",
+  "Payable setup",
+  "Background check",
+  "E&O insurance",
+  "Identity verification",
+  "NNA certification",
+  "Notary commission",
+  "RON credentials",
+  "Expiration monitoring",
+  "Payment ledger",
 ];
 
-const notaryUploadItems = [
-  "Background Check Report - National Notary Association preferred",
-  "E&O Insurance Declaration Page",
-  "Government ID or Driver's License Verification",
-  "NNA Certification Profile Link",
-  "Notary Commission Certificate",
-  "RON Training Certificate",
+const notaryProfileLinks = [
+  ["Overview", "#profile-overview"],
+  ["Address and Contact", "#address-contact"],
+  ["Phone Verification", "#phone-verification"],
+  ["Payable Setup", "#payable-setup"],
+  ["Background Check", "#background-check"],
+  ["E&O Insurance", "#eo-insurance"],
+  ["Identity Verification", "#identity-verification"],
+  ["NNA Certification", "#nna-certification"],
+  ["Notary Commission", "#notary-commission"],
+  ["RON Credentials", "#ron-credentials"],
+  ["Expiration Monitoring", "#expiration-monitoring"],
+  ["Payment Ledger", "#payment-ledger"],
+] as const;
+
+const clientProfileLinks = [
+  ["Overview", "#profile-overview"],
+  ["Client Type", "#client-type"],
+  ["Authorized Users", "#authorized-users"],
+  ["Submit", "#submit-profile"],
+] as const;
+
+const credentialOverviewItems = [
+  "Background Check",
+  "E&O Insurance",
+  "Identity Verification",
+  "NNA Certification",
+  "Notary Commission",
+  "RON Training",
   "RON Digital Certificate",
-  "W-9 or payable onboarding record",
+  "Payable Onboarding",
 ];
 
 const notaryExpirationRules = [
@@ -77,8 +105,13 @@ export default async function ProfileCompletionPage({
       </section>
 
       <section className="profile-layout" aria-label="Profile completion workspace">
+        <ProfileNavigation
+          links={isNotary ? notaryProfileLinks : clientProfileLinks}
+          title={isNotary ? "Notary profile sections" : "Client profile sections"}
+        />
+
         <form className="profile-form">
-          <div className="form-heading">
+          <div className="form-heading" id="profile-overview">
             <p>{request.id}</p>
             <h2>{request.name}</h2>
           </div>
@@ -172,7 +205,7 @@ export default async function ProfileCompletionPage({
 function ClientProfileFields() {
   return (
     <>
-      <div className="field-row">
+      <div className="field-row" id="client-type">
         <label>
           Client type
           <select name="Client type" defaultValue="">
@@ -188,7 +221,7 @@ function ClientProfileFields() {
           <input name="Billing contact email" type="email" />
         </label>
       </div>
-      <label>
+      <label id="authorized-users">
         Authorized users
         <textarea
           name="Authorized users"
@@ -204,6 +237,7 @@ function NotaryProfileFields() {
   return (
     <>
       <ProfileSection
+        id="address-contact"
         title="Address and company information"
         note="The payment address may match the primary profile address, but staff must be able to verify both records."
       >
@@ -246,6 +280,7 @@ function NotaryProfileFields() {
       </ProfileSection>
 
       <ProfileSection
+        id="phone-verification"
         title="Phone numbers and emergency contact"
         note="Mobile verification should create a system verified indicator before activation."
       >
@@ -287,6 +322,7 @@ function NotaryProfileFields() {
       </ProfileSection>
 
       <ProfileSection
+        id="payable-setup"
         title="Payable setup"
         note="Notarix should initially support an external payable provider evaluation rather than building a full funds-movement system from scratch."
       >
@@ -316,26 +352,31 @@ function NotaryProfileFields() {
           tax-form handling, payment status, and audit reporting before Notarix
           builds an internal payment system.
         </p>
+        <DocumentAttachment
+          label="Payable onboarding document"
+          note="Attach W-9, payment authorization, or external provider confirmation."
+        />
       </ProfileSection>
 
       <ProfileSection
-        title="Credential upload center"
-        note="A completion checkmark appears when each required document has been uploaded; staff verification is still required before activation."
+        title="Credential completion overview"
+        note="Each credential has its own detailed section below. The checklist summarizes upload status without bunching unrelated documents together."
       >
         <div className="upload-grid">
-          {notaryUploadItems.map((item) => (
-            <label className="upload-card" key={item}>
+          {credentialOverviewItems.map((item) => (
+            <div className="upload-card" key={item}>
               <span className="verified-check pending" aria-label="Upload pending" />
               <strong>{item}</strong>
-              <input name={item} type="file" />
-            </label>
+              <span>Awaiting upload and staff verification.</span>
+            </div>
           ))}
         </div>
       </ProfileSection>
 
       <ProfileSection
-        title="Background check and E&O insurance"
-        note="State rules vary; Notarix staff must verify the required E&O amount for each operating state."
+        id="background-check"
+        title="Background check"
+        note="National Notary Association background checks are preferred. Staff verifies the provider, completion date, and uploaded report."
       >
         <div className="field-row">
           <label>
@@ -347,6 +388,17 @@ function NotaryProfileFields() {
             <input name="Background Check Report Date" placeholder="Dec 31 2026" />
           </label>
         </div>
+        <DocumentAttachment
+          label="Background Check Report"
+          note="Attach a copy of the completed background check report."
+        />
+      </ProfileSection>
+
+      <ProfileSection
+        id="eo-insurance"
+        title="E&O insurance"
+        note="State rules vary; Notarix staff must verify the required E&O amount for each operating state."
+      >
         <div className="field-row three-column">
           <label>
             E&O Policy Number
@@ -361,9 +413,14 @@ function NotaryProfileFields() {
             <input name="E&O Expiration Date" placeholder="Dec 31 2026" />
           </label>
         </div>
+        <DocumentAttachment
+          label="E&O Insurance Declaration Page"
+          note="Attach policy declaration page or proof of active E&O coverage."
+        />
       </ProfileSection>
 
       <ProfileSection
+        id="identity-verification"
         title="Identity verification"
         note="Driver's license or government ID verification must be recorded without exposing unnecessary ID data to general staff."
       >
@@ -400,10 +457,15 @@ function NotaryProfileFields() {
             <input name="ID Expiration Date" placeholder="Dec 31 2026" />
           </label>
         </div>
+        <DocumentAttachment
+          label="Government ID or Driver's License Verification"
+          note="Attach verified ID record or credential-analysis confirmation."
+        />
       </ProfileSection>
 
       <ProfileSection
-        title="NNA certification and notary commission"
+        id="nna-certification"
+        title="NNA certification"
         note="Because NNA certificates may only be available inside the NNA profile, Notarix should store a profile hyperlink and staff verification record."
       >
         <div className="field-row">
@@ -416,6 +478,17 @@ function NotaryProfileFields() {
             <input name="NNA Exam Date" placeholder="Dec 31 2026" />
           </label>
         </div>
+        <DocumentAttachment
+          label="NNA Certification Profile View"
+          note="Attach screenshot or link evidence if the certificate is viewable only inside the NNA profile."
+        />
+      </ProfileSection>
+
+      <ProfileSection
+        id="notary-commission"
+        title="Notary commission"
+        note="Commission status must be verified by state before the notary profile can be activated."
+      >
         <div className="field-row three-column">
           <label>
             Commission Number
@@ -430,9 +503,14 @@ function NotaryProfileFields() {
             <input name="Commission Expiration Date" placeholder="Dec 31 2026" />
           </label>
         </div>
+        <DocumentAttachment
+          label="Notary Commission Certificate"
+          note="Attach current commission certificate or state verification record."
+        />
       </ProfileSection>
 
       <ProfileSection
+        id="ron-credentials"
         title="RON authorization and digital certificate"
         note="RON access remains unavailable unless state authorization, training, digital certificate, and provider readiness are all verified."
       >
@@ -485,10 +563,19 @@ function NotaryProfileFields() {
             </select>
           </label>
         </div>
+        <DocumentAttachment
+          label="RON Training Certificate"
+          note="Attach proof of completed RON training and any required state-approved course evidence."
+        />
+        <DocumentAttachment
+          label="RON Digital Certificate"
+          note="Attach digital certificate record, provider confirmation, or expiration evidence."
+        />
       </ProfileSection>
 
       <ProfileSection
-        title="Expiration monitoring and payment ledger"
+        id="expiration-monitoring"
+        title="Expiration monitoring"
         note="This creates the rules for automatic reminder emails and staff audit reports."
       >
         <div className="rule-list">
@@ -496,6 +583,13 @@ function NotaryProfileFields() {
             <p key={rule}>{rule}</p>
           ))}
         </div>
+      </ProfileSection>
+
+      <ProfileSection
+        id="payment-ledger"
+        title="Payment ledger"
+        note="Assigned order payments, adjustments, release dates, and received acknowledgements must remain auditable."
+      >
         <div className="payment-ledger">
           <div>
             <p className="request-label">Assigned orders</p>
@@ -514,21 +608,57 @@ function NotaryProfileFields() {
 }
 
 function ProfileSection({
+  id,
   title,
   note,
   children,
 }: {
+  id?: string;
   title: string;
   note: string;
   children: ReactNode;
 }) {
   return (
-    <section className="profile-section">
+    <section className="profile-section" id={id}>
       <div>
         <p className="request-label">{title}</p>
         <span>{note}</span>
       </div>
       {children}
     </section>
+  );
+}
+
+function ProfileNavigation({
+  links,
+  title,
+}: {
+  links: readonly (readonly [string, string])[];
+  title: string;
+}) {
+  return (
+    <aside className="profile-nav" aria-label={title}>
+      <p className="request-label">{title}</p>
+      <nav>
+        {links.map(([label, href]) => (
+          <a href={href} key={href}>
+            {label}
+          </a>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+
+function DocumentAttachment({ label, note }: { label: string; note: string }) {
+  return (
+    <label className="document-attachment">
+      <span className="verified-check pending" aria-label="Document upload pending" />
+      <span>
+        <strong>{label}</strong>
+        <small>{note}</small>
+      </span>
+      <input name={label} type="file" />
+    </label>
   );
 }
