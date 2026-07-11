@@ -362,12 +362,12 @@ function NotaryProfileFields() {
         title="Credential completion overview"
         note="Each credential has its own detailed section below. The checklist summarizes upload status without bunching unrelated documents together."
       >
-        <div className="upload-grid">
+        <div className="credential-overview">
           {credentialOverviewItems.map((item) => (
-            <div className="upload-card" key={item}>
-              <span className="verified-check pending" aria-label="Upload pending" />
+            <div className="credential-row" key={item}>
+              <span className="credential-dot" aria-label="Upload pending" />
               <strong>{item}</strong>
-              <span>Awaiting upload and staff verification.</span>
+              <span>Awaiting document</span>
             </div>
           ))}
         </div>
@@ -653,11 +653,12 @@ function ProfileNavigation({
 function DocumentAttachment({ label, note }: { label: string; note: string }) {
   return (
     <label className="document-attachment">
-      <span className="verified-check pending" aria-label="Document upload pending" />
+      <span className="credential-dot" aria-label="Document upload pending" />
       <span>
         <strong>{label}</strong>
         <small>{note}</small>
       </span>
+      <span className="upload-action">Attach document</span>
       <input name={label} type="file" />
     </label>
   );

@@ -1148,8 +1148,8 @@ a {
 
 .profile-form {
   display: grid;
-  gap: 18px;
-  padding: 32px;
+  gap: 22px;
+  padding: 36px;
 }
 
 .profile-form h2 {
@@ -1240,10 +1240,10 @@ a {
 
 .profile-section {
   display: grid;
-  gap: 16px;
+  gap: 18px;
   border-top: 1px solid var(--line);
   scroll-margin-top: 24px;
-  padding-top: 24px;
+  padding-top: 30px;
 }
 
 .profile-section > div:first-child {
@@ -1319,17 +1319,67 @@ a {
   transform: none;
 }
 
-.upload-grid {
+.credential-overview {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  border: 1px solid rgba(7, 17, 59, 0.14);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.upload-card {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fffdf7;
-  padding: 16px;
+.credential-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  border-bottom: 1px solid rgba(7, 17, 59, 0.1);
+  background: rgba(255, 253, 247, 0.64);
+  gap: 12px;
+  padding: 13px 16px;
+}
+
+.credential-row:nth-child(even) {
+  background: rgba(250, 244, 229, 0.6);
+}
+
+.credential-row:last-child {
+  border-bottom: 0;
+}
+
+.credential-row strong {
+  color: var(--navy);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.credential-row > span:last-child {
+  border-radius: 999px;
+  background: rgba(211, 166, 39, 0.16);
+  color: var(--gold-dark);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 18px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.credential-dot {
+  position: relative;
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgba(134, 99, 32, 0.24);
+  border-radius: 999px;
+  background: rgba(211, 166, 39, 0.18);
+}
+
+.credential-dot::after {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--gold-dark);
+  content: "";
 }
 
 .upload-card span:last-child {
@@ -1349,12 +1399,13 @@ a {
 }
 
 .document-attachment {
-  grid-template-columns: 28px minmax(0, 1fr);
-  align-items: start;
-  border: 1px solid rgba(7, 17, 59, 0.16);
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  border: 1px solid rgba(7, 17, 59, 0.14);
   border-radius: 8px;
-  background: #fffdf7;
-  padding: 16px;
+  background: linear-gradient(180deg, #fffefa 0%, #fbf7ed 100%);
+  column-gap: 14px;
+  padding: 15px 16px;
 }
 
 .document-attachment > span:nth-child(2) {
@@ -1375,10 +1426,23 @@ a {
   line-height: 20px;
 }
 
+.upload-action {
+  border: 1px solid rgba(7, 17, 59, 0.2);
+  border-radius: 999px;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 18px;
+  padding: 9px 13px;
+  white-space: nowrap;
+}
+
 .document-attachment input {
-  grid-column: 2;
-  margin-top: 8px;
-  padding: 11px;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .rule-list {
