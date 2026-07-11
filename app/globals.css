@@ -1166,6 +1166,117 @@ a {
   color: var(--white);
 }
 
+.decision-hero h1 {
+  max-width: 780px;
+}
+
+.decision-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 20px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 40px 20px;
+}
+
+.decision-impact-grid {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.decision-impact-grid section {
+  border-left: 4px solid var(--gold);
+  background: #fffdf7;
+  padding: 18px 20px;
+}
+
+.decision-impact-grid p {
+  margin: 0 0 8px;
+  color: var(--gold-dark);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 18px;
+  text-transform: uppercase;
+}
+
+.decision-impact-grid strong {
+  display: block;
+  color: var(--navy);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 27px;
+}
+
+.decision-safeguards {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.decision-safeguards li {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf7;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 26px;
+  padding: 16px 18px 16px 42px;
+}
+
+.decision-safeguards li::before {
+  position: absolute;
+  top: 20px;
+  left: 18px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--gold);
+  content: "";
+}
+
+.compact-verification-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.compact-verification-list section {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf7;
+  padding: 14px;
+}
+
+.compact-verification-list span {
+  display: inline-flex;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  background: rgba(209, 164, 45, 0.18);
+  color: var(--gold-dark);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 16px;
+  padding: 4px 8px;
+}
+
+.compact-verification-list strong {
+  display: block;
+  color: var(--navy);
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.compact-verification-list p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+
 .invitation-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
@@ -1752,6 +1863,7 @@ a {
   .review-hero,
   .review-layout,
   .verification-layout,
+  .decision-workspace,
   .invitation-layout,
   .profile-layout,
   .summary-grid,

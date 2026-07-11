@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireChatGPTUser } from "../../../../chatgpt-auth";
 import {
+  activationDecisions,
   findAccessRequest,
   getProfileVerificationItems,
   type ProfileVerificationItem,
@@ -129,9 +130,14 @@ export default async function StaffProfileVerificationPage({
             </div>
           </dl>
           <div className="decision-actions">
-            <button type="button">Approve Profile</button>
-            <button type="button">Request Corrections</button>
-            <button type="button">Keep Inactive</button>
+            {activationDecisions.map((decision) => (
+              <a
+                href={`/staff/requests/${request.id}/profile-verification/decision/${decision.slug}`}
+                key={decision.slug}
+              >
+                {decision.label}
+              </a>
+            ))}
           </div>
         </aside>
       </section>

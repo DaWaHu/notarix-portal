@@ -157,9 +157,72 @@ test("server-renders the protected staff profile verification workspace", async 
   assert.match(html, /Approve Profile/);
   assert.match(html, /Request Corrections/);
   assert.match(html, /Keep Inactive/);
+  assert.match(
+    html,
+    /href="\/staff\/requests\/NSR-1001\/profile-verification\/decision\/approve"/,
+  );
+  assert.match(
+    html,
+    /href="\/staff\/requests\/NSR-1001\/profile-verification\/decision\/corrections"/,
+  );
+  assert.match(
+    html,
+    /href="\/staff\/requests\/NSR-1001\/profile-verification\/decision\/inactive"/,
+  );
   assert.match(html, /Administrator or Super Admin approval required/);
   assert.match(html, /555-123-4567/);
   assert.doesNotMatch(html, /\b\d{10,11}\b/);
+});
+
+test("server-renders protected staff activation decision screens", async () => {
+  const lockedResponse = await render(
+    "/staff/requests/NSR-1001/profile-verification/decision/approve",
+  );
+  assert.equal(lockedResponse.status, 307);
+  assert.match(lockedResponse.headers.get("location") ?? "", /signin-with-chatgpt/);
+
+  const response = await render(
+    "/staff/requests/NSR-1001/profile-verification/decision/approve",
+    {
+      "oai-authenticated-user-email": "staff@example.com",
+    },
+  );
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Activation decision review/);
+  assert.match(html, /Approve Profile/);
+  assert.match(html, /Activate verified portal profile/);
+  assert.match(html, /Administrator or Super Admin/);
+  assert.match(html, /RON access remains disabled/);
+  assert.match(html, /Credential expiration monitoring begins/);
+  assert.match(html, /Open review items/);
+  assert.match(html, /555-123-4567/);
+  assert.doesNotMatch(html, /\b\d{10,11}\b/);
+
+  const correctionsResponse = await render(
+    "/staff/requests/NSR-1001/profile-verification/decision/corrections",
+    {
+      "oai-authenticated-user-email": "staff@example.com",
+    },
+  );
+  assert.equal(correctionsResponse.status, 200);
+  const correctionsHtml = await correctionsResponse.text();
+  assert.match(correctionsHtml, /Request Corrections/);
+  assert.match(correctionsHtml, /Return profile for correction/);
+  assert.match(correctionsHtml, /Correction request issued/);
+
+  const inactiveResponse = await render(
+    "/staff/requests/NSR-1001/profile-verification/decision/inactive",
+    {
+      "oai-authenticated-user-email": "staff@example.com",
+    },
+  );
+  assert.equal(inactiveResponse.status, 200);
+  const inactiveHtml = await inactiveResponse.text();
+  assert.match(inactiveHtml, /Keep Inactive/);
+  assert.match(inactiveHtml, /Maintain inactive access/);
+  assert.match(inactiveHtml, /No notary assignment eligibility is granted while inactive/);
 });
 
 test("server-renders the protected staff profile invitation workflow", async () => {

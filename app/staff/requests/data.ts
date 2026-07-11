@@ -40,6 +40,73 @@ export type ProfileVerificationItem = {
   reviewerNote: string;
 };
 
+export type ActivationDecisionSlug = "approve" | "corrections" | "inactive";
+
+export type ActivationDecision = {
+  slug: ActivationDecisionSlug;
+  label: string;
+  outcome: string;
+  authority: string;
+  staffAction: string;
+  portalEffect: string;
+  auditEntry: string;
+  safeguards: string[];
+};
+
+export const activationDecisions: ActivationDecision[] = [
+  {
+    slug: "approve",
+    label: "Approve Profile",
+    outcome: "Activate verified portal profile",
+    authority: "Administrator or Super Admin",
+    staffAction:
+      "Confirm every required profile item is verified, record the reviewer decision, and activate only the permissions approved for this profile.",
+    portalEffect:
+      "Client or notary portal access becomes active. RON and financial permissions remain separate controlled capabilities.",
+    auditEntry:
+      "Profile approved, portal status changed to Active, approving staff member recorded.",
+    safeguards: [
+      "RON access remains disabled unless remote authorization, RON training, and digital certificate records are verified.",
+      "Payable changes require Administrator or Super Admin approval.",
+      "Credential expiration monitoring begins immediately after activation.",
+    ],
+  },
+  {
+    slug: "corrections",
+    label: "Request Corrections",
+    outcome: "Return profile for correction",
+    authority: "Authorized staff reviewer",
+    staffAction:
+      "Identify deficient items, send a correction notice, and keep portal access inactive until the corrected evidence is returned.",
+    portalEffect:
+      "Profile status remains Profile Completion Pending or Credential Verification. The user can update only the requested sections.",
+    auditEntry:
+      "Correction request issued with deficient sections, deadline, staff reviewer, and notification time.",
+    safeguards: [
+      "Do not expose internal notes that contain restricted credential or financial review details.",
+      "Correction notices must use the formatted phone number and approved contact email.",
+      "Expired or missing credentials cannot be overridden by a General Admin.",
+    ],
+  },
+  {
+    slug: "inactive",
+    label: "Keep Inactive",
+    outcome: "Maintain inactive access",
+    authority: "Administrator or Super Admin for final denial or restriction",
+    staffAction:
+      "Document why activation is withheld, assign follow-up ownership, and prevent order, RON, document, and payable permissions from being enabled.",
+    portalEffect:
+      "The profile remains inactive. Staff may reopen review after missing eligibility or credential evidence is resolved.",
+    auditEntry:
+      "Profile kept inactive with reason, restricted permissions, reviewer, and next review date.",
+    safeguards: [
+      "No notary assignment eligibility is granted while inactive.",
+      "No payable ledger adjustments are allowed without elevated approval.",
+      "A future review date must use the Notarix date format, such as Dec 31 2026.",
+    ],
+  },
+];
+
 export const notaryProfileVerificationItems: ProfileVerificationItem[] = [
   {
     section: "Identity",
