@@ -15,11 +15,27 @@ const PERCENT_ENCODED_UTF8 = "percent-encoded-utf-8";
 const SIGN_IN_PATH = "/signin-with-chatgpt";
 const SIGN_OUT_PATH = "/signout-with-chatgpt";
 const CALLBACK_PATH = "/callback";
+const LOCAL_STAFF_PREVIEW_PATH = "/local-staff-preview";
+const LOCAL_STAFF_COOKIE = "notarix_local_staff_preview";
 
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const requestHeaders = await headers();
   const email = requestHeaders.get(USER_EMAIL_HEADER);
-  if (!email) return null;
+  if (!email) {
+    const cookieHeader = requestHeaders.get("cookie") ?? "";
+    if (
+      isLocalDevHost(requestHeaders.get("host")) &&
+      cookieHeader.includes(`${LOCAL_STAFF_COOKIE}=1`)
+    ) {
+      return {
+        displayName: "Local Notarix Staff Preview",
+        email: "local.staff@notarix.live",
+        fullName: "Local Notarix Staff Preview",
+      };
+    }
+
+    return null;
+  }
 
   const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
   const fullName =
@@ -41,6 +57,11 @@ export async function requireChatGPTUser(
   const user = await getChatGPTUser();
   if (user) return user;
 
+  const requestHeaders = await headers();
+  if (isLocalDevHost(requestHeaders.get("host"))) {
+    redirect(localStaffPreviewPath(returnTo));
+  }
+
   redirect(chatGPTSignInPath(returnTo));
 }
 
@@ -52,6 +73,23 @@ export function chatGPTSignInPath(returnTo: string): string {
 export function chatGPTSignOutPath(returnTo = "/"): string {
   const safeReturnTo = safeRelativeReturnPath(returnTo);
   return `${SIGN_OUT_PATH}?return_to=${encodeURIComponent(safeReturnTo)}`;
+}
+
+export function localStaffPreviewPath(returnTo: string): string {
+  const safeReturnTo = safeRelativeReturnPath(returnTo);
+  return `${LOCAL_STAFF_PREVIEW_PATH}?return_to=${encodeURIComponent(safeReturnTo)}`;
+}
+
+export function localStaffCookieName(): string {
+  return LOCAL_STAFF_COOKIE;
+}
+
+export function isLocalDevHost(host: string | null): boolean {
+  return host === "localhost:3000" || host === "127.0.0.1:3000";
+}
+
+export function safeAuthReturnPath(value: string | null): string {
+  return safeRelativeReturnPath(value ?? "/");
 }
 
 function safeRelativeReturnPath(value: string): string {
