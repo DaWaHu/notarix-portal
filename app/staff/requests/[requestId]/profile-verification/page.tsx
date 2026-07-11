@@ -4,8 +4,8 @@ import {
   activationDecisions,
   findAccessRequest,
   getProfileVerificationItems,
-  type ProfileVerificationItem,
 } from "../../data";
+import { VerificationRecords } from "./VerificationRecords";
 
 type StaffProfileVerificationPageProps = {
   params: Promise<{
@@ -105,11 +105,7 @@ export default async function StaffProfileVerificationPage({
             </section>
           </div>
 
-          <div className="verification-list">
-            {verificationItems.map((item) => (
-              <VerificationRecord item={item} key={`${item.section}-${item.requirement}`} />
-            ))}
-          </div>
+          <VerificationRecords items={verificationItems} />
         </article>
 
         <aside className="review-panel decision-panel">
@@ -142,25 +138,5 @@ export default async function StaffProfileVerificationPage({
         </aside>
       </section>
     </main>
-  );
-}
-
-function VerificationRecord({ item }: { item: ProfileVerificationItem }) {
-  return (
-    <section className="verification-record">
-      <div>
-        <p className="request-label">{item.section}</p>
-        <h3>{item.requirement}</h3>
-        <p>{item.evidence}</p>
-      </div>
-      <mark data-status={item.status}>{item.status}</mark>
-      <p>{item.reviewerNote}</p>
-      <div className="verification-actions">
-        <span>Staff actions</span>
-        <button type="button">Record as Verified</button>
-        <button type="button">Request Correction</button>
-        <button type="button">Open Evidence</button>
-      </div>
-    </section>
   );
 }

@@ -1038,6 +1038,16 @@ a {
   padding: 18px;
 }
 
+.verification-record[data-status="Verified"] {
+  border-color: rgba(26, 127, 55, 0.24);
+  background: linear-gradient(180deg, #fcfffd 0%, #f4fbf6 100%);
+}
+
+.verification-record[data-status="Deficient"] {
+  border-color: rgba(176, 52, 48, 0.28);
+  background: linear-gradient(180deg, #fffdfb 0%, #fff4f2 100%);
+}
+
 .verification-record h3 {
   margin: 7px 0 0;
   color: var(--navy);
@@ -1057,6 +1067,15 @@ a {
   grid-column: 1 / -1;
   border-top: 1px solid rgba(7, 17, 59, 0.1);
   padding-top: 12px;
+}
+
+.verification-confirmation {
+  border-top: 0 !important;
+  border-left: 4px solid rgba(26, 127, 55, 0.45);
+  background: rgba(26, 127, 55, 0.08);
+  color: #176331 !important;
+  font-weight: 700;
+  padding: 12px 14px !important;
 }
 
 .verification-record mark {
