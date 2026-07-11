@@ -148,6 +148,10 @@ test("server-renders the protected staff profile verification workspace", async 
   assert.match(html, /NSR-1001/);
   assert.match(html, /Activation decision/);
   assert.match(html, /Submitted profile/);
+  assert.match(html, /Request number/);
+  assert.match(html, /Notary number/);
+  assert.match(html, /Reserved on approval:/);
+  assert.match(html, /NSN-NC-2607-0001/);
   assert.match(html, /Financial access/);
   assert.match(html, /Background check/);
   assert.match(html, /National Notary Association report preferred/);
@@ -192,11 +196,11 @@ test("server-renders protected staff activation decision screens", async () => {
 
   const html = await response.text();
   assert.match(html, /Activation decision review/);
-  assert.match(html, /Approve Profile/);
-  assert.match(html, /Activate verified portal profile/);
-  assert.match(html, /Administrator or Super Admin/);
-  assert.match(html, /RON access remains disabled/);
-  assert.match(html, /Credential expiration monitoring begins/);
+  assert.match(html, /Approval blocked/);
+  assert.match(html, /Profile cannot be approved yet/);
+  assert.match(html, /stored verification records still contain/);
+  assert.match(html, /NSN-NC-2607-0001/);
+  assert.match(html, /Notarix Signing Notary Number/);
   assert.match(html, /Open review items/);
   assert.match(html, /555-123-4567/);
   assert.doesNotMatch(html, /\b\d{10,11}\b/);
@@ -301,6 +305,7 @@ test("server-renders invited profile completion pages", async () => {
   assert.match(notaryHtml, /General Admin users may review status/);
   assert.match(notaryHtml, /Dec 31 2026/);
   assert.match(notaryHtml, /555-123-4567/);
+  assert.doesNotMatch(notaryHtml, /prototype screen/);
   assert.doesNotMatch(notaryHtml, /\b\d{10,11}\b/);
 
   const clientResponse = await render("/profile/complete/NSR-1002");
@@ -329,6 +334,9 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(agents, /Dec 31 2026/);
   assert.match(agents, /6:00 PM ET/);
   assert.match(agents, /###-###-####/);
+  assert.match(agents, /NSR/);
+  assert.match(agents, /NSN-NC-2607-0001/);
+  assert.match(agents, /NSC-NC-2607-0001/);
   assert.match(agents, /RON access must be restricted/);
   assert.match(page, /Notarial Services Made Simple/);
   assert.match(layout, /Notarix Signings Portal/);

@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 import { requireChatGPTUser } from "../../../../../../chatgpt-auth";
 import {
   activationDecisions,
+  canActivateProfile,
   findAccessRequest,
   getProfileVerificationItems,
+  profileNumberLabel,
   type ActivationDecisionSlug,
 } from "../../../../data";
 
@@ -36,6 +38,7 @@ export default async function StaffProfileDecisionPage({
 
   const verificationItems = getProfileVerificationItems(request);
   const openItems = verificationItems.filter((item) => item.status !== "Verified");
+  const approvalBlocked = selectedDecision.slug === "approve" && !canActivateProfile(request);
 
   return (
     <main className="staff-page">
@@ -57,36 +60,67 @@ export default async function StaffProfileDecisionPage({
       <section className="review-hero decision-hero">
         <div>
           <p className="kicker">Activation decision review</p>
-          <h1>{selectedDecision.label}</h1>
+          <h1>{approvalBlocked ? "Approval blocked" : selectedDecision.label}</h1>
           <p>
             Review the operational impact before changing the profile status for{" "}
-            {request.name}. This screen prepares the staff decision record before
-            database activation is connected.
+            {request.name}. Activation decisions require stored verification records,
+            staff identity, role authority, and audit history.
           </p>
         </div>
         <aside>
           <p>{request.id}</p>
-          <strong>{selectedDecision.outcome}</strong>
-          <span>{selectedDecision.authority}</span>
+          <strong>
+            {approvalBlocked
+              ? `${openItems.length} items must be resolved`
+              : selectedDecision.outcome}
+          </strong>
+          <span>
+            {request.approvedProfileNumber ??
+              `Approval will assign ${request.projectedProfileNumber}`}
+          </span>
         </aside>
       </section>
 
       <section className="decision-workspace" aria-label="Activation decision details">
         <article className="review-panel">
           <p className="request-label">Decision impact</p>
-          <h2>{selectedDecision.outcome}</h2>
+          <h2>
+            {approvalBlocked
+              ? "Profile cannot be approved yet"
+              : selectedDecision.outcome}
+          </h2>
+          {approvalBlocked ? (
+            <p className="decision-lock-note">
+              Approval is blocked because stored verification records still contain
+              pending, deficient, or restricted items. The {profileNumberLabel(request.type)}{" "}
+              is reserved as {request.projectedProfileNumber} and must not be assigned
+              until activation is complete.
+            </p>
+          ) : null}
           <div className="decision-impact-grid">
             <section>
               <p>Staff action</p>
-              <strong>{selectedDecision.staffAction}</strong>
+              <strong>
+                {approvalBlocked
+                  ? "Return to profile verification and resolve every open credential, identity, RON, and payable review item before approval."
+                  : selectedDecision.staffAction}
+              </strong>
             </section>
             <section>
               <p>Portal effect</p>
-              <strong>{selectedDecision.portalEffect}</strong>
+              <strong>
+                {approvalBlocked
+                  ? "Portal access remains inactive. RON, documents, assignments, and payable permissions remain disabled."
+                  : selectedDecision.portalEffect}
+              </strong>
             </section>
             <section>
               <p>Audit entry</p>
-              <strong>{selectedDecision.auditEntry}</strong>
+              <strong>
+                {approvalBlocked
+                  ? "No activation audit entry may be recorded until approval is eligible."
+                  : selectedDecision.auditEntry}
+              </strong>
             </section>
           </div>
         </article>
@@ -98,6 +132,14 @@ export default async function StaffProfileDecisionPage({
             <div>
               <dt>Request type</dt>
               <dd>{request.type}</dd>
+            </div>
+            <div>
+              <dt>{profileNumberLabel(request.type)}</dt>
+              <dd>{request.approvedProfileNumber ?? "Not assigned"}</dd>
+            </div>
+            <div>
+              <dt>Reserved on approval</dt>
+              <dd>{request.projectedProfileNumber}</dd>
             </div>
             <div>
               <dt>Current status</dt>

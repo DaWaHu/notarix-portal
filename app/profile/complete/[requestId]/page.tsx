@@ -193,7 +193,7 @@ export default async function ProfileCompletionPage({
             <p className="request-label">Security notice</p>
             <span>
               Do not upload banking credentials, passwords, private keys, or
-              unrelated personal records through this prototype screen.
+              unrelated personal records through this secure profile workflow.
             </span>
           </section>
         </aside>

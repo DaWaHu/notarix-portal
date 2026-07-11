@@ -13,6 +13,10 @@ Notarix Signings is a security-first notarial transaction platform for tradition
 - Phone numbers must be entered, displayed, and persisted as `###-###-####`, using example-safe placeholder numbers such as `555-123-4567`; do not store raw digit strings such as `19104468523`.
 - Available hours are `6:00 AM ET` through `9:00 PM ET`.
 - Store timestamps in UTC when backend persistence is added.
+- Use `NSR` for intake requests before approval, such as `NSR-1001`.
+- Assign `NSN` only to approved notary profiles, using the format `NSN-NC-2607-0001`.
+- Assign `NSC` only to approved client profiles, using the format `NSC-NC-2607-0001`.
+- Approved profile numbers are permanent, database-generated, never reused, and should not be assigned before activation.
 
 ## Visual Direction
 

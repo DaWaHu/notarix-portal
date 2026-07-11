@@ -10,6 +10,8 @@ export type AccessRequestStatus =
 export type AccessRequest = {
   id: string;
   type: "Client" | "Notary";
+  approvedProfileNumber: string | null;
+  projectedProfileNumber: string;
   name: string;
   organization: string;
   email: string;
@@ -187,6 +189,8 @@ export const accessRequests: AccessRequest[] = [
   {
     id: "NSR-1001",
     type: "Notary",
+    approvedProfileNumber: null,
+    projectedProfileNumber: "NSN-NC-2607-0001",
     name: "Bernadette W Hudlin",
     organization: "DaWaHu Collective, LLC",
     email: "hudlinbe@example.com",
@@ -227,6 +231,8 @@ export const accessRequests: AccessRequest[] = [
   {
     id: "NSR-1002",
     type: "Client",
+    approvedProfileNumber: null,
+    projectedProfileNumber: "NSC-NC-2607-0001",
     name: "Avery Coleman",
     organization: "Coleman Title Group",
     email: "avery@example.com",
@@ -267,6 +273,8 @@ export const accessRequests: AccessRequest[] = [
   {
     id: "NSR-1003",
     type: "Notary",
+    approvedProfileNumber: null,
+    projectedProfileNumber: "NSN-SC-2607-0001",
     name: "Jordan Ellis",
     organization: "Independent Notary",
     email: "jordan@example.com",
@@ -325,4 +333,20 @@ export function getProfileVerificationItems(
   return request.type === "Notary"
     ? notaryProfileVerificationItems
     : clientProfileVerificationItems;
+}
+
+export function profileNumberPrefix(type: AccessRequest["type"]): "NSC" | "NSN" {
+  return type === "Notary" ? "NSN" : "NSC";
+}
+
+export function profileNumberLabel(type: AccessRequest["type"]): string {
+  return type === "Notary"
+    ? "Notarix Signing Notary Number"
+    : "Notarix Signing Client Number";
+}
+
+export function canActivateProfile(request: AccessRequest): boolean {
+  return getProfileVerificationItems(request).every(
+    (item) => item.status === "Verified",
+  );
 }

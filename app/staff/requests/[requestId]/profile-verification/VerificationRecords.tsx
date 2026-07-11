@@ -11,7 +11,18 @@ type ProfileVerificationWorkspaceProps = {
   items: ProfileVerificationItem[];
   request: Pick<
     AccessRequest,
-    "email" | "id" | "jurisdiction" | "name" | "nextAction" | "organization" | "phone" | "service" | "status" | "type"
+    | "approvedProfileNumber"
+    | "email"
+    | "id"
+    | "jurisdiction"
+    | "name"
+    | "nextAction"
+    | "organization"
+    | "phone"
+    | "projectedProfileNumber"
+    | "service"
+    | "status"
+    | "type"
   >;
 };
 
@@ -71,6 +82,18 @@ export function ProfileVerificationWorkspace({
         </div>
 
         <div className="summary-grid verification-profile-summary">
+          <section>
+            <p className="request-label">Request number</p>
+            <strong>{request.id}</strong>
+            <span>Intake record before activation.</span>
+          </section>
+          <section>
+            <p className="request-label">
+              {request.type === "Notary" ? "Notary number" : "Client number"}
+            </p>
+            <strong>{request.approvedProfileNumber ?? "Pending approval"}</strong>
+            <span>Reserved on approval: {request.projectedProfileNumber}</span>
+          </section>
           <section>
             <p className="request-label">Profile type</p>
             <strong>{request.type}</strong>
