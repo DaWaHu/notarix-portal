@@ -403,6 +403,14 @@ a {
   color: var(--navy);
 }
 
+.profile-page {
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(199, 154, 38, 0.12), rgba(255, 248, 232, 0) 340px),
+    var(--cream);
+  color: var(--navy);
+}
+
 .portal-header {
   display: flex;
   align-items: center;
@@ -427,6 +435,14 @@ a {
   font-size: 14px;
   font-weight: 500;
   line-height: 20px;
+}
+
+.portal-header nav span {
+  color: var(--gold-dark);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 20px;
+  text-transform: uppercase;
 }
 
 .access-form {
@@ -1037,6 +1053,140 @@ a {
   line-height: 26px;
 }
 
+.message-preview a {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 800;
+  margin-top: 18px;
+  padding: 0 18px;
+}
+
+.profile-hero {
+  display: grid;
+  gap: 18px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 54px 40px 28px;
+}
+
+.profile-hero .kicker {
+  color: var(--gold-dark);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 20px;
+}
+
+.profile-hero h1 {
+  max-width: 860px;
+  margin: 0;
+  font-size: clamp(48px, 6vw, 92px);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.profile-hero > p:last-child {
+  max-width: 800px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 29px;
+}
+
+.profile-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 20px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 40px 84px;
+}
+
+.profile-form,
+.profile-sidebar section {
+  border: 1px solid rgba(7, 17, 59, 0.18);
+  border-radius: 8px;
+  background: var(--white);
+  box-shadow: 0 18px 48px rgba(3, 12, 50, 0.09);
+}
+
+.profile-form {
+  display: grid;
+  gap: 18px;
+  padding: 30px;
+}
+
+.profile-form h2 {
+  margin: 10px 0 0;
+  font-size: 34px;
+  font-weight: 400;
+  line-height: 42px;
+}
+
+.profile-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.profile-form input,
+.profile-form select,
+.profile-form textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf7;
+  color: var(--navy);
+  font: inherit;
+  font-size: 16px;
+  line-height: 24px;
+  padding: 14px;
+}
+
+.profile-sidebar {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.profile-sidebar section {
+  padding: 22px;
+}
+
+.profile-sidebar strong,
+.profile-sidebar span {
+  display: block;
+}
+
+.profile-sidebar strong {
+  margin-top: 10px;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 28px;
+}
+
+.profile-sidebar span,
+.profile-sidebar li {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.profile-sidebar ul {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding-left: 18px;
+}
+
 .checklist-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1150,6 +1300,7 @@ a {
   .review-hero,
   .review-layout,
   .invitation-layout,
+  .profile-layout,
   .summary-grid,
   .checklist-grid,
   .status-strip,
@@ -1232,6 +1383,8 @@ a {
   .review-hero,
   .review-layout,
   .invitation-layout,
+  .profile-hero,
+  .profile-layout,
   .checklist-grid,
   .audit-panel,
   .status-strip,

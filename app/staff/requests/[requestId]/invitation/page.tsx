@@ -114,6 +114,7 @@ export default async function StaffInvitationPage({
               Portal access will remain inactive until Notarix staff completes
               final review and activation.
             </p>
+            <a href={request.invitationUrl}>Preview Profile Completion Page</a>
           </section>
         </article>
 

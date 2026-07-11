@@ -145,6 +145,8 @@ test("server-renders the protected staff profile invitation workflow", async () 
   assert.match(html, /NSR-1001/);
   assert.match(html, /Notary Portal Profile/);
   assert.match(html, /Complete your Notarix Signings profile/);
+  assert.match(html, /href="\/profile\/complete\/NSR-1001"/);
+  assert.match(html, /Preview Profile Completion Page/);
   assert.match(html, /Jul 18 2026 at 5:00 PM ET/);
   assert.match(html, /Profile Completion Pending/);
   assert.match(html, /Single recipient, staff-issued, audit logged/);
@@ -153,6 +155,32 @@ test("server-renders the protected staff profile invitation workflow", async () 
   assert.match(html, /Staff receives profile-completion notification/);
   assert.match(html, /555-123-4567/);
   assert.doesNotMatch(html, /\b\d{10,11}\b/);
+});
+
+test("server-renders invited profile completion pages", async () => {
+  const notaryResponse = await render("/profile/complete/NSR-1001");
+  assert.equal(notaryResponse.status, 200);
+  const notaryHtml = await notaryResponse.text();
+  assert.match(notaryHtml, /Complete your notary profile/);
+  assert.match(notaryHtml, /DaWaHu Collective, LLC/);
+  assert.match(notaryHtml, /Profile Completion Pending/);
+  assert.match(notaryHtml, /Commission expiration date/);
+  assert.match(notaryHtml, /Remote online notary authorization/);
+  assert.match(notaryHtml, /Approved by state/);
+  assert.match(notaryHtml, /Dec 31 2026/);
+  assert.match(notaryHtml, /555-123-4567/);
+  assert.doesNotMatch(notaryHtml, /\b\d{10,11}\b/);
+
+  const clientResponse = await render("/profile/complete/NSR-1002");
+  assert.equal(clientResponse.status, 200);
+  const clientHtml = await clientResponse.text();
+  assert.match(clientHtml, /Complete your client profile/);
+  assert.match(clientHtml, /Coleman Title Group/);
+  assert.match(clientHtml, /Client type/);
+  assert.match(clientHtml, /Billing contact email/);
+  assert.match(clientHtml, /Authorized users/);
+  assert.match(clientHtml, /555-234-6789/);
+  assert.doesNotMatch(clientHtml, /\b\d{10,11}\b/);
 });
 
 test("keeps product rules in the local governance file", async () => {

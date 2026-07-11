@@ -22,6 +22,7 @@ export type AccessRequest = {
   risk: "Standard" | "Elevated";
   reviewer: string;
   invitationTarget: string;
+  invitationUrl: string;
   notes: string;
   eligibilityItems: string[];
   credentialItems: string[];
@@ -45,6 +46,7 @@ export const accessRequests: AccessRequest[] = [
     risk: "Standard",
     reviewer: "Unassigned",
     invitationTarget: "Notary profile completion",
+    invitationUrl: "/profile/complete/NSR-1001",
     notes:
       "Confirm commission status, identity document readiness, service area, availability, and insurance documentation before issuing profile access.",
     eligibilityItems: [
@@ -84,6 +86,7 @@ export const accessRequests: AccessRequest[] = [
     risk: "Standard",
     reviewer: "Operations",
     invitationTarget: "Client organization profile completion",
+    invitationUrl: "/profile/complete/NSR-1002",
     notes:
       "Review organization type, billing contact, authorized users, service eligibility, and whether invoice terms should be withheld until financial review is complete.",
     eligibilityItems: [
@@ -123,6 +126,7 @@ export const accessRequests: AccessRequest[] = [
     risk: "Elevated",
     reviewer: "Credential Review",
     invitationTarget: "Remote notary credential verification",
+    invitationUrl: "/profile/complete/NSR-1003",
     notes:
       "RON access must remain disabled until state authorization, electronic seal readiness, identity workflow, and approved remote-notary status are verified.",
     eligibilityItems: [
