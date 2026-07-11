@@ -156,9 +156,10 @@ function VerificationRecord({ item }: { item: ProfileVerificationItem }) {
       <mark data-status={item.status}>{item.status}</mark>
       <p>{item.reviewerNote}</p>
       <div className="verification-actions">
-        <button type="button">Mark Verified</button>
-        <button type="button">Flag Deficiency</button>
-        <button type="button">View Evidence</button>
+        <span>Staff actions</span>
+        <button type="button">Record as Verified</button>
+        <button type="button">Request Correction</button>
+        <button type="button">Open Evidence</button>
       </div>
     </section>
   );
