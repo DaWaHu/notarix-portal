@@ -122,9 +122,35 @@ test("server-renders the protected staff review detail workflow", async () => {
   assert.match(html, /Credential review/);
   assert.match(html, /Activation requirements/);
   assert.match(html, /Send Profile Invitation/);
+  assert.match(html, /href="\/staff\/requests\/NSR-1001\/invitation"/);
   assert.match(html, /Place On Hold/);
   assert.match(html, /Audit intelligence/);
   assert.match(html, /Jul 10 2026 at 9:12 AM ET/);
+  assert.match(html, /555-123-4567/);
+  assert.doesNotMatch(html, /\b\d{10,11}\b/);
+});
+
+test("server-renders the protected staff profile invitation workflow", async () => {
+  const lockedResponse = await render("/staff/requests/NSR-1001/invitation");
+  assert.equal(lockedResponse.status, 307);
+  assert.match(lockedResponse.headers.get("location") ?? "", /signin-with-chatgpt/);
+
+  const response = await render("/staff/requests/NSR-1001/invitation", {
+    "oai-authenticated-user-email": "staff@example.com",
+  });
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Profile invitation preparation/);
+  assert.match(html, /NSR-1001/);
+  assert.match(html, /Notary Portal Profile/);
+  assert.match(html, /Complete your Notarix Signings profile/);
+  assert.match(html, /Jul 18 2026 at 5:00 PM ET/);
+  assert.match(html, /Profile Completion Pending/);
+  assert.match(html, /Single recipient, staff-issued, audit logged/);
+  assert.match(html, /Required profile sections/);
+  assert.match(html, /Commission profile and primary jurisdiction/);
+  assert.match(html, /Staff receives profile-completion notification/);
   assert.match(html, /555-123-4567/);
   assert.doesNotMatch(html, /\b\d{10,11}\b/);
 });

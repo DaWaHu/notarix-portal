@@ -101,7 +101,9 @@ export default async function StaffRequestReviewPage({
             </div>
           </dl>
           <div className="decision-actions">
-            <button type="button">Send Profile Invitation</button>
+            <a href={`/staff/requests/${request.id}/invitation`}>
+              Send Profile Invitation
+            </a>
             <button type="button">Mark Credential Review</button>
             <button type="button">Place On Hold</button>
           </div>
