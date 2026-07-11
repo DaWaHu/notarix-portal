@@ -101,6 +101,9 @@ export default async function StaffRequestReviewPage({
             </div>
           </dl>
           <div className="decision-actions">
+            <a href={`/staff/requests/${request.id}/profile-verification`}>
+              Open Profile Verification
+            </a>
             <a href={`/staff/requests/${request.id}/invitation`}>
               Send Profile Invitation
             </a>

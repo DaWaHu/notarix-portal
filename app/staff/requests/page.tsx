@@ -84,6 +84,9 @@ export default async function StaffRequestsPage() {
               <p>{request.nextAction}</p>
               <div className="row-actions">
                 <a href={`/staff/requests/${request.id}`}>Open Review</a>
+                <a href={`/staff/requests/${request.id}/profile-verification`}>
+                  Profile Verification
+                </a>
                 <button type="button">Send Invitation</button>
               </div>
             </div>

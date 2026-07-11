@@ -30,6 +30,92 @@ export type AccessRequest = {
   auditEvents: string[];
 };
 
+export type VerificationDecision = "Verified" | "Pending" | "Deficient" | "Restricted";
+
+export type ProfileVerificationItem = {
+  section: string;
+  requirement: string;
+  evidence: string;
+  status: VerificationDecision;
+  reviewerNote: string;
+};
+
+export const notaryProfileVerificationItems: ProfileVerificationItem[] = [
+  {
+    section: "Identity",
+    requirement: "Government identification",
+    evidence: "Driver's license verification record",
+    status: "Pending",
+    reviewerNote: "Confirm name, state, expiration date, and verification method.",
+  },
+  {
+    section: "Commission",
+    requirement: "Notary commission",
+    evidence: "Commission certificate or state lookup",
+    status: "Pending",
+    reviewerNote: "Verify commission number, state, and expiration date before activation.",
+  },
+  {
+    section: "Insurance",
+    requirement: "E&O insurance",
+    evidence: "Policy declaration page",
+    status: "Pending",
+    reviewerNote: "Confirm policy number, coverage amount, state requirement, and expiration.",
+  },
+  {
+    section: "Background",
+    requirement: "Background check",
+    evidence: "National Notary Association report preferred",
+    status: "Pending",
+    reviewerNote: "Record provider and completion date. Escalate if report is missing.",
+  },
+  {
+    section: "NNA",
+    requirement: "NNA certification",
+    evidence: "NNA profile certificate link or staff-view evidence",
+    status: "Pending",
+    reviewerNote: "Store profile hyperlink and staff verification result when certificate cannot be downloaded.",
+  },
+  {
+    section: "RON",
+    requirement: "Remote online notary authorization",
+    evidence: "State authorization, RON training, and digital certificate",
+    status: "Restricted",
+    reviewerNote: "RON must remain disabled unless all remote authorization evidence is verified.",
+  },
+  {
+    section: "Payables",
+    requirement: "Payment setup",
+    evidence: "Payable onboarding document",
+    status: "Pending",
+    reviewerNote: "Financial permissions remain disabled until Administrator or Super Admin approval.",
+  },
+];
+
+export const clientProfileVerificationItems: ProfileVerificationItem[] = [
+  {
+    section: "Organization",
+    requirement: "Business identity",
+    evidence: "Organization name, authorized representative, and service jurisdiction",
+    status: "Pending",
+    reviewerNote: "Confirm the organization is eligible for currently offered Notarix services.",
+  },
+  {
+    section: "Users",
+    requirement: "Authorized users",
+    evidence: "Named account administrator and permitted order submitters",
+    status: "Pending",
+    reviewerNote: "No shared accounts. Staff must confirm who can submit orders.",
+  },
+  {
+    section: "Billing",
+    requirement: "Billing contact",
+    evidence: "Billing contact email and payment preference",
+    status: "Pending",
+    reviewerNote: "Order permissions remain limited until financial review is complete.",
+  },
+];
+
 export const accessRequests: AccessRequest[] = [
   {
     id: "NSR-1001",
@@ -164,4 +250,12 @@ export function findAccessRequest(id: string): AccessRequest | undefined {
   return accessRequests.find(
     (request) => request.id.toLowerCase() === id.toLowerCase(),
   );
+}
+
+export function getProfileVerificationItems(
+  request: AccessRequest,
+): ProfileVerificationItem[] {
+  return request.type === "Notary"
+    ? notaryProfileVerificationItems
+    : clientProfileVerificationItems;
 }
