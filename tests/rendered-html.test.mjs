@@ -89,6 +89,7 @@ test("server-renders the staff access request queue", async () => {
   assert.match(html, /Review client and notary access requests/);
   assert.match(html, /Notarix Signings Request/);
   assert.match(html, /NSR-1001/);
+  assert.match(html, /href="\/staff\/requests\/NSR-1001"/);
   assert.doesNotMatch(html, /NAR-/);
   assert.match(html, /Pending Review/);
   assert.match(html, /Profile Completion Pending/);
@@ -98,6 +99,33 @@ test("server-renders the staff access request queue", async () => {
   assert.match(html, /Send Invitation/);
   assert.match(html, /Notarix Signings Staff Workspace/);
   assert.match(html, /Authorized staff use only/);
+  assert.doesNotMatch(html, /\b\d{10,11}\b/);
+});
+
+test("server-renders the protected staff review detail workflow", async () => {
+  const lockedResponse = await render("/staff/requests/NSR-1001");
+  assert.equal(lockedResponse.status, 307);
+  assert.match(lockedResponse.headers.get("location") ?? "", /signin-with-chatgpt/);
+
+  const response = await render("/staff/requests/NSR-1001", {
+    "oai-authenticated-user-email": "staff@example.com",
+  });
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Staff review record/);
+  assert.match(html, /NSR-1001/);
+  assert.match(html, /Current status/);
+  assert.match(html, /Pending Review/);
+  assert.match(html, /Request summary/);
+  assert.match(html, /Eligibility review/);
+  assert.match(html, /Credential review/);
+  assert.match(html, /Activation requirements/);
+  assert.match(html, /Send Profile Invitation/);
+  assert.match(html, /Place On Hold/);
+  assert.match(html, /Audit intelligence/);
+  assert.match(html, /Jul 10 2026 at 9:12 AM ET/);
+  assert.match(html, /555-123-4567/);
   assert.doesNotMatch(html, /\b\d{10,11}\b/);
 });
 

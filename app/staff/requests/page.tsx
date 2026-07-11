@@ -1,53 +1,5 @@
 import { requireChatGPTUser } from "../../chatgpt-auth";
-
-const accessRequests = [
-  {
-    id: "NSR-1001",
-    type: "Notary",
-    name: "Bernadette W Hudlin",
-    organization: "DaWaHu Collective, LLC",
-    email: "hudlinbe@example.com",
-    phone: "555-123-4567",
-    jurisdiction: "NC",
-    service: "Mobile notarial services",
-    status: "Pending Review",
-    received: "Jul 10 2026",
-    nextAction: "Review commission and identity credentials.",
-  },
-  {
-    id: "NSR-1002",
-    type: "Client",
-    name: "Avery Coleman",
-    organization: "Coleman Title Group",
-    email: "avery@example.com",
-    phone: "555-234-6789",
-    jurisdiction: "NC",
-    service: "Multiple services",
-    status: "Profile Completion Pending",
-    received: "Jul 10 2026",
-    nextAction: "Confirm authorized users and billing contact.",
-  },
-  {
-    id: "NSR-1003",
-    type: "Notary",
-    name: "Jordan Ellis",
-    organization: "Independent Notary",
-    email: "jordan@example.com",
-    phone: "555-345-7890",
-    jurisdiction: "SC",
-    service: "Remote online notarial services",
-    status: "Credential Verification",
-    received: "Jul 09 2026",
-    nextAction: "Verify RON authorization before activation.",
-  },
-];
-
-const statusCounts = [
-  ["Pending Review", "1", "New requests awaiting staff intake."],
-  ["Profile Pending", "1", "Invitations sent, profile not complete."],
-  ["Credential Review", "1", "Eligibility and commission review."],
-  ["Active", "0", "Approved portal profiles."],
-];
+import { accessRequests, statusCounts } from "./data";
 
 export default async function StaffRequestsPage() {
   await requireChatGPTUser("/staff/requests");
@@ -131,7 +83,7 @@ export default async function StaffRequestsPage() {
               <p className="request-label">Next staff action</p>
               <p>{request.nextAction}</p>
               <div className="row-actions">
-                <button type="button">Open Review</button>
+                <a href={`/staff/requests/${request.id}`}>Open Review</a>
                 <button type="button">Send Invitation</button>
               </div>
             </div>

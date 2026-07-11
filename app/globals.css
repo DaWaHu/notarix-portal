@@ -783,8 +783,11 @@ a {
   margin-top: 16px;
 }
 
-.row-actions button {
+.row-actions button,
+.row-actions a {
+  display: inline-flex;
   min-height: 38px;
+  align-items: center;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--white);
@@ -794,6 +797,250 @@ a {
   font-size: 14px;
   font-weight: 700;
   padding: 0 16px;
+}
+
+.review-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  align-items: end;
+  gap: 36px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 52px 40px 28px;
+}
+
+.review-hero > div {
+  display: grid;
+  gap: 18px;
+  max-width: 780px;
+}
+
+.review-hero .kicker {
+  color: var(--gold-dark);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 20px;
+}
+
+.review-hero h1 {
+  margin: 0;
+  font-size: clamp(58px, 7vw, 108px);
+  font-weight: 300;
+  line-height: 0.98;
+}
+
+.review-hero > div > p:last-child {
+  max-width: 720px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 29px;
+}
+
+.review-hero aside,
+.review-panel {
+  border: 1px solid rgba(7, 17, 59, 0.18);
+  border-radius: 8px;
+  background: var(--white);
+  box-shadow: 0 18px 48px rgba(3, 12, 50, 0.09);
+}
+
+.review-hero aside {
+  padding: 26px;
+  background:
+    linear-gradient(135deg, rgba(199, 154, 38, 0.14), rgba(255, 255, 255, 0)),
+    var(--white);
+}
+
+.review-hero aside p,
+.review-hero aside strong,
+.review-hero aside span {
+  display: block;
+}
+
+.review-hero aside p {
+  margin: 0;
+  color: var(--gold-dark);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 18px;
+  text-transform: uppercase;
+}
+
+.review-hero aside strong {
+  margin-top: 12px;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 30px;
+}
+
+.review-hero aside span {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 24px;
+}
+
+.review-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 20px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 40px 20px;
+}
+
+.review-panel {
+  padding: 28px;
+}
+
+.review-panel-heading h2,
+.decision-panel h2 {
+  margin: 6px 0 0;
+  font-size: 34px;
+  font-weight: 400;
+  line-height: 42px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.summary-grid section,
+.staff-note {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf7;
+  padding: 18px;
+}
+
+.summary-grid strong,
+.summary-grid span {
+  display: block;
+}
+
+.summary-grid strong {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.summary-grid span,
+.staff-note p:last-child,
+.decision-panel dd,
+.audit-panel li {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.staff-note {
+  margin-top: 16px;
+}
+
+.staff-note p:last-child {
+  margin: 8px 0 0;
+}
+
+.decision-panel dl {
+  display: grid;
+  gap: 12px;
+  margin: 22px 0 0;
+}
+
+.decision-panel dl div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf7;
+  padding: 14px;
+}
+
+.decision-panel dt {
+  color: var(--gold-dark);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 18px;
+  text-transform: uppercase;
+}
+
+.decision-panel dd {
+  margin: 6px 0 0;
+}
+
+.decision-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.decision-actions button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--navy);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 0 16px;
+}
+
+.decision-actions button:first-child {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: var(--white);
+}
+
+.checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 40px 20px;
+}
+
+.checklist-panel ul,
+.audit-panel ol {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0 0;
+  padding: 0;
+}
+
+.checklist-panel li {
+  list-style: none;
+  position: relative;
+  color: var(--navy);
+  font-size: 15px;
+  line-height: 23px;
+  padding-left: 28px;
+}
+
+.checklist-panel li::before {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--gold);
+  content: "";
+}
+
+.audit-panel {
+  max-width: 1280px;
+  margin: 0 auto 80px;
+}
+
+.audit-panel li {
+  margin-left: 20px;
+  padding-left: 4px;
 }
 
 .staff-footer {
@@ -859,6 +1106,10 @@ a {
   .service-grid,
   .trust-strip,
   .staff-title,
+  .review-hero,
+  .review-layout,
+  .summary-grid,
+  .checklist-grid,
   .status-strip,
   .request-card-grid,
   .staff-footer {
@@ -936,6 +1187,10 @@ a {
   }
 
   .staff-title,
+  .review-hero,
+  .review-layout,
+  .checklist-grid,
+  .audit-panel,
   .status-strip,
   .request-table {
     padding-left: 22px;
