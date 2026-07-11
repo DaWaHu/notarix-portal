@@ -154,13 +154,14 @@ test("server-renders the protected staff profile verification workspace", async 
   assert.match(html, /E&amp;O insurance/);
   assert.match(html, /Remote online notary authorization/);
   assert.match(html, /RON must remain disabled/);
-  assert.match(html, /Approve Profile/);
-  assert.match(html, /Request Corrections/);
-  assert.match(html, /Keep Inactive/);
-  assert.match(
+  assert.match(html, /Approval Locked/);
+  assert.match(html, /verification items remain unresolved/);
+  assert.doesNotMatch(
     html,
     /href="\/staff\/requests\/NSR-1001\/profile-verification\/decision\/approve"/,
   );
+  assert.match(html, /Request Corrections/);
+  assert.match(html, /Keep Inactive/);
   assert.match(
     html,
     /href="\/staff\/requests\/NSR-1001\/profile-verification\/decision\/corrections"/,

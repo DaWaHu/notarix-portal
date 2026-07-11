@@ -1197,6 +1197,25 @@ a {
   color: var(--white);
 }
 
+.decision-actions button:disabled,
+.decision-actions button[aria-disabled="true"] {
+  border-color: rgba(7, 17, 59, 0.16);
+  background: rgba(7, 17, 59, 0.08);
+  color: rgba(7, 17, 59, 0.58);
+  cursor: not-allowed;
+}
+
+.decision-lock-note {
+  margin: 16px 0 0;
+  border-left: 4px solid var(--gold);
+  background: #fff7df;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 22px;
+  padding: 12px 14px;
+}
+
 .decision-hero h1 {
   max-width: 780px;
 }
