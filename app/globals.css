@@ -1137,6 +1137,22 @@ a {
   line-height: 20px;
 }
 
+.profile-form .check-row {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf7;
+  gap: 10px;
+  padding: 14px;
+}
+
+.profile-form .check-row input {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+}
+
 .profile-form input,
 .profile-form select,
 .profile-form textarea {
@@ -1185,6 +1201,152 @@ a {
   gap: 10px;
   margin: 14px 0 0;
   padding-left: 18px;
+}
+
+.three-column {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.profile-section {
+  display: grid;
+  gap: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+}
+
+.profile-section > div:first-child {
+  display: grid;
+  gap: 6px;
+}
+
+.profile-section > div:first-child > span,
+.profile-note {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 22px;
+  margin: 0;
+}
+
+.verification-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 0.45fr) minmax(0, 1fr);
+  align-items: center;
+  border: 1px solid rgba(26, 127, 55, 0.28);
+  border-radius: 8px;
+  background: rgba(26, 127, 55, 0.08);
+  gap: 10px;
+  padding: 14px;
+}
+
+.verification-row strong {
+  color: #176331;
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.verification-row p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.verified-check {
+  position: relative;
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #1a7f37;
+}
+
+.verified-check::after {
+  position: absolute;
+  top: 5px;
+  left: 7px;
+  width: 5px;
+  height: 9px;
+  border-right: 2px solid var(--white);
+  border-bottom: 2px solid var(--white);
+  content: "";
+  transform: rotate(45deg);
+}
+
+.verified-check.pending {
+  background: rgba(199, 154, 38, 0.24);
+}
+
+.verified-check.pending::after {
+  border-color: var(--gold-dark);
+}
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.upload-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf7;
+  padding: 16px;
+}
+
+.upload-card strong {
+  display: block;
+  color: var(--navy);
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.upload-card input {
+  margin-top: 8px;
+}
+
+.rule-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rule-list p,
+.payment-ledger > div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf7;
+  margin: 0;
+  padding: 14px;
+}
+
+.rule-list p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.payment-ledger {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.payment-ledger strong,
+.payment-ledger span {
+  display: block;
+}
+
+.payment-ledger strong {
+  margin-top: 8px;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.payment-ledger span {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 22px;
 }
 
 .checklist-grid {
@@ -1303,6 +1465,10 @@ a {
   .profile-layout,
   .summary-grid,
   .checklist-grid,
+  .three-column,
+  .upload-grid,
+  .rule-list,
+  .payment-ledger,
   .status-strip,
   .request-card-grid,
   .staff-footer {
