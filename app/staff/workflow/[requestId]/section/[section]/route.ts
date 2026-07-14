@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireChatGPTUser } from "../../../../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../../../../access-policy";
 import {
   resolveSectionTransition,
   type WorkflowSectionTransition,
@@ -25,7 +25,10 @@ const validSectionActions = new Set<WorkflowSectionTransition["action"]>([
 
 export async function POST(request: Request, context: SectionRouteContext) {
   const { requestId, section } = await context.params;
-  const user = await requireChatGPTUser(`/staff/workflow/${requestId}/section/${section}`);
+  const { user } = await requireStaffRouteAccess(
+    `/staff/workflow/${requestId}/section/${section}`,
+    ["GenAdmin", "Admin", "SuperAdmin"],
+  );
 
   const profileRequest = await getPersistedAccessRequest(requestId);
   if (!profileRequest) notFound();

@@ -1,5 +1,4 @@
-import { getRequestStaffRole, type StaffRole } from "../access-policy";
-import { requireChatGPTUser } from "../chatgpt-auth";
+import { requireStaffRouteAccess, type StaffRole } from "../access-policy";
 import {
   auditReportRecords,
   credentialMonitorRecords,
@@ -121,8 +120,11 @@ const roleConfig: Record<
 };
 
 export default async function StaffRoleHomePage() {
-  const user = await requireChatGPTUser("/staff");
-  const role = await getRequestStaffRole();
+  const { role, user } = await requireStaffRouteAccess("/staff", [
+    "GenAdmin",
+    "Admin",
+    "SuperAdmin",
+  ]);
   const config = roleConfig[role];
 
   return (

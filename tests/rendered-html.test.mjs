@@ -403,6 +403,61 @@ test("restricts the profile verification audit report to SuperAdmin role", async
   assert.match(html, /GenAdmin004/);
 });
 
+test("binds protected staff access to production identity-provider claims", async () => {
+  const previewHeaderOnlyResponse = await render("/staff/audit-reports", {
+    host: "portal.notarix.live",
+    "oai-authenticated-user-email": "superadmin@example.com",
+    "x-notarix-staff-role": "SuperAdmin",
+  });
+  assert.equal(previewHeaderOnlyResponse.status, 404);
+
+  const incompleteClaimResponse = await render("/staff/audit-reports", {
+    host: "portal.notarix.live",
+    "oai-authenticated-user-email": "superadmin@example.com",
+    "x-notarix-device-trust": "managed",
+    "x-notarix-idp-mfa": "verified",
+    "x-notarix-idp-passkey": "verified",
+    "x-notarix-idp-role": "notarix:staff:superadmin",
+  });
+  assert.equal(incompleteClaimResponse.status, 404);
+
+  const productionClaimResponse = await render("/staff/audit-reports", {
+    host: "portal.notarix.live",
+    "oai-authenticated-user-email": "superadmin@example.com",
+    "x-notarix-device-trust": "managed",
+    "x-notarix-idp-mfa": "verified",
+    "x-notarix-idp-passkey": "verified",
+    "x-notarix-idp-role": "notarix:staff:superadmin",
+    "x-notarix-session-assurance": "phishing-resistant",
+  });
+  assert.equal(productionClaimResponse.status, 200);
+  const html = await productionClaimResponse.text();
+  assert.match(html, /Super Admin Audit Reporting Center/);
+
+  const productionAdminCommandResponse = await requestRoute("/staff/command-center", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "hold-payment-release",
+      targetId: "LED-2607-0002",
+    }),
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      host: "portal.notarix.live",
+      "oai-authenticated-user-email": "admin@example.com",
+      "x-notarix-device-trust": "approved",
+      "x-notarix-idp-mfa": "verified",
+      "x-notarix-idp-passkey": "verified",
+      "x-notarix-idp-role": "notarix:staff:admin",
+      "x-notarix-session-assurance": "high",
+    },
+  });
+  assert.equal(productionAdminCommandResponse.status, 200);
+  const command = await productionAdminCommandResponse.json();
+  assert.equal(command.allowed, true);
+  assert.equal(command.receipt.role, "Admin");
+});
+
 test("server-renders protected staff activation decision screens", async () => {
   const lockedResponse = await render(
     "/staff/requests/NSR-1001/profile-verification/decision/approve",
@@ -2290,6 +2345,10 @@ test("keeps product rules in the local governance file", async () => {
     new URL("../app/staff/command-center/route.ts", import.meta.url),
     "utf8",
   );
+  const workflowRoute = await readFile(
+    new URL("../app/staff/workflow/[requestId]/route.ts", import.meta.url),
+    "utf8",
+  );
   const d1Seed = await readFile(new URL("../app/d1-seed.ts", import.meta.url), "utf8");
   const d1SeedRoute = await readFile(
     new URL("../app/staff/platform/seed/route.ts", import.meta.url),
@@ -2365,16 +2424,28 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(commandStore, /schema\.commandCenterReceipts/);
   assert.match(commandStore, /canUseCommandAuthority/);
   assert.match(commandStore, /commandAuthorityLabel/);
-  assert.match(commandRoute, /normalizeStaffRole/);
-  assert.doesNotMatch(commandRoute, /payload\.role/);
+  assert.match(commandRoute, /normalizeLocalPreviewStaffRole/);
+  assert.match(commandRoute, /session\.localPreview[\s\S]*payload\.role/);
   assert.match(accessPolicy, /accessPolicyContract/);
+  assert.match(accessPolicy, /productionIdentityClaimHeaders/);
   assert.match(accessPolicy, /requireStaffRouteAccess/);
+  assert.match(accessPolicy, /getStaffIdentitySession/);
+  assert.match(accessPolicy, /x-notarix-idp-role/);
+  assert.match(accessPolicy, /x-notarix-idp-mfa/);
+  assert.match(accessPolicy, /x-notarix-idp-passkey/);
+  assert.match(accessPolicy, /x-notarix-device-trust/);
+  assert.match(accessPolicy, /x-notarix-session-assurance/);
+  assert.match(accessPolicy, /ProductionIdentityProvider/);
+  assert.match(accessPolicy, /LocalPreview/);
   assert.match(accessPolicy, /normalizeStaffRole/);
+  assert.match(accessPolicy, /normalizeStaffRoleClaim/);
   assert.match(accessPolicy, /normalizePortalActorRole/);
   assert.match(accessPolicy, /canUseCommandAuthority/);
   assert.match(accessPolicy, /AdminOrSuperAdmin/);
   assert.match(accessPolicy, /ClientUser/);
   assert.match(accessPolicy, /AssignedNotary/);
+  assert.match(workflowRoute, /requireStaffRouteAccess/);
+  assert.match(workflowRoute, /session\.localPreview/);
   assert.match(workflowStore, /getPersistedAccessRequest/);
   assert.match(workflowStore, /persistStoredAccessRequest/);
   assert.match(workflowStore, /schema\.accessRequests/);

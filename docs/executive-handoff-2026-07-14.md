@@ -3,8 +3,8 @@
 Date: Jul 14 2026
 Workspace: `/Users/hudlinbe/Desktop/100 Notarix Signing`
 Branch: `codex/notarix-portal-checkpoint`
-Latest checkpoint: Shared RBAC access-policy checkpoint pending current commit
-Verification status: `npm test` passed, 32 of 32 tests passing
+Latest checkpoint: Production identity-provider claim binding checkpoint pending current commit
+Verification status: `npm test` passed, 33 of 33 tests passing
 
 ## Executive Summary
 
@@ -18,13 +18,14 @@ The product is not production-deployed yet. The remaining work is primarily infr
 
 Portal UI and workflow coverage: 90 percent to 93 percent complete.
 
-Backend persistence and workflow hardening: 70 percent to 76 percent complete.
+Backend persistence and workflow hardening: 74 percent to 80 percent complete.
 
-Overall full deployment readiness: 78 percent to 82 percent complete.
+Overall full deployment readiness: 80 percent to 84 percent complete.
 
 This estimate increased because the latest work moved profile workflow state, order workflow state, and command-center audit receipts from in-memory-only behavior toward D1-backed persistence with preview fallback.
 It increased again after adding SuperAdmin-only idempotent D1 seed/reconciliation tooling for baseline profile, order, evidence, and command-center target records.
 It increased again after centralizing staff route access, role normalization, and command-center authority checks behind a shared RBAC policy module.
+It increased again after binding protected staff routes and workflow endpoints to production identity-provider claim headers for role, MFA/passkey status, device trust, and session assurance.
 
 ## Latest Commits
 
@@ -101,6 +102,19 @@ Completed:
 - Moved Admin/SuperAdmin command activity access through shared route-access enforcement.
 - Updated the staff command-center endpoint so request-body role values cannot spoof Client or Notary authority.
 - Added regression coverage for blocked role spoofing and governance coverage for the access-policy contract.
+
+### Production Identity-Provider Claim Binding
+
+Completed:
+
+- Added production staff claim header contract in `app/access-policy.ts`.
+- Protected staff access now requires production role, MFA, passkey, trusted-device, and high-assurance session claims outside local preview.
+- Production role claims support GenAdmin, Admin, and SuperAdmin staff roles through canonical claim values.
+- Local preview remains available for development and tests, while explicit non-local hosts require production claims.
+- Staff home, command-center GET/POST, profile workflow transitions, and section verification actions now pass through shared access enforcement.
+- Local-only form role values remain supported for staff preview, but production requests ignore body role values and use identity claims.
+- Added deployed-host tests proving preview role headers alone cannot unlock SuperAdmin routes.
+- Added production-claim tests for SuperAdmin audit access and Admin command authority.
 
 ## Core Pages Completed
 
@@ -188,6 +202,12 @@ Completed:
   - `app/staff/platform/seed/route.ts`
 - Shared RBAC and command authority policy now lives in:
   - `app/access-policy.ts`
+- Production identity-provider claim contract uses:
+  - `x-notarix-idp-role`
+  - `x-notarix-idp-mfa`
+  - `x-notarix-idp-passkey`
+  - `x-notarix-device-trust`
+  - `x-notarix-session-assurance`
 - Tests intentionally assert these persistence boundaries so future work does not regress into seed-only behavior.
 
 ## Production Gaps Remaining
@@ -195,8 +215,8 @@ Completed:
 ### Critical Before Deployment
 
 - Configure production D1 binding and apply migrations.
-- Bind real identity provider with MFA, passkeys, device controls, and production role claims.
-- Replace local preview staff-role headers with provider-backed claims in deployed environments.
+- Connect the selected production identity provider so it emits the required Notarix Signings claim headers.
+- Confirm production deployment strips or ignores preview-only staff-role headers before application routing.
 - Add encrypted file storage, likely R2 or equivalent object storage.
 - Add malware scanning provider and block file release until scan completion.
 - Add real email provider and phone/SMS provider.
@@ -213,21 +233,21 @@ Completed:
 - Persist financial ledger controls and payment release state.
 - Persist credential expiration records and renewal reminders.
 - Add admin seed/reconciliation tools for records that start in local modeled data.
-- Add deployed-environment role-claim tests once the identity provider is connected.
+- Add provider-specific integration tests once the identity provider is selected and connected.
 
 ## Recommended Next Task
 
-Start with **production identity provider claim binding and session enforcement**.
+Start with **encrypted evidence storage and malware validation provider integration**.
 
-Reason: the application now has D1-backed persistence paths, baseline seed tooling, and a shared RBAC policy module. The next critical production blocker is binding that policy to real identity-provider claims, MFA/passkeys, and device/session controls.
+Reason: the application now has D1-backed persistence paths, baseline seed tooling, shared RBAC, and production claim enforcement at the application boundary. The next critical production blocker is moving evidence and document handling from modeled records into encrypted storage with malware validation and custody controls.
 
 Recommended scope:
 
-1. Define the exact production claim names for GenAdmin, Admin, SuperAdmin, Client, and Notary.
-2. Add provider-backed role extraction inside `app/access-policy.ts`.
-3. Enforce MFA/passkey and device/session requirements for protected staff routes.
-4. Keep local preview behavior available only for local development.
-5. Add deployed-environment tests for protected workflows and SuperAdmin-only seed/audit routes.
+1. Define the R2 or equivalent object storage bucket boundary for evidence files.
+2. Store evidence metadata, custody status, content hash, scan status, and access class in D1.
+3. Add upload validation and malware-scan provider status fields.
+4. Block evidence release until validation and malware scanning pass.
+5. Keep evidence access receipts tied to staff identity, role, target, timestamp, and reason.
 
 ## Verification Snapshot
 
@@ -240,7 +260,7 @@ npm test
 Result:
 
 ```text
-32 tests passing
+33 tests passing
 ```
 
 Last whitespace check:
@@ -260,7 +280,7 @@ Result: clean.
 3. Confirm latest commit:
    `git log --oneline -5`
 4. Start task:
-   Begin production identity provider claim binding and session enforcement.
+   Begin encrypted evidence storage and malware validation provider integration.
 5. Run:
    `npm test`
 6. Commit the checkpoint.

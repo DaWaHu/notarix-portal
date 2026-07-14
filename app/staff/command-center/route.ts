@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
-import { normalizeStaffRole } from "../../access-policy";
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import {
+  normalizeLocalPreviewStaffRole,
+  requireStaffRouteAccess,
+} from "../../access-policy";
 import {
   applyCommandCenterAction,
   listPersistedCommandCenterEvents,
@@ -61,7 +63,11 @@ const validCommandActions = new Set<CommandCenterAction>([
 ]);
 
 export async function GET() {
-  await requireChatGPTUser("/staff/command-center");
+  await requireStaffRouteAccess("/staff/command-center", [
+    "GenAdmin",
+    "Admin",
+    "SuperAdmin",
+  ]);
   const [commandEvents, commandReceipts] = await Promise.all([
     listPersistedCommandCenterEvents(),
     listPersistedCommandCenterReceipts(),
@@ -84,7 +90,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await requireChatGPTUser("/staff/command-center");
+  const { role: claimRole, session, user } = await requireStaffRouteAccess("/staff/command-center", [
+    "GenAdmin",
+    "Admin",
+    "SuperAdmin",
+  ]);
   const payload = await safeJson(request);
   const action = String(payload.action ?? "");
 
@@ -98,7 +108,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const role = normalizeStaffRole(request.headers.get("x-notarix-staff-role"));
+  const role = session.localPreview
+    ? normalizeLocalPreviewStaffRole(
+        request.headers.get("x-notarix-staff-role") ?? payload.role,
+      )
+    : claimRole;
   const transition = await applyCommandCenterAction(
     action as CommandCenterAction,
     user.fullName ?? user.email,

@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
-import { requireChatGPTUser } from "../../../chatgpt-auth";
+import {
+  normalizeLocalPreviewStaffRole,
+  requireStaffRouteAccess,
+} from "../../../access-policy";
 import {
   resolveWorkflowTransition,
   type WorkflowAction,
-  type WorkflowActorRole,
 } from "../../requests/workflow";
 import {
   activateStoredProfile,
@@ -31,7 +33,11 @@ const validActions = new Set<WorkflowAction>([
 
 export async function GET(_request: Request, context: RouteContext) {
   const { requestId } = await context.params;
-  await requireChatGPTUser(`/staff/workflow/${requestId}`);
+  await requireStaffRouteAccess(`/staff/workflow/${requestId}`, [
+    "GenAdmin",
+    "Admin",
+    "SuperAdmin",
+  ]);
 
   const profileRequest = await getPersistedAccessRequest(requestId);
   if (!profileRequest) notFound();
@@ -51,7 +57,10 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function POST(request: Request, context: RouteContext) {
   const { requestId } = await context.params;
-  const user = await requireChatGPTUser(`/staff/workflow/${requestId}`);
+  const { role: claimRole, session, user } = await requireStaffRouteAccess(
+    `/staff/workflow/${requestId}`,
+    ["GenAdmin", "Admin", "SuperAdmin"],
+  );
 
   const profileRequest = await getPersistedAccessRequest(requestId);
   if (!profileRequest) notFound();
@@ -65,7 +74,11 @@ export async function POST(request: Request, context: RouteContext) {
     );
   }
 
-  const role = normalizeRole(request.headers.get("x-notarix-staff-role") ?? payload.role);
+  const role = session.localPreview
+    ? normalizeLocalPreviewStaffRole(
+        request.headers.get("x-notarix-staff-role") ?? payload.role,
+      )
+    : claimRole;
   const transition = resolveWorkflowTransition(
     profileRequest,
     action as WorkflowAction,
@@ -126,9 +139,4 @@ async function safeJson(request: Request): Promise<Record<string, unknown>> {
   } catch {
     return {};
   }
-}
-
-function normalizeRole(value: unknown): WorkflowActorRole {
-  if (value === "Admin" || value === "SuperAdmin") return value;
-  return "GenAdmin";
 }
