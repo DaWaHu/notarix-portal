@@ -3,7 +3,7 @@
 Date: Jul 14 2026
 Workspace: `/Users/hudlinbe/Desktop/100 Notarix Signing`
 Branch: `codex/notarix-portal-checkpoint`
-Latest checkpoint: Production identity-provider claim binding checkpoint pending current commit
+Latest checkpoint: Evidence storage controls checkpoint pending current commit
 Verification status: `npm test` passed, 33 of 33 tests passing
 
 ## Executive Summary
@@ -18,14 +18,15 @@ The product is not production-deployed yet. The remaining work is primarily infr
 
 Portal UI and workflow coverage: 90 percent to 93 percent complete.
 
-Backend persistence and workflow hardening: 74 percent to 80 percent complete.
+Backend persistence and workflow hardening: 78 percent to 83 percent complete.
 
-Overall full deployment readiness: 80 percent to 84 percent complete.
+Overall full deployment readiness: 82 percent to 86 percent complete.
 
 This estimate increased because the latest work moved profile workflow state, order workflow state, and command-center audit receipts from in-memory-only behavior toward D1-backed persistence with preview fallback.
 It increased again after adding SuperAdmin-only idempotent D1 seed/reconciliation tooling for baseline profile, order, evidence, and command-center target records.
 It increased again after centralizing staff route access, role normalization, and command-center authority checks behind a shared RBAC policy module.
 It increased again after binding protected staff routes and workflow endpoints to production identity-provider claim headers for role, MFA/passkey status, device trust, and session assurance.
+It increased again after adding D1 evidence storage controls for encrypted object keys, malware validation status, release eligibility, and custody metadata.
 
 ## Latest Commits
 
@@ -116,6 +117,20 @@ Completed:
 - Added deployed-host tests proving preview role headers alone cannot unlock SuperAdmin routes.
 - Added production-claim tests for SuperAdmin audit access and Admin command authority.
 
+### Evidence Storage and Malware Validation Controls
+
+Completed:
+
+- Added D1 schema table for evidence storage controls.
+- Added migration `drizzle/0003_evidence_storage_controls.sql`.
+- Added `app/evidence-repository.ts` as the D1-first evidence storage control boundary.
+- Evidence storage controls now track storage provider, bucket, object key, SHA-256, encryption status, validation status, malware status, malware provider receipt, access level, release eligibility, release block reason, retention rule, and last access.
+- D1 seed/reconciliation now includes baseline evidence storage controls for profile evidence, provider results, and order documents.
+- Evidence viewer now shows encrypted object key, malware provider receipt, signed URL status, release eligibility, and release block reason.
+- Evidence intake now shows release-blocked files and object-key custody.
+- Document validation now reads from the storage-control repository and blocks release when storage or malware controls are incomplete.
+- Governance tests now protect the evidence storage schema, migration, repository, and seed path.
+
 ## Core Pages Completed
 
 ### Public and Access
@@ -195,6 +210,7 @@ Completed:
 - Local preview remains intentionally seed-backed when `DB` is unavailable.
 - D1-first modules now include:
   - `app/order-repository.ts`
+  - `app/evidence-repository.ts`
   - `app/staff/command-center/store.ts`
   - `app/staff/requests/store.ts`
 - Seed/reconciliation tooling now lives in:
@@ -217,8 +233,8 @@ Completed:
 - Configure production D1 binding and apply migrations.
 - Connect the selected production identity provider so it emits the required Notarix Signings claim headers.
 - Confirm production deployment strips or ignores preview-only staff-role headers before application routing.
-- Add encrypted file storage, likely R2 or equivalent object storage.
-- Add malware scanning provider and block file release until scan completion.
+- Connect encrypted file storage, likely R2 or equivalent object storage, to the evidence repository.
+- Connect malware scanning provider callbacks and update D1 scan status after provider results.
 - Add real email provider and phone/SMS provider.
 - Add notification consent and delivery callback handling.
 - Add production audit immutability strategy.
@@ -228,8 +244,8 @@ Completed:
 
 ### Important Next Layer
 
-- Persist evidence metadata and file custody to D1/R2.
-- Persist document validation results and malware scan outcomes.
+- Issue signed evidence access URLs only after release controls clear.
+- Persist evidence access receipts as append-only audit records.
 - Persist financial ledger controls and payment release state.
 - Persist credential expiration records and renewal reminders.
 - Add admin seed/reconciliation tools for records that start in local modeled data.
@@ -237,17 +253,17 @@ Completed:
 
 ## Recommended Next Task
 
-Start with **encrypted evidence storage and malware validation provider integration**.
+Start with **evidence object storage binding, signed URL issuance, and malware scan callbacks**.
 
-Reason: the application now has D1-backed persistence paths, baseline seed tooling, shared RBAC, and production claim enforcement at the application boundary. The next critical production blocker is moving evidence and document handling from modeled records into encrypted storage with malware validation and custody controls.
+Reason: the application now has D1-backed evidence storage controls and release-blocking logic. The next critical production blocker is connecting those controls to real encrypted object storage, signed URL issuance, and malware scanner provider callbacks.
 
 Recommended scope:
 
-1. Define the R2 or equivalent object storage bucket boundary for evidence files.
-2. Store evidence metadata, custody status, content hash, scan status, and access class in D1.
-3. Add upload validation and malware-scan provider status fields.
-4. Block evidence release until validation and malware scanning pass.
-5. Keep evidence access receipts tied to staff identity, role, target, timestamp, and reason.
+1. Add object storage binding abstraction for evidence files.
+2. Add signed URL issuance policy tied to release eligibility and staff access claims.
+3. Add malware scan callback/update endpoint for provider results.
+4. Persist evidence access receipts with actor, role, target, reason, timestamp, and outcome.
+5. Keep local preview fallback active when object storage and malware provider bindings are absent.
 
 ## Verification Snapshot
 
@@ -280,7 +296,7 @@ Result: clean.
 3. Confirm latest commit:
    `git log --oneline -5`
 4. Start task:
-   Begin encrypted evidence storage and malware validation provider integration.
+   Begin evidence object storage binding, signed URL issuance, and malware scan callbacks.
 5. Run:
    `npm test`
 6. Commit the checkpoint.

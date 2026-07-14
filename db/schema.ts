@@ -70,6 +70,43 @@ export const evidenceFiles = sqliteTable(
   ],
 );
 
+export const evidenceStorageControls = sqliteTable(
+  "evidence_storage_controls",
+  {
+    evidenceId: text("evidence_id").primaryKey(),
+    requestId: text("request_id"),
+    orderId: text("order_id"),
+    source: text("source").notNull(),
+    section: text("section").notNull(),
+    category: text("category").notNull(),
+    fileName: text("file_name").notNull(),
+    fileType: text("file_type").notNull(),
+    fileSize: text("file_size").notNull(),
+    sha256: text("sha256").notNull(),
+    storageProvider: text("storage_provider").notNull(),
+    bucketName: text("bucket_name").notNull(),
+    objectKey: text("object_key").notNull(),
+    encryptionStatus: text("encryption_status").notNull(),
+    validationStatus: text("validation_status").notNull(),
+    malwareStatus: text("malware_status").notNull(),
+    malwareProvider: text("malware_provider").notNull(),
+    providerReceipt: text("provider_receipt").notNull(),
+    custody: text("custody").notNull(),
+    accessLevel: text("access_level").notNull(),
+    releaseEligibility: text("release_eligibility").notNull(),
+    releaseBlockedReason: text("release_blocked_reason").notNull(),
+    retentionRule: text("retention_rule").notNull(),
+    lastAccessed: text("last_accessed").notNull(),
+    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("evidence_storage_controls_request_idx").on(table.requestId),
+    index("evidence_storage_controls_order_idx").on(table.orderId),
+    index("evidence_storage_controls_release_idx").on(table.releaseEligibility),
+    index("evidence_storage_controls_malware_idx").on(table.malwareStatus),
+  ],
+);
+
 export const workflowAuditEvents = sqliteTable(
   "workflow_audit_events",
   {

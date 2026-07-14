@@ -1,5 +1,5 @@
 import { requireChatGPTUser } from "../../chatgpt-auth";
-import { evidenceRecords } from "../../evidence-data";
+import { listEvidenceStorageControls } from "../../evidence-repository";
 
 function evidenceAnchor(label: string) {
   return label
@@ -11,6 +11,7 @@ function evidenceAnchor(label: string) {
 
 export default async function EvidenceIntakePage() {
   await requireChatGPTUser("/staff/evidence-intake");
+  const evidenceRecords = await listEvidenceStorageControls();
 
   const profileEvidence = evidenceRecords.filter(
     (record) => record.source === "Profile Verification",
@@ -22,7 +23,10 @@ export default async function EvidenceIntakePage() {
     record.accessLevel.toLowerCase().includes("restricted"),
   ).length;
   const scanCompleteCount = evidenceRecords.filter((record) =>
-    record.scanStatus.toLowerCase().includes("complete"),
+    record.malwareStatus.toLowerCase().includes("complete"),
+  ).length;
+  const releaseBlockedCount = evidenceRecords.filter(
+    (record) => record.releaseEligibility !== "Release Eligible",
   ).length;
 
   return (
@@ -69,6 +73,7 @@ export default async function EvidenceIntakePage() {
           ["Order documents", String(orderEvidence), "Client-uploaded documents tied to active order files."],
           ["Restricted files", String(restrictedEvidence), "Identity, tax, financial, and RON evidence requiring controlled access."],
           ["Scan complete", String(scanCompleteCount), "Records with malware scan or provider integrity status already recorded."],
+          ["Release blocked", String(releaseBlockedCount), "Files held by storage, malware, or restricted-access controls."],
         ].map(([label, value, description]) => (
           <article key={label}>
             <p>{label}</p>
@@ -124,6 +129,7 @@ export default async function EvidenceIntakePage() {
                     <th scope="col">Custody</th>
                     <th scope="col">Scan / storage</th>
                     <th scope="col">Access</th>
+                    <th scope="col">Release</th>
                     <th scope="col">Retention</th>
                     <th scope="col">Action</th>
                   </tr>
@@ -151,15 +157,21 @@ export default async function EvidenceIntakePage() {
                         </span>
                       </td>
                       <td>
-                        <mark>{record.scanStatus}</mark>
+                        <mark>{record.malwareStatus}</mark>
                         <span className="evidence-packet-summary">
-                          {record.storageStatus}
+                          {record.objectKey}
                         </span>
                       </td>
                       <td>
                         {record.accessLevel}
                         <span className="evidence-packet-summary">
                           Last accessed {record.lastAccessed}
+                        </span>
+                      </td>
+                      <td>
+                        {record.releaseEligibility}
+                        <span className="evidence-packet-summary">
+                          {record.releaseBlockedReason}
                         </span>
                       </td>
                       <td>{record.retentionRule}</td>
@@ -189,6 +201,7 @@ export default async function EvidenceIntakePage() {
               <div><dt>Validation</dt><dd>File type, size, hash, and malware scan recorded</dd></div>
               <div><dt>Custody</dt><dd>Provider, profile, order, tax, or restricted identity classification</dd></div>
               <div><dt>Storage</dt><dd>Encrypted object storage and signed access URLs required in production</dd></div>
+              <div><dt>Release</dt><dd>Files remain blocked until storage and malware controls clear</dd></div>
               <div><dt>Audit</dt><dd>Every restricted view remains attributable</dd></div>
             </dl>
             <div className="decision-actions">

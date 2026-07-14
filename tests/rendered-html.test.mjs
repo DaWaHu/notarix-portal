@@ -1082,7 +1082,11 @@ test("server-renders the protected evidence file viewer", async () => {
   assert.match(html, /Restricted financial review/);
   assert.match(html, /Restricted tax record/);
   assert.match(html, /SHA-256 fingerprint/);
-  assert.match(html, /Encrypted evidence object pending production storage binding/);
+  assert.match(html, /Encrypted object storage required/);
+  assert.match(html, /Cloudflare R2 compatible encrypted object storage/);
+  assert.match(html, /Malware provider receipt/);
+  assert.match(html, /Storage Binding Required/);
+  assert.match(html, /Signed access URL blocked until release controls clear/);
   assert.match(html, /Retain under tax onboarding and payable control policy/);
   assert.match(html, /Access audit/);
   assert.match(html, /Record Access Note/);
@@ -1110,13 +1114,16 @@ test("server-renders the protected evidence upload and intake review workspace",
   assert.match(html, /Order documents/);
   assert.match(html, /Restricted files/);
   assert.match(html, /Scan complete/);
+  assert.match(html, /Release blocked/);
   assert.match(html, /EV-W9-FORM/);
   assert.match(html, /EV-NNA-CERTIFICATE/);
   assert.match(html, /DOC-2607-0001/);
   assert.match(html, /completed-w-9-form\.pdf/);
   assert.match(html, /nna-signing-agent-certificate\.pdf/);
   assert.match(html, /seller-closing-package\.pdf/);
-  assert.match(html, /Malware scan complete/);
+  assert.match(html, /Malware validation complete/);
+  assert.match(html, /Storage Binding Required/);
+  assert.match(html, /profiles\/NSR-1001\/EV-W9-FORM\/completed-w-9-form\.pdf/);
   assert.match(html, /Encrypted object storage and signed access URLs required in production/);
   assert.match(html, /href="\/evidence\/EV-W9-FORM"/);
   assert.match(html, /href="\/evidence\/EV-NNA-CERTIFICATE"/);
@@ -1141,13 +1148,14 @@ test("server-renders the protected document malware and validation queue", async
   assert.match(html, /Document Malware And Validation Queue/);
   assert.match(html, /Document Validation/);
   assert.match(html, /Malware scan and release matrix/);
-  assert.match(html, /Ready for release/);
+  assert.match(html, /Release eligible/);
   assert.match(html, /Restricted holds/);
   assert.match(html, /Storage pending/);
   assert.match(html, /Hash coverage/);
   assert.match(html, /Allowed type/);
-  assert.match(html, /SHA-256 recorded/);
-  assert.match(html, /Restricted release hold/);
+  assert.match(html, /SHA-256 fingerprint recorded/);
+  assert.match(html, /Storage Binding Required/);
+  assert.match(html, /Encrypted object storage binding is required before production release/);
   assert.match(html, /seller-closing-package\.pdf/);
   assert.match(html, /borrower-identification-copy\.pdf/);
   assert.match(html, /completed-w-9-form\.pdf/);
@@ -2333,6 +2341,10 @@ test("keeps product rules in the local governance file", async () => {
     new URL("../app/order-repository.ts", import.meta.url),
     "utf8",
   );
+  const evidenceRepository = await readFile(
+    new URL("../app/evidence-repository.ts", import.meta.url),
+    "utf8",
+  );
   const commandStore = await readFile(
     new URL("../app/staff/command-center/store.ts", import.meta.url),
     "utf8",
@@ -2364,6 +2376,10 @@ test("keeps product rules in the local governance file", async () => {
   );
   const orderMigration = await readFile(
     new URL("../drizzle/0002_magical_thena.sql", import.meta.url),
+    "utf8",
+  );
+  const evidenceStorageMigration = await readFile(
+    new URL("../drizzle/0003_evidence_storage_controls.sql", import.meta.url),
     "utf8",
   );
   const packageJson = await readFile(
@@ -2399,6 +2415,7 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(schema, /orderCloseoutControls/);
   assert.match(schema, /orderDeliveryReceipts/);
   assert.match(schema, /notaryCompletionReceipts/);
+  assert.match(schema, /evidenceStorageControls/);
   assert.match(commandMigration, /CREATE TABLE `command_center_targets`/);
   assert.match(commandMigration, /CREATE TABLE `command_center_events`/);
   assert.match(commandMigration, /CREATE TABLE `command_center_receipts`/);
@@ -2409,6 +2426,16 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(orderMigration, /CREATE TABLE `order_closeout_controls`/);
   assert.match(orderMigration, /CREATE TABLE `order_delivery_receipts`/);
   assert.match(orderMigration, /CREATE TABLE `notary_completion_receipts`/);
+  assert.match(evidenceStorageMigration, /CREATE TABLE `evidence_storage_controls`/);
+  assert.match(evidenceStorageMigration, /storage_provider/);
+  assert.match(evidenceStorageMigration, /malware_status/);
+  assert.match(evidenceStorageMigration, /release_eligibility/);
+  assert.match(evidenceRepository, /evidenceStorageContract/);
+  assert.match(evidenceRepository, /listEvidenceStorageControls/);
+  assert.match(evidenceRepository, /getEvidenceStorageControl/);
+  assert.match(evidenceRepository, /schema\.evidenceStorageControls/);
+  assert.match(evidenceRepository, /Cloudflare R2 compatible encrypted object storage/);
+  assert.match(evidenceRepository, /Malware validation complete/);
   assert.match(orderRepository, /orderRepositoryPersistenceContract/);
   assert.match(orderRepository, /D1-first repository/);
   assert.match(orderRepository, /listOrderOperations/);
@@ -2458,6 +2485,8 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(d1Seed, /schema\.accessRequests/);
   assert.match(d1Seed, /schema\.orderOperationalRecords/);
   assert.match(d1Seed, /schema\.commandCenterTargets/);
+  assert.match(d1Seed, /schema\.evidenceStorageControls/);
+  assert.match(d1Seed, /buildEvidenceStorageControls/);
   assert.match(d1Seed, /onConflictDoUpdate/);
   assert.match(d1SeedRoute, /SuperAdmin/);
   assert.match(d1SeedRoute, /reconcileBaselineD1Seed/);

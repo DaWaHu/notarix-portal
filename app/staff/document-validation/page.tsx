@@ -1,9 +1,12 @@
 import { requireChatGPTUser } from "../../chatgpt-auth";
-import { evidenceRecords, type EvidenceRecord } from "../../evidence-data";
+import {
+  listEvidenceStorageControls,
+  type EvidenceStorageControlRecord,
+} from "../../evidence-repository";
 import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
-type ValidationRecord = EvidenceRecord & {
+type ValidationRecord = EvidenceStorageControlRecord & {
   fileTypeStatus: string;
   hashStatus: string;
   releaseStatus: string;
@@ -11,31 +14,18 @@ type ValidationRecord = EvidenceRecord & {
   nextAction: string;
 };
 
-function validationStatusFor(record: EvidenceRecord): ValidationRecord {
+function validationStatusFor(record: EvidenceStorageControlRecord): ValidationRecord {
   const restricted = record.accessLevel.toLowerCase().includes("restricted");
-  const scanComplete =
-    record.scanStatus.toLowerCase().includes("complete") ||
-    record.scanStatus.toLowerCase().includes("integrity");
-  const storagePending = record.storageStatus.toLowerCase().includes("pending");
 
   return {
     ...record,
     fileTypeStatus: ["PDF", "JSON", "CSV", "URL"].includes(record.fileType)
       ? "Allowed type"
       : "Requires review",
-    hashStatus: record.sha256.length >= 64 ? "SHA-256 recorded" : "Hash required",
-    releaseStatus:
-      scanComplete && !restricted
-        ? "Ready for release"
-        : scanComplete && restricted
-          ? "Restricted release hold"
-          : "Validation pending",
+    hashStatus: record.contentHashStatus,
+    releaseStatus: record.releaseEligibility,
     reviewer: restricted ? "Administrator or Super Admin" : "GenAdmin evidence review",
-    nextAction: storagePending
-      ? "Bind encrypted storage before production release."
-      : restricted
-        ? "Escalate restricted access classification before release."
-        : "Release to linked workflow after staff validation.",
+    nextAction: record.releaseBlockedReason,
   };
 }
 
@@ -45,18 +35,19 @@ export default async function DocumentValidationPage() {
     "/staff/document-validation",
   );
 
+  const evidenceRecords = await listEvidenceStorageControls();
   const validationRecords = evidenceRecords.map(validationStatusFor);
   const readyCount = validationRecords.filter(
-    (record) => record.releaseStatus === "Ready for release",
+    (record) => record.releaseStatus === "Release Eligible",
   ).length;
   const restrictedCount = validationRecords.filter(
-    (record) => record.releaseStatus === "Restricted release hold",
+    (record) => record.releaseStatus === "Restricted Hold",
   ).length;
   const storagePendingCount = validationRecords.filter((record) =>
-    record.storageStatus.toLowerCase().includes("pending"),
+    record.releaseStatus === "Storage Binding Required",
   ).length;
   const hashCount = validationRecords.filter(
-    (record) => record.hashStatus === "SHA-256 recorded",
+    (record) => record.hashStatus === "SHA-256 fingerprint recorded",
   ).length;
 
   return (
@@ -98,7 +89,7 @@ export default async function DocumentValidationPage() {
 
       <section className="verification-summary" aria-label="Document validation summary">
         {[
-          ["Ready for release", String(readyCount), "Files with acceptable type, scan, and nonrestricted access posture."],
+          ["Release eligible", String(readyCount), "Files with acceptable type, scan, storage, and nonrestricted access posture."],
           ["Restricted holds", String(restrictedCount), "Identity, tax, financial, or RON evidence requiring elevated release review."],
           ["Storage pending", String(storagePendingCount), "Files awaiting production encrypted object storage binding."],
           ["Hash coverage", `${hashCount} of ${validationRecords.length}`, "Files with SHA-256 fingerprint recorded for integrity review."],
@@ -180,13 +171,13 @@ export default async function DocumentValidationPage() {
                       <td>
                         {record.fileTypeStatus}
                         <span className="evidence-packet-summary">
-                          {record.hashStatus}
+                          {record.validationStatus}
                         </span>
                       </td>
                       <td>
-                        <mark>{record.scanStatus}</mark>
+                        <mark>{record.malwareStatus}</mark>
                         <span className="evidence-packet-summary">
-                          {record.storageStatus}
+                          {record.objectKey}
                         </span>
                       </td>
                       <td>

@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import { requireChatGPTUser } from "../../chatgpt-auth";
-import { evidenceRecords, findEvidenceRecord } from "../../evidence-data";
+import {
+  getEvidenceStorageControl,
+  listEvidenceStorageControls,
+} from "../../evidence-repository";
 
 type EvidenceViewerPageProps = {
   params: Promise<{
@@ -14,9 +17,10 @@ export default async function EvidenceViewerPage({
   const { evidenceId } = await params;
   await requireChatGPTUser(`/evidence/${evidenceId}`);
 
-  const evidence = findEvidenceRecord(evidenceId);
+  const evidence = await getEvidenceStorageControl(evidenceId);
   if (!evidence) notFound();
 
+  const evidenceRecords = await listEvidenceStorageControls();
   const relatedEvidence = evidenceRecords
     .filter((record) => {
       if (evidence.requestId) return record.requestId === evidence.requestId;
@@ -65,16 +69,17 @@ export default async function EvidenceViewerPage({
         <aside>
           <p>Access decision</p>
           <strong>{evidence.scanStatus}</strong>
-          <span>{evidence.accessLevel}</span>
+          <span>{evidence.releaseEligibility}</span>
         </aside>
       </section>
 
       <section className="verification-summary" aria-label="Evidence control summary">
         {[
           ["Custody", evidence.custody, "Source and handling classification."],
-          ["Storage", evidence.storageStatus, "Encrypted storage binding status."],
+          ["Storage", evidence.encryptionStatus, "Encrypted storage binding status."],
+          ["Malware", evidence.malwareStatus, "Validation provider result."],
           ["Retention", evidence.retentionRule, "Record retention requirement."],
-          ["Last access", evidence.lastAccessed, "Most recent logged evidence access."],
+          ["Release", evidence.releaseEligibility, "Current release eligibility."],
         ].map(([label, value, description]) => (
           <article key={label}>
             <p>{label}</p>
@@ -152,16 +157,16 @@ export default async function EvidenceViewerPage({
                 <strong>{evidence.sha256}</strong>
               </article>
               <article>
-                <p>Storage control</p>
-                <strong>{evidence.storageStatus}</strong>
+                <p>Encrypted object key</p>
+                <strong>{evidence.objectKey}</strong>
               </article>
               <article>
-                <p>Retention rule</p>
-                <strong>{evidence.retentionRule}</strong>
+                <p>Malware provider receipt</p>
+                <strong>{evidence.providerReceipt}</strong>
               </article>
               <article>
-                <p>Access classification</p>
-                <strong>{evidence.accessLevel}</strong>
+                <p>Release block</p>
+                <strong>{evidence.releaseBlockedReason}</strong>
               </article>
             </section>
           </article>
@@ -189,7 +194,15 @@ export default async function EvidenceViewerPage({
               </div>
               <div>
                 <dt>Scan status</dt>
-                <dd>{evidence.scanStatus}</dd>
+                <dd>{evidence.malwareStatus}</dd>
+              </div>
+              <div>
+                <dt>Signed URL</dt>
+                <dd>{evidence.accessUrlStatus}</dd>
+              </div>
+              <div>
+                <dt>Storage provider</dt>
+                <dd>{evidence.storageProvider}</dd>
               </div>
             </dl>
             <div className="decision-actions">

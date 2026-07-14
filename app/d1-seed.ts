@@ -1,6 +1,7 @@
 import { getOptionalDb } from "../db";
 import * as schema from "../db/schema";
 import { evidenceRecords } from "./evidence-data";
+import { buildEvidenceStorageControl } from "./evidence-repository";
 import {
   accessControlRecords,
   auditReportRecords,
@@ -64,6 +65,7 @@ export function buildBaselineSeedSummary() {
     accessRequests: accessRequests.length,
     commandCenterTargets: buildCommandCenterTargets().length,
     evidenceFiles: buildProfileEvidenceFiles().length,
+    evidenceStorageControls: evidenceRecords.length,
     notaryCompletionReceipts: notaryCompletionReceiptRecords.length,
     orderAppointments: appointmentConfirmationRecords.length,
     orderCloseoutControls: orderCloseoutRecords.length,
@@ -83,6 +85,7 @@ async function seedBaselineRecords(db: NotarixDb) {
   let accessRequestCount = 0;
   let profileVerificationCount = 0;
   let evidenceFileCount = 0;
+  let evidenceStorageControlCount = 0;
   let commandTargetCount = 0;
   let orderRecordCount = 0;
   let orderLifecycleCount = 0;
@@ -182,6 +185,68 @@ async function seedBaselineRecords(db: NotarixDb) {
         target: schema.evidenceFiles.id,
       });
     evidenceFileCount += 1;
+  }
+
+  for (const evidence of buildEvidenceStorageControls()) {
+    await db
+      .insert(schema.evidenceStorageControls)
+      .values({
+        accessLevel: evidence.accessLevel,
+        bucketName: evidence.bucketName,
+        category: evidence.category,
+        custody: evidence.custody,
+        encryptionStatus: evidence.encryptionStatus,
+        evidenceId: evidence.id,
+        fileName: evidence.fileName,
+        fileSize: evidence.size,
+        fileType: evidence.fileType,
+        lastAccessed: evidence.lastAccessed,
+        malwareProvider: evidence.malwareProvider,
+        malwareStatus: evidence.malwareStatus,
+        objectKey: evidence.objectKey,
+        orderId: evidence.orderId ?? null,
+        providerReceipt: evidence.providerReceipt,
+        releaseBlockedReason: evidence.releaseBlockedReason,
+        releaseEligibility: evidence.releaseEligibility,
+        requestId: evidence.requestId ?? null,
+        retentionRule: evidence.retentionRule,
+        section: evidence.section,
+        sha256: evidence.sha256,
+        source: evidence.source,
+        storageProvider: evidence.storageProvider,
+        updatedAtUtc: timestamp,
+        validationStatus: evidence.validationStatus,
+      })
+      .onConflictDoUpdate({
+        set: {
+          accessLevel: evidence.accessLevel,
+          bucketName: evidence.bucketName,
+          category: evidence.category,
+          custody: evidence.custody,
+          encryptionStatus: evidence.encryptionStatus,
+          fileName: evidence.fileName,
+          fileSize: evidence.size,
+          fileType: evidence.fileType,
+          lastAccessed: evidence.lastAccessed,
+          malwareProvider: evidence.malwareProvider,
+          malwareStatus: evidence.malwareStatus,
+          objectKey: evidence.objectKey,
+          orderId: evidence.orderId ?? null,
+          providerReceipt: evidence.providerReceipt,
+          releaseBlockedReason: evidence.releaseBlockedReason,
+          releaseEligibility: evidence.releaseEligibility,
+          requestId: evidence.requestId ?? null,
+          retentionRule: evidence.retentionRule,
+          section: evidence.section,
+          sha256: evidence.sha256,
+          source: evidence.source,
+          storageProvider: evidence.storageProvider,
+          updatedAtUtc: timestamp,
+          validationStatus: evidence.validationStatus,
+        },
+        target: schema.evidenceStorageControls.evidenceId,
+      });
+    evidenceStorageControlCount += 1;
   }
 
   for (const order of orderOperationRecords) {
@@ -373,6 +438,7 @@ async function seedBaselineRecords(db: NotarixDb) {
     accessRequests: accessRequestCount,
     commandCenterTargets: commandTargetCount,
     evidenceFiles: evidenceFileCount,
+    evidenceStorageControls: evidenceStorageControlCount,
     notaryCompletionReceipts: notaryCompletionReceiptCount,
     orderAppointments: appointmentCount,
     orderCloseoutControls: closeoutControlCount,
@@ -382,6 +448,10 @@ async function seedBaselineRecords(db: NotarixDb) {
     orderSignerReadiness: signerReadinessCount,
     profileVerificationItems: profileVerificationCount,
   };
+}
+
+function buildEvidenceStorageControls() {
+  return evidenceRecords.map(buildEvidenceStorageControl);
 }
 
 function buildProfileEvidenceFiles() {
