@@ -1691,6 +1691,28 @@ test("persists command center workflow actions", async () => {
     /Administrator or Super Admin authority is required/,
   );
 
+  const blockedSpoofedClientResponse = await requestRoute("/staff/command-center", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "client-upload-order-documents",
+      role: "Client",
+      targetId: "ORD-2607-0001",
+    }),
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      "oai-authenticated-user-email": "staff@example.com",
+    },
+  });
+  assert.equal(blockedSpoofedClientResponse.status, 409);
+  const blockedSpoofedClient = await blockedSpoofedClientResponse.json();
+  assert.equal(blockedSpoofedClient.allowed, false);
+  assert.equal(blockedSpoofedClient.receipt.role, "GenAdmin");
+  assert.match(
+    blockedSpoofedClient.blockedReason,
+    /Authorized client user authority is required/,
+  );
+
   const ledgerHoldResponse = await requestRoute("/staff/command-center", {
     method: "POST",
     body: JSON.stringify({
@@ -2260,6 +2282,14 @@ test("keeps product rules in the local governance file", async () => {
     new URL("../app/staff/command-center/store.ts", import.meta.url),
     "utf8",
   );
+  const accessPolicy = await readFile(
+    new URL("../app/access-policy.ts", import.meta.url),
+    "utf8",
+  );
+  const commandRoute = await readFile(
+    new URL("../app/staff/command-center/route.ts", import.meta.url),
+    "utf8",
+  );
   const d1Seed = await readFile(new URL("../app/d1-seed.ts", import.meta.url), "utf8");
   const d1SeedRoute = await readFile(
     new URL("../app/staff/platform/seed/route.ts", import.meta.url),
@@ -2333,6 +2363,18 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(commandStore, /schema\.commandCenterTargets/);
   assert.match(commandStore, /schema\.commandCenterEvents/);
   assert.match(commandStore, /schema\.commandCenterReceipts/);
+  assert.match(commandStore, /canUseCommandAuthority/);
+  assert.match(commandStore, /commandAuthorityLabel/);
+  assert.match(commandRoute, /normalizeStaffRole/);
+  assert.doesNotMatch(commandRoute, /payload\.role/);
+  assert.match(accessPolicy, /accessPolicyContract/);
+  assert.match(accessPolicy, /requireStaffRouteAccess/);
+  assert.match(accessPolicy, /normalizeStaffRole/);
+  assert.match(accessPolicy, /normalizePortalActorRole/);
+  assert.match(accessPolicy, /canUseCommandAuthority/);
+  assert.match(accessPolicy, /AdminOrSuperAdmin/);
+  assert.match(accessPolicy, /ClientUser/);
+  assert.match(accessPolicy, /AssignedNotary/);
   assert.match(workflowStore, /getPersistedAccessRequest/);
   assert.match(workflowStore, /persistStoredAccessRequest/);
   assert.match(workflowStore, /schema\.accessRequests/);

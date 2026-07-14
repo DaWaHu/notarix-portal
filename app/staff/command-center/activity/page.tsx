@@ -1,6 +1,4 @@
-import { headers } from "next/headers";
-import { notFound } from "next/navigation";
-import { requireChatGPTUser } from "../../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../../access-policy";
 import { listPersistedCommandCenterReceipts } from "../store";
 
 type ActivityArea = "Communications" | "Credentials" | "Financial" | "Audit";
@@ -13,11 +11,10 @@ function areaForHref(href: string): ActivityArea {
 }
 
 export default async function CommandCenterActivityPage() {
-  await requireChatGPTUser("/staff/command-center/activity");
-
-  const requestHeaders = await headers();
-  const staffRole = requestHeaders.get("x-notarix-staff-role");
-  if (staffRole !== "Admin" && staffRole !== "SuperAdmin") notFound();
+  const { role: staffRole } = await requireStaffRouteAccess("/staff/command-center/activity", [
+    "Admin",
+    "SuperAdmin",
+  ]);
 
   const receipts = await listPersistedCommandCenterReceipts();
   const completedCount = receipts.filter(

@@ -3,7 +3,7 @@
 Date: Jul 14 2026
 Workspace: `/Users/hudlinbe/Desktop/100 Notarix Signing`
 Branch: `codex/notarix-portal-checkpoint`
-Latest checkpoint: `40ec694 Update executive handoff with persistence status`
+Latest checkpoint: Shared RBAC access-policy checkpoint pending current commit
 Verification status: `npm test` passed, 32 of 32 tests passing
 
 ## Executive Summary
@@ -18,16 +18,18 @@ The product is not production-deployed yet. The remaining work is primarily infr
 
 Portal UI and workflow coverage: 90 percent to 93 percent complete.
 
-Backend persistence and workflow hardening: 65 percent to 72 percent complete.
+Backend persistence and workflow hardening: 70 percent to 76 percent complete.
 
-Overall full deployment readiness: 75 percent to 80 percent complete.
+Overall full deployment readiness: 78 percent to 82 percent complete.
 
 This estimate increased because the latest work moved profile workflow state, order workflow state, and command-center audit receipts from in-memory-only behavior toward D1-backed persistence with preview fallback.
 It increased again after adding SuperAdmin-only idempotent D1 seed/reconciliation tooling for baseline profile, order, evidence, and command-center target records.
+It increased again after centralizing staff route access, role normalization, and command-center authority checks behind a shared RBAC policy module.
 
 ## Latest Commits
 
 - `1e3f2d6 Persist profile workflow state to D1`
+- `d060a66 Add D1 baseline seed reconciliation`
 - `5b43824 Persist command center receipts to D1`
 - `e768733 Persist order workflow actions through repository`
 - `62766df Expand order persistence schema and repository`
@@ -87,6 +89,18 @@ Completed:
 - POST reconciles baseline data when the production `DB` binding is available.
 - Seeds access requests, profile verification items, profile evidence metadata, order operational records, order lifecycle/supporting records, and command-center targets.
 - Seed operations use deterministic IDs and upsert logic.
+
+### Shared RBAC Access Policy
+
+Completed:
+
+- Added a shared Notarix Signings access policy module.
+- Centralized GenAdmin, Admin, SuperAdmin, Client, and Notary role normalization.
+- Centralized command authority checks for AnyStaff, AdminOrSuperAdmin, SuperAdmin, ClientUser, and AssignedNotary actions.
+- Moved SuperAdmin-only seed and audit report gates through shared route-access enforcement.
+- Moved Admin/SuperAdmin command activity access through shared route-access enforcement.
+- Updated the staff command-center endpoint so request-body role values cannot spoof Client or Notary authority.
+- Added regression coverage for blocked role spoofing and governance coverage for the access-policy contract.
 
 ## Core Pages Completed
 
@@ -172,6 +186,8 @@ Completed:
 - Seed/reconciliation tooling now lives in:
   - `app/d1-seed.ts`
   - `app/staff/platform/seed/route.ts`
+- Shared RBAC and command authority policy now lives in:
+  - `app/access-policy.ts`
 - Tests intentionally assert these persistence boundaries so future work does not regress into seed-only behavior.
 
 ## Production Gaps Remaining
@@ -179,8 +195,8 @@ Completed:
 ### Critical Before Deployment
 
 - Configure production D1 binding and apply migrations.
-- Bind real identity provider with MFA, passkeys, device controls, and role claims.
-- Replace local preview staff-role headers with provider-backed RBAC.
+- Bind real identity provider with MFA, passkeys, device controls, and production role claims.
+- Replace local preview staff-role headers with provider-backed claims in deployed environments.
 - Add encrypted file storage, likely R2 or equivalent object storage.
 - Add malware scanning provider and block file release until scan completion.
 - Add real email provider and phone/SMS provider.
@@ -197,21 +213,21 @@ Completed:
 - Persist financial ledger controls and payment release state.
 - Persist credential expiration records and renewal reminders.
 - Add admin seed/reconciliation tools for records that start in local modeled data.
-- Add role-claim tests for GenAdmin, Admin, SuperAdmin, Client, and Notary.
+- Add deployed-environment role-claim tests once the identity provider is connected.
 
 ## Recommended Next Task
 
-Start with **production identity provider and RBAC binding design/implementation**.
+Start with **production identity provider claim binding and session enforcement**.
 
-Reason: the application now has D1-backed persistence paths and baseline seed tooling. The next critical production blocker is replacing preview staff-role headers with real identity-provider claims, MFA/passkeys, and role enforcement.
+Reason: the application now has D1-backed persistence paths, baseline seed tooling, and a shared RBAC policy module. The next critical production blocker is binding that policy to real identity-provider claims, MFA/passkeys, and device/session controls.
 
 Recommended scope:
 
-1. Define production role claims for GenAdmin, Admin, SuperAdmin, Client, and Notary.
-2. Replace preview `x-notarix-staff-role` behavior with provider-backed role extraction.
-3. Enforce MFA/passkey requirement for protected staff routes.
-4. Preserve local preview behavior behind an explicit development-only path.
-5. Add role-claim tests for protected workflows and SuperAdmin-only seed/audit routes.
+1. Define the exact production claim names for GenAdmin, Admin, SuperAdmin, Client, and Notary.
+2. Add provider-backed role extraction inside `app/access-policy.ts`.
+3. Enforce MFA/passkey and device/session requirements for protected staff routes.
+4. Keep local preview behavior available only for local development.
+5. Add deployed-environment tests for protected workflows and SuperAdmin-only seed/audit routes.
 
 ## Verification Snapshot
 
@@ -244,7 +260,7 @@ Result: clean.
 3. Confirm latest commit:
    `git log --oneline -5`
 4. Start task:
-   Begin production identity provider and RBAC binding implementation.
+   Begin production identity provider claim binding and session enforcement.
 5. Run:
    `npm test`
 6. Commit the checkpoint.

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { normalizeStaffRole } from "../../access-policy";
 import { requireChatGPTUser } from "../../chatgpt-auth";
 import {
   applyCommandCenterAction,
@@ -6,7 +7,6 @@ import {
   listPersistedCommandCenterReceipts,
   type CommandCenterAction,
 } from "./store";
-import type { WorkflowActorRole } from "../requests/workflow";
 
 const validCommandActions = new Set<CommandCenterAction>([
   "retry-failed-notification",
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const role = normalizeRole(request.headers.get("x-notarix-staff-role") ?? payload.role);
+  const role = normalizeStaffRole(request.headers.get("x-notarix-staff-role"));
   const transition = await applyCommandCenterAction(
     action as CommandCenterAction,
     user.fullName ?? user.email,
@@ -130,11 +130,6 @@ async function safeJson(request: Request): Promise<Record<string, unknown>> {
   } catch {
     return {};
   }
-}
-
-function normalizeRole(value: unknown): WorkflowActorRole {
-  if (value === "Admin" || value === "SuperAdmin") return value;
-  return "GenAdmin";
 }
 
 function isFormRequest(request: Request): boolean {

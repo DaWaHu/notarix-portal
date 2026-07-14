@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { getRequestStaffRole, type StaffRole } from "../access-policy";
 import { requireChatGPTUser } from "../chatgpt-auth";
 import {
   auditReportRecords,
@@ -8,8 +8,6 @@ import {
   orderRecords,
 } from "../operations-data";
 import { accessRequests } from "./requests/data";
-
-type StaffRole = "GenAdmin" | "Admin" | "SuperAdmin";
 
 const roleConfig: Record<
   StaffRole,
@@ -122,16 +120,9 @@ const roleConfig: Record<
   },
 };
 
-function normalizeRole(value: string | null): StaffRole {
-  if (value === "SuperAdmin") return "SuperAdmin";
-  if (value === "Admin") return "Admin";
-  return "GenAdmin";
-}
-
 export default async function StaffRoleHomePage() {
   const user = await requireChatGPTUser("/staff");
-  const requestHeaders = await headers();
-  const role = normalizeRole(requestHeaders.get("x-notarix-staff-role"));
+  const role = await getRequestStaffRole();
   const config = roleConfig[role];
 
   return (

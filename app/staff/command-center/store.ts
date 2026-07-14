@@ -2,6 +2,12 @@ import {
   eq,
 } from "drizzle-orm";
 import {
+  canUseCommandAuthority,
+  commandAuthorityLabel,
+  type CommandAuthority,
+  type PortalActorRole,
+} from "../../access-policy";
+import {
   auditReportRecords,
   accessControlRecords,
   credentialMonitorRecords,
@@ -16,9 +22,8 @@ import { getOptionalDb } from "../../../db";
 import * as schema from "../../../db/schema";
 import { persistOrderCommandTransition } from "../../order-repository";
 import { evidenceRecords } from "../../evidence-data";
-import type { WorkflowActorRole } from "../requests/workflow";
 
-export type CommandActorRole = WorkflowActorRole | "Client" | "Notary";
+export type CommandActorRole = PortalActorRole;
 
 export type CommandCenterAction =
   | "retry-failed-notification"
@@ -175,7 +180,7 @@ const commandDefinitions: Record<
   {
     targetType: StoredCommandEvent["targetType"];
     defaultTargetId: string;
-    authority: "AnyStaff" | "AdminOrSuperAdmin" | "SuperAdmin" | "ClientUser" | "AssignedNotary";
+    authority: CommandAuthority;
     nextStatus: string;
     auditVerb: string;
   }
@@ -651,7 +656,7 @@ export async function applyCommandCenterAction(
 }> {
   const definition = commandDefinitions[action];
   const resolvedTargetId = (targetId || definition.defaultTargetId).toUpperCase();
-  const authority = authorityLabel(definition.authority);
+  const authority = commandAuthorityLabel(definition.authority);
   const store = getCommandStore();
   const target = store.targets[resolvedTargetId];
 
@@ -688,7 +693,7 @@ export async function applyCommandCenterAction(
     };
   }
 
-  if (!canUseAuthority(definition.authority, role)) {
+  if (!canUseCommandAuthority(definition.authority, role)) {
     const receipt = storeReceipt(store, {
       action,
       actor,
@@ -1290,31 +1295,6 @@ function nextRequiredAction(
     return "Route the completion package to document validation, delivery review, invoice release, and payable controls.";
   }
   return "Track the escalated exception through restricted audit review.";
-}
-
-function canUseAuthority(
-  authority: (typeof commandDefinitions)[CommandCenterAction]["authority"],
-  role: CommandActorRole,
-): boolean {
-  if (authority === "AnyStaff") {
-    return role === "GenAdmin" || role === "Admin" || role === "SuperAdmin";
-  }
-  if (authority === "AdminOrSuperAdmin") {
-    return role === "Admin" || role === "SuperAdmin";
-  }
-  if (authority === "ClientUser") return role === "Client";
-  if (authority === "AssignedNotary") return role === "Notary";
-  return role === "SuperAdmin";
-}
-
-function authorityLabel(
-  authority: (typeof commandDefinitions)[CommandCenterAction]["authority"],
-): string {
-  if (authority === "AnyStaff") return "Authorized staff";
-  if (authority === "AdminOrSuperAdmin") return "Administrator or Super Admin";
-  if (authority === "ClientUser") return "Authorized client user";
-  if (authority === "AssignedNotary") return "Assigned notary";
-  return "Super Admin";
 }
 
 function workflowTimestamp(): string {

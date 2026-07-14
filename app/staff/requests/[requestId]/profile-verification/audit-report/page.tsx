@@ -1,6 +1,5 @@
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { requireChatGPTUser } from "../../../../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../../../../access-policy";
 import { findAccessRequest } from "../../../data";
 
 type AuditReportPageProps = {
@@ -19,13 +18,10 @@ export default async function SuperAdminAuditReportPage({
   params,
 }: AuditReportPageProps) {
   const { requestId } = await params;
-  await requireChatGPTUser(
+  await requireStaffRouteAccess(
     `/staff/requests/${requestId}/profile-verification/audit-report`,
+    ["SuperAdmin"],
   );
-
-  const requestHeaders = await headers();
-  const staffRole = requestHeaders.get("x-notarix-staff-role");
-  if (staffRole !== "SuperAdmin") notFound();
 
   const request = findAccessRequest(requestId);
   if (!request) notFound();

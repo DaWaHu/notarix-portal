@@ -1,19 +1,13 @@
-import { headers } from "next/headers";
-import { notFound } from "next/navigation";
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import { auditReportRecords } from "../../operations-data";
 import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function SuperAdminAuditReportingPage() {
-  await requireChatGPTUser("/staff/audit-reports");
+  await requireStaffRouteAccess("/staff/audit-reports", ["SuperAdmin"]);
   const latestCommandReceipt = getLatestCommandCenterReceiptForHref(
     "/staff/audit-reports",
   );
-
-  const requestHeaders = await headers();
-  const staffRole = requestHeaders.get("x-notarix-staff-role");
-  if (staffRole !== "SuperAdmin") notFound();
 
   const restrictedCount = auditReportRecords.filter((record) =>
     ["Restricted", "High", "Elevated"].includes(record.risk),

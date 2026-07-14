@@ -1,6 +1,4 @@
-import { headers } from "next/headers";
-import { notFound } from "next/navigation";
-import { requireChatGPTUser } from "../../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../../access-policy";
 import {
   buildBaselineSeedSummary,
   d1SeedReconciliationContract,
@@ -27,11 +25,5 @@ export async function POST() {
 }
 
 async function requireSeedAuthority() {
-  await requireChatGPTUser("/staff/platform/seed");
-
-  const requestHeaders = await headers();
-  const staffRole = requestHeaders.get("x-notarix-staff-role");
-  if (staffRole !== "SuperAdmin") {
-    notFound();
-  }
+  await requireStaffRouteAccess("/staff/platform/seed", ["SuperAdmin"]);
 }
