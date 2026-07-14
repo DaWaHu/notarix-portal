@@ -32,6 +32,7 @@ export default async function AppointmentSchedulingConfirmationPage() {
           <a href="/staff">Staff Home</a>
           <a href="/staff/orders">Orders</a>
           <a href="/staff/order-intake">Order Intake</a>
+          <a href="/staff/signers">Signer Readiness</a>
           <a className="nav-cta" href="/staff/appointments">Appointments</a>
           <a href="/staff/order-closeout">Order Closeout</a>
           <a href="/notifications">Communications</a>
@@ -190,6 +191,7 @@ export default async function AppointmentSchedulingConfirmationPage() {
                 <input name="targetId" type="hidden" value="ORD-2607-0002" />
                 <button type="submit">Escalate Appointment Issue</button>
               </form>
+              <a href="/staff/signers">Open Signer Readiness</a>
               <a href="/staff/orders">Open Order Operations</a>
               <a href="/notifications">Open Communications</a>
               <a href="/notary/assignments">Open Notary Assignments</a>

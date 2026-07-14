@@ -499,6 +499,65 @@ export const appointmentConfirmationRecords = [
   },
 ] as const;
 
+export const signerReadinessRecords = [
+  {
+    id: "SGN-2607-0001",
+    orderId: "ORD-2607-0001",
+    signerName: "Dana Whitaker",
+    signerRole: "Borrower",
+    identityMethod: "Government-issued photo identification at appointment",
+    identityStatus: "Pending appointment check",
+    locationReadiness: "Raleigh signing location confirmed by client contact",
+    witnessRequirement: "No witness requirement recorded",
+    specialInstructions: "Confirm name match against closing package before notarization begins.",
+    risk: "Identity document must be reviewed in person",
+    staffOwner: "GenAdmin001",
+    nextAction: "Confirm signer availability, identity method, and document name match before appointment confirmation.",
+  },
+  {
+    id: "SGN-2607-0002",
+    orderId: "ORD-2607-0001",
+    signerName: "Marcus Whitaker",
+    signerRole: "Co-borrower",
+    identityMethod: "Government-issued photo identification at appointment",
+    identityStatus: "Pending appointment check",
+    locationReadiness: "Same appointment location",
+    witnessRequirement: "No witness requirement recorded",
+    specialInstructions: "Confirm signer will be present for the full signing appointment.",
+    risk: "Availability confirmation required",
+    staffOwner: "GenAdmin001",
+    nextAction: "Confirm attendance with client contact before dispatch.",
+  },
+  {
+    id: "SGN-2607-0003",
+    orderId: "ORD-2607-0002",
+    signerName: "Elena Morris",
+    signerRole: "Remote signer",
+    identityMethod: "Remote identity proofing and credential analysis",
+    identityStatus: "Restricted pending RON authority",
+    locationReadiness: "Remote session details pending",
+    witnessRequirement: "Electronic witness requirement under review",
+    specialInstructions: "Do not schedule RON session until client authority, replacement documents, and eligible notary assignment clear.",
+    risk: "RON restricted",
+    staffOwner: "GenAdmin003",
+    nextAction: "Hold signer confirmation until document replacement and RON controls clear.",
+  },
+  {
+    id: "SGN-2607-0004",
+    orderId: "ORD-2607-0003",
+    signerName: "Morgan Price",
+    signerRole: "Consumer signer",
+    identityMethod: "Government-issued photo identification at appointment",
+    identityStatus: "Ready for in-person check",
+    locationReadiness: "Durham mobile appointment address ready",
+    witnessRequirement: "No witness requirement recorded",
+    specialInstructions: "Confirm signer has acceptable identification before notary arrival.",
+    risk: "Standard",
+    staffOwner: "GenAdmin001",
+    nextAction: "Confirm appointment details and identity expectations with signer.",
+  },
+] as const;
+
 export const orderLifecycleIntakeRecords = [
   {
     id: "OIN-2607-0001",
@@ -1290,6 +1349,12 @@ export function notaryCompletionReceiptsForOrder(orderId: string) {
 export function appointmentsForOrder(orderId: string) {
   return appointmentConfirmationRecords.filter(
     (appointment) => appointment.orderId.toLowerCase() === orderId.toLowerCase(),
+  );
+}
+
+export function signersForOrder(orderId: string) {
+  return signerReadinessRecords.filter(
+    (signer) => signer.orderId.toLowerCase() === orderId.toLowerCase(),
   );
 }
 
