@@ -3,8 +3,8 @@
 Date: Jul 14 2026
 Workspace: `/Users/hudlinbe/Desktop/100 Notarix Signing`
 Branch: `codex/notarix-portal-checkpoint`
-Latest checkpoint: `1e3f2d6 Persist profile workflow state to D1`
-Verification status: `npm test` passed, 31 of 31 tests passing
+Latest checkpoint: `40ec694 Update executive handoff with persistence status`
+Verification status: `npm test` passed, 32 of 32 tests passing
 
 ## Executive Summary
 
@@ -18,11 +18,12 @@ The product is not production-deployed yet. The remaining work is primarily infr
 
 Portal UI and workflow coverage: 90 percent to 93 percent complete.
 
-Backend persistence and workflow hardening: 60 percent to 68 percent complete.
+Backend persistence and workflow hardening: 65 percent to 72 percent complete.
 
-Overall full deployment readiness: 72 percent to 78 percent complete.
+Overall full deployment readiness: 75 percent to 80 percent complete.
 
 This estimate increased because the latest work moved profile workflow state, order workflow state, and command-center audit receipts from in-memory-only behavior toward D1-backed persistence with preview fallback.
+It increased again after adding SuperAdmin-only idempotent D1 seed/reconciliation tooling for baseline profile, order, evidence, and command-center target records.
 
 ## Latest Commits
 
@@ -75,6 +76,17 @@ Completed:
 - `/staff/workflow/:requestId` reads D1-first and writes successful transitions back to D1.
 - `/staff/workflow/:requestId/section/:section` reads D1-first and writes section verification changes back to D1.
 - Local preview fallback remains intact.
+
+### D1 Seed and Reconciliation Tooling
+
+Completed:
+
+- Added idempotent baseline D1 seed/reconciliation module.
+- Added SuperAdmin-only `/staff/platform/seed` route.
+- GET provides dry-run seed coverage.
+- POST reconciles baseline data when the production `DB` binding is available.
+- Seeds access requests, profile verification items, profile evidence metadata, order operational records, order lifecycle/supporting records, and command-center targets.
+- Seed operations use deterministic IDs and upsert logic.
 
 ## Core Pages Completed
 
@@ -157,6 +169,9 @@ Completed:
   - `app/order-repository.ts`
   - `app/staff/command-center/store.ts`
   - `app/staff/requests/store.ts`
+- Seed/reconciliation tooling now lives in:
+  - `app/d1-seed.ts`
+  - `app/staff/platform/seed/route.ts`
 - Tests intentionally assert these persistence boundaries so future work does not regress into seed-only behavior.
 
 ## Production Gaps Remaining
@@ -164,7 +179,6 @@ Completed:
 ### Critical Before Deployment
 
 - Configure production D1 binding and apply migrations.
-- Add seed/import routine for initial access requests, profile items, order records, command targets, and operational reference data.
 - Bind real identity provider with MFA, passkeys, device controls, and role claims.
 - Replace local preview staff-role headers with provider-backed RBAC.
 - Add encrypted file storage, likely R2 or equivalent object storage.
@@ -187,18 +201,17 @@ Completed:
 
 ## Recommended Next Task
 
-Start with **D1 seed and reconciliation tooling**.
+Start with **production identity provider and RBAC binding design/implementation**.
 
-Reason: the application now has D1-backed persistence paths, but production deployment needs a reliable way to populate baseline operational records into D1. Without seeding/reconciliation, pages can fall back locally in preview but production D1 may start empty.
+Reason: the application now has D1-backed persistence paths and baseline seed tooling. The next critical production blocker is replacing preview staff-role headers with real identity-provider claims, MFA/passkeys, and role enforcement.
 
 Recommended scope:
 
-1. Create a seed module or script for baseline data.
-2. Seed access requests and profile verification items.
-3. Seed order operational records and lifecycle records.
-4. Seed command-center targets for notifications, credentials, ledger, evidence, retention, system, access, integrations, and orders.
-5. Make seeding idempotent through upsert logic.
-6. Add a test or governance assertion confirming seed coverage.
+1. Define production role claims for GenAdmin, Admin, SuperAdmin, Client, and Notary.
+2. Replace preview `x-notarix-staff-role` behavior with provider-backed role extraction.
+3. Enforce MFA/passkey requirement for protected staff routes.
+4. Preserve local preview behavior behind an explicit development-only path.
+5. Add role-claim tests for protected workflows and SuperAdmin-only seed/audit routes.
 
 ## Verification Snapshot
 
@@ -211,7 +224,7 @@ npm test
 Result:
 
 ```text
-31 tests passing
+32 tests passing
 ```
 
 Last whitespace check:
@@ -231,7 +244,7 @@ Result: clean.
 3. Confirm latest commit:
    `git log --oneline -5`
 4. Start task:
-   Build idempotent D1 seed/reconciliation tooling for baseline profile, order, and command-center records.
+   Begin production identity provider and RBAC binding implementation.
 5. Run:
    `npm test`
 6. Commit the checkpoint.

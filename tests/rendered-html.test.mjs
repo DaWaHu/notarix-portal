@@ -1270,6 +1270,50 @@ test("server-renders the protected platform configuration center", async () => {
   assert.match(html, /Logout/);
 });
 
+test("protects D1 baseline seed reconciliation", async () => {
+  const lockedResponse = await requestRoute("/staff/platform/seed");
+  assert.equal(lockedResponse.status, 307);
+  assert.match(lockedResponse.headers.get("location") ?? "", /signin-with-chatgpt/);
+
+  const genAdminResponse = await requestRoute("/staff/platform/seed", {
+    headers: {
+      accept: "application/json",
+      "oai-authenticated-user-email": "staff@example.com",
+    },
+  });
+  assert.equal(genAdminResponse.status, 404);
+
+  const dryRunResponse = await requestRoute("/staff/platform/seed", {
+    headers: {
+      accept: "application/json",
+      "oai-authenticated-user-email": "superadmin@example.com",
+      "x-notarix-staff-role": "SuperAdmin",
+    },
+  });
+  assert.equal(dryRunResponse.status, 200);
+  const dryRun = await dryRunResponse.json();
+  assert.equal(dryRun.mode, "Dry run");
+  assert.match(dryRun.contract.idempotency, /deterministic IDs and upsert logic/);
+  assert.ok(dryRun.summary.accessRequests >= 4);
+  assert.ok(dryRun.summary.profileVerificationItems >= 8);
+  assert.ok(dryRun.summary.orderOperationalRecords >= 3);
+  assert.ok(dryRun.summary.commandCenterTargets >= 20);
+
+  const seedResponse = await requestRoute("/staff/platform/seed", {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "oai-authenticated-user-email": "superadmin@example.com",
+      "x-notarix-staff-role": "SuperAdmin",
+    },
+  });
+  assert.equal(seedResponse.status, 503);
+  const seedResult = await seedResponse.json();
+  assert.equal(seedResult.available, false);
+  assert.match(seedResult.reason, /D1 binding `DB` is unavailable/);
+  assert.ok(seedResult.summary.orderLifecycleStages >= 1);
+});
+
 test("server-renders the protected financial controls workspace", async () => {
   const lockedResponse = await render("/staff/financial-controls");
   assert.equal(lockedResponse.status, 307);
@@ -2216,6 +2260,11 @@ test("keeps product rules in the local governance file", async () => {
     new URL("../app/staff/command-center/store.ts", import.meta.url),
     "utf8",
   );
+  const d1Seed = await readFile(new URL("../app/d1-seed.ts", import.meta.url), "utf8");
+  const d1SeedRoute = await readFile(
+    new URL("../app/staff/platform/seed/route.ts", import.meta.url),
+    "utf8",
+  );
   const workflowStore = await readFile(
     new URL("../app/staff/requests/store.ts", import.meta.url),
     "utf8",
@@ -2290,6 +2339,15 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(workflowStore, /schema\.profileVerificationItems/);
   assert.match(workflowStore, /schema\.workflowAuditEvents/);
   assert.match(workflowStore, /schema\.workflowNotifications/);
+  assert.match(d1Seed, /d1SeedReconciliationContract/);
+  assert.match(d1Seed, /reconcileBaselineD1Seed/);
+  assert.match(d1Seed, /buildBaselineSeedSummary/);
+  assert.match(d1Seed, /schema\.accessRequests/);
+  assert.match(d1Seed, /schema\.orderOperationalRecords/);
+  assert.match(d1Seed, /schema\.commandCenterTargets/);
+  assert.match(d1Seed, /onConflictDoUpdate/);
+  assert.match(d1SeedRoute, /SuperAdmin/);
+  assert.match(d1SeedRoute, /reconcileBaselineD1Seed/);
   assert.match(dbIndex, /await import\("cloudflare:workers"\)/);
   assert.match(css, /request-card:nth-child\(even\)/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
