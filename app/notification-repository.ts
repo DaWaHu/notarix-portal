@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { getOptionalDb } from "../db";
 import * as schema from "../db/schema";
+import { getNotificationProviderBinding } from "./notification-provider-config";
 import { notificationRecords } from "./operations-data";
 
 type ModeledNotificationRecord = (typeof notificationRecords)[number];
@@ -107,7 +108,8 @@ export async function dispatchNotificationDelivery(input: {
 
   const requiresConsent = phoneOrSmsChannel(record.channel) &&
     !record.consent.toLowerCase().includes("recorded");
-  const provider = providerForChannel(record.channel);
+  const providerBinding = await getNotificationProviderBinding(record.channel);
+  const provider = providerBinding.provider;
   const providerMessageId =
     record.providerMessageId !== "Pending"
       ? record.providerMessageId
@@ -125,7 +127,9 @@ export async function dispatchNotificationDelivery(input: {
     createdAtUtc: timestamp,
     detail: blocked
       ? "Phone or SMS delivery blocked until communication consent is retained."
-      : "Notification dispatched to provider and retained for delivery callback reconciliation.",
+      : providerBinding.configured
+        ? "Notification dispatched with configured provider credentials and retained for delivery callback reconciliation."
+        : "Notification dispatch recorded; provider credentials must be bound through environment secrets before production delivery.",
     eventType: blocked ? "Consent Hold" : "Provider Dispatch",
     id: nextNotificationEventId(),
     nextStatus,
@@ -149,7 +153,11 @@ export async function dispatchNotificationDelivery(input: {
         : "Await provider delivery callback.",
       provider,
       providerMessageId,
-      providerStatus: blocked ? "Blocked before provider handoff" : "Accepted",
+      providerStatus: blocked
+        ? "Blocked before provider handoff"
+        : providerBinding.configured
+          ? "Accepted"
+          : "Provider credentials not configured",
       status: nextStatus,
       updatedAtUtc: timestamp,
     },

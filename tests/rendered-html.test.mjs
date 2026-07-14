@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
@@ -26,6 +27,23 @@ async function requestRoute(path = "/", init = {}) {
       passThroughOnException() {},
     },
   );
+}
+
+function signedNotificationCallbackHeaders(body, provider = "email") {
+  const timestamp = "2026-07-18T21:00:00.000Z";
+  const signature = createHmac(
+    "sha256",
+    "local-preview-notification-webhook-secret",
+  )
+    .update(`${timestamp}.${body}`)
+    .digest("hex");
+
+  return {
+    "content-type": "application/json",
+    "x-notarix-provider": provider,
+    "x-notarix-provider-signature": signature,
+    "x-notarix-provider-timestamp": timestamp,
+  };
 }
 
 test("server-renders the Notarix Signings brand composition", async () => {
@@ -1657,17 +1675,29 @@ test("records notification provider dispatch, consent, and delivery callbacks", 
   );
   assert.equal(unsignedCallbackResponse.status, 401);
 
-  const callbackResponse = await requestRoute("/notifications/provider-callback", {
-    body: JSON.stringify({
-      deliveryStatus: "Delivered",
-      notificationId: "NTF-2607-0001",
-      provider: "Production email provider",
-      providerMessageId: emailDispatch.providerMessageId,
-    }),
-    headers: {
-      "content-type": "application/json",
-      "x-notarix-provider-signature": "local-preview-provider-signature",
+  const callbackBody = JSON.stringify({
+    deliveryStatus: "Delivered",
+    notificationId: "NTF-2607-0001",
+    provider: "Production email provider",
+    providerMessageId: emailDispatch.providerMessageId,
+  });
+  const invalidSignatureResponse = await requestRoute(
+    "/notifications/provider-callback",
+    {
+      body: callbackBody,
+      headers: {
+        "content-type": "application/json",
+        "x-notarix-provider-signature": "invalid-signature",
+        "x-notarix-provider-timestamp": "2026-07-18T21:00:00.000Z",
+      },
+      method: "POST",
     },
+  );
+  assert.equal(invalidSignatureResponse.status, 401);
+
+  const callbackResponse = await requestRoute("/notifications/provider-callback", {
+    body: callbackBody,
+    headers: signedNotificationCallbackHeaders(callbackBody),
     method: "POST",
   });
   assert.equal(callbackResponse.status, 200);
@@ -2509,6 +2539,10 @@ test("keeps product rules in the local governance file", async () => {
     new URL("../app/notification-repository.ts", import.meta.url),
     "utf8",
   );
+  const notificationProviderConfig = await readFile(
+    new URL("../app/notification-provider-config.ts", import.meta.url),
+    "utf8",
+  );
   const commandStore = await readFile(
     new URL("../app/staff/command-center/store.ts", import.meta.url),
     "utf8",
@@ -2664,14 +2698,23 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(notificationRepository, /dispatchNotificationDelivery/);
   assert.match(notificationRepository, /recordNotificationProviderCallback/);
   assert.match(notificationRepository, /recordNotificationConsent/);
+  assert.match(notificationRepository, /getNotificationProviderBinding/);
   assert.match(notificationRepository, /schema\.notificationDeliveryRecords/);
   assert.match(notificationRepository, /schema\.notificationDeliveryEvents/);
   assert.match(notificationRepository, /schema\.communicationConsentRecords/);
   assert.match(notificationDispatchRoute, /dispatchNotificationDelivery/);
   assert.match(notificationDispatchRoute, /recordNotificationConsent/);
   assert.match(notificationDispatchRoute, /requireStaffRouteAccess/);
-  assert.match(notificationCallbackRoute, /x-notarix-provider-signature/);
   assert.match(notificationCallbackRoute, /recordNotificationProviderCallback/);
+  assert.match(notificationCallbackRoute, /verifyNotificationProviderWebhook/);
+  assert.match(notificationProviderConfig, /notificationProviderEnvironmentContract/);
+  assert.match(notificationProviderConfig, /x-notarix-provider-signature/);
+  assert.match(notificationProviderConfig, /SENDGRID_API_KEY/);
+  assert.match(notificationProviderConfig, /TWILIO_AUTH_TOKEN/);
+  assert.match(notificationProviderConfig, /NOTARIX_NOTIFICATION_WEBHOOK_SECRET/);
+  assert.match(notificationProviderConfig, /HMAC/);
+  assert.match(notificationProviderConfig, /crypto\.subtle/);
+  assert.match(notificationProviderConfig, /constantTimeEqual/);
   assert.match(orderRepository, /orderRepositoryPersistenceContract/);
   assert.match(orderRepository, /D1-first repository/);
   assert.match(orderRepository, /listOrderOperations/);

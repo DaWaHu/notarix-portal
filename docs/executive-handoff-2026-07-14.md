@@ -3,7 +3,7 @@
 Date: Jul 14 2026
 Workspace: `/Users/hudlinbe/Desktop/100 Notarix Signing`
 Branch: `codex/notarix-portal-checkpoint`
-Latest checkpoint: Notification provider binding and delivery callback controls pending current commit
+Latest checkpoint: Notification provider environment binding and webhook signature verification pending current commit
 Verification status: `npm test` passed, 35 of 35 tests passing
 
 ## Executive Summary
@@ -29,6 +29,7 @@ It increased again after binding protected staff routes and workflow endpoints t
 It increased again after adding D1 evidence storage controls for encrypted object keys, malware validation status, release eligibility, and custody metadata.
 It increased again after adding signed evidence access decisions, malware scan callback updates, and retained evidence access receipts.
 It increased again after adding notification provider dispatch, delivery callbacks, retained provider events, and consent records.
+It increased again after binding notification providers to environment-secret configuration and replacing callback signature presence checks with HMAC-SHA256 verification.
 
 ## Latest Commits
 
@@ -158,6 +159,8 @@ Completed:
 - Added `/notifications/:notificationId/dispatch` for staff delivery dispatch and consent recording.
 - Added `/notifications/provider-callback` for provider delivery status callbacks.
 - Provider callback route requires `x-notarix-provider-signature` before delivery status updates are accepted.
+- Provider callback route now verifies `x-notarix-provider-signature` with HMAC-SHA256 over `x-notarix-provider-timestamp` plus the raw callback body.
+- Provider credentials and webhook secrets are read from environment bindings, including `NOTARIX_EMAIL_API_KEY`, `SENDGRID_API_KEY`, `NOTARIX_SMS_API_KEY`, `TWILIO_AUTH_TOKEN`, `TWILIO_ACCOUNT_SID`, `NOTARIX_EMAIL_WEBHOOK_SECRET`, `NOTARIX_SMS_WEBHOOK_SECRET`, and `NOTARIX_NOTIFICATION_WEBHOOK_SECRET`.
 - Communications center now reads delivery records through the repository instead of directly from modeled page data.
 - Communications table now shows provider name, provider status, provider message ID, callback status, consent state, and dispatch action.
 - Phone/SMS dispatch is blocked until communication consent is retained.
@@ -165,6 +168,18 @@ Completed:
 - Provider callbacks update delivery status, provider status, message ID, callback status, last callback time, and next action.
 - Baseline D1 seed/reconciliation now includes notification delivery records.
 - Tests now verify email dispatch, unsigned callback rejection, signed callback delivery update, phone consent blocking, consent recording, phone dispatch, and visible status feedback.
+- Tests now verify invalid callback signatures are rejected and correctly signed local-preview callbacks are accepted.
+
+### Notification Provider Environment Binding
+
+Completed:
+
+- Added `app/notification-provider-config.ts` as the provider credential and webhook verification boundary.
+- Email and SMS provider credentials are resolved through environment bindings only.
+- Local preview uses a deterministic local webhook secret for tests without exposing production secrets.
+- Production runtimes require provider webhook secrets from environment bindings.
+- HMAC comparison uses a constant-time comparison helper.
+- Dispatch records now distinguish configured provider credentials from local preview or unconfigured provider state.
 
 ## Core Pages Completed
 
@@ -270,6 +285,8 @@ Completed:
 - Notification provider dispatch and callback behavior now lives in:
   - `app/notifications/[notificationId]/dispatch/route.ts`
   - `app/notifications/provider-callback/route.ts`
+- Notification provider environment binding and webhook verification now lives in:
+  - `app/notification-provider-config.ts`
 
 ## Production Gaps Remaining
 
@@ -280,8 +297,8 @@ Completed:
 - Confirm production deployment strips or ignores preview-only staff-role headers before application routing.
 - Bind encrypted file storage credentials and object APIs, likely R2 or equivalent object storage, to the evidence repository.
 - Bind malware scanning provider callback authentication and provider webhook verification.
-- Bind real email provider and phone/SMS provider credentials through environment configuration.
-- Replace local provider-signature presence check with provider-specific HMAC or webhook signature validation.
+- Configure real production email/SMS secrets in the deployment environment.
+- Confirm selected provider callback payload format and signature headers before production cutover.
 - Add production audit immutability strategy.
 - Add backup and restore verification.
 - Add environment-specific secrets management.
@@ -292,6 +309,7 @@ Completed:
 - Replace local signed evidence URL preview tokens with provider-issued R2/S3 signed URLs.
 - Add webhook signature verification for malware scan callbacks.
 - Add provider-specific notification retry/backoff and suppression policy.
+- Replace the generic HMAC callback contract with vendor-native verification if the selected provider requires a different signature scheme.
 - Persist financial ledger controls and payment release state.
 - Persist credential expiration records and renewal reminders.
 - Add admin seed/reconciliation tools for records that start in local modeled data.
@@ -299,15 +317,15 @@ Completed:
 
 ## Recommended Next Task
 
-Start with **real provider credential binding for email/SMS and webhook signature verification**.
+Start with **deployment environment configuration and provider-specific callback contract validation**.
 
-Reason: the notification workflow now has D1-backed delivery records, dispatch events, consent retention, and provider callback updates. The next critical production blocker is connecting the selected provider credentials and validating provider webhook signatures with environment secrets.
+Reason: the notification workflow now has D1-backed delivery records, dispatch events, consent retention, provider callback updates, environment-secret credential binding, and HMAC webhook verification. The next critical production blocker is configuring the actual deployment environment and confirming the selected email/SMS provider callback contract.
 
 Recommended scope:
 
-1. Select provider-specific adapters for email and SMS/phone delivery.
-2. Bind credentials through environment variables or platform secrets.
-3. Validate callback signatures with provider-specific HMAC or webhook verification.
+1. Add production secrets for selected email and SMS providers.
+2. Confirm callback URLs for the provider control plane.
+3. Validate provider-native payload shape against `/notifications/provider-callback`.
 4. Add retry/backoff and suppression policy for failed, bounced, or opted-out delivery.
 5. Add deployment documentation for provider setup and callback URLs.
 
@@ -342,7 +360,7 @@ Result: clean.
 3. Confirm latest commit:
    `git log --oneline -5`
 4. Start task:
-   Begin real provider credential binding for email/SMS and webhook signature verification.
+   Begin deployment environment configuration and provider-specific callback contract validation.
 5. Run:
    `npm test`
 6. Commit the checkpoint.

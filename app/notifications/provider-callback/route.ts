@@ -1,22 +1,29 @@
+import { verifyNotificationProviderWebhook } from "../../notification-provider-config";
 import { recordNotificationProviderCallback } from "../../notification-repository";
 
-const PROVIDER_SIGNATURE_HEADER = "x-notarix-provider-signature";
-
 export async function POST(request: Request) {
-  const signature = request.headers.get(PROVIDER_SIGNATURE_HEADER);
-  if (!signature) {
+  const rawBody = await request.text();
+  const payload = safeJson(rawBody);
+  const notificationId = String(payload.notificationId ?? "");
+  const deliveryStatus = String(payload.deliveryStatus ?? "");
+  const provider =
+    typeof payload.provider === "string"
+      ? payload.provider
+      : "Production email provider";
+
+  const verification = await verifyNotificationProviderWebhook({
+    provider,
+    rawBody,
+    request,
+  });
+  if (!verification.ok) {
     return Response.json(
       {
-        error:
-          "Notification provider callback signature is required before delivery status can be recorded.",
+        error: verification.reason,
       },
       { status: 401 },
     );
   }
-
-  const payload = await safeJson(request);
-  const notificationId = String(payload.notificationId ?? "");
-  const deliveryStatus = String(payload.deliveryStatus ?? "");
 
   if (!notificationId || !deliveryStatus) {
     return Response.json(
@@ -33,7 +40,7 @@ export async function POST(request: Request) {
     detail:
       typeof payload.detail === "string" ? payload.detail : undefined,
     notificationId,
-    provider: typeof payload.provider === "string" ? payload.provider : undefined,
+    provider,
     providerMessageId:
       typeof payload.providerMessageId === "string"
         ? payload.providerMessageId
@@ -45,9 +52,9 @@ export async function POST(request: Request) {
   });
 }
 
-async function safeJson(request: Request): Promise<Record<string, unknown>> {
+function safeJson(rawBody: string): Record<string, unknown> {
   try {
-    return (await request.json()) as Record<string, unknown>;
+    return JSON.parse(rawBody) as Record<string, unknown>;
   } catch {
     return {};
   }
