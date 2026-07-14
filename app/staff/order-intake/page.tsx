@@ -27,6 +27,7 @@ export default async function OrderLifecycleIntakePage() {
           <a href="/">Home</a>
           <a href="/staff">Staff Home</a>
           <a href="/staff/orders">Orders</a>
+          <a href="/staff/appointments">Appointments</a>
           <a href="/staff/order-closeout">Order Closeout</a>
           <a href="/staff/document-validation">Document Validation</a>
           <a href="/staff/financial-reports">Financial Reports</a>
@@ -189,6 +190,7 @@ export default async function OrderLifecycleIntakePage() {
                 <input name="targetId" type="hidden" value="ORD-2607-0001" />
                 <button type="submit">Route Financial Review</button>
               </form>
+              <a href="/staff/appointments">Open Appointments</a>
               <a href="/staff/order-closeout">Open Closeout Console</a>
               <a href="/staff/document-validation">Open Validation Queue</a>
               <a href="/staff/financial-reports">Open Financial Reports</a>

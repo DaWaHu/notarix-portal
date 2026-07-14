@@ -448,6 +448,57 @@ export const notaryCompletionReceiptRecords = [
   },
 ] as const;
 
+export const appointmentConfirmationRecords = [
+  {
+    id: "APT-2607-0001",
+    orderId: "ORD-2607-0001",
+    client: "Coleman Title Group",
+    notary: "Bernadette W Hudlin",
+    appointment: "Jul 22 2026 at 10:30 AM ET",
+    location: "210 Market Street, Raleigh, NC 27601",
+    serviceType: "Loan signing appointment",
+    status: "Pending confirmation",
+    signerReadiness: "Signer and location confirmation required",
+    documentReadiness: "Validated release pending",
+    notificationStatus: "Client notice failed; retry required",
+    staffOwner: "GenAdmin001",
+    authority: "Authorized staff may confirm; Admin controls release exceptions",
+    nextAction: "Confirm client, notary, signer location, document availability, and delivery notices before appointment proceeds.",
+  },
+  {
+    id: "APT-2607-0002",
+    orderId: "ORD-2607-0002",
+    client: "Grant & Ledger Law PLLC",
+    notary: "Unassigned",
+    appointment: "Jul 23 2026 at 2:00 PM ET",
+    location: "Remote document preparation",
+    serviceType: "Electronic notarization",
+    status: "Hold for assignment",
+    signerReadiness: "Remote signer details pending",
+    documentReadiness: "Replacement document requested",
+    notificationStatus: "Client correction open",
+    staffOwner: "GenAdmin003",
+    authority: "Admin assignment and RON review required",
+    nextAction: "Do not confirm appointment until replacement document, client authority, and eligible notary assignment clear.",
+  },
+  {
+    id: "APT-2607-0003",
+    orderId: "ORD-2607-0003",
+    client: "Oak City Home Buyer",
+    notary: "Bernadette W Hudlin",
+    appointment: "Jul 24 2026 at 6:00 PM ET",
+    location: "540 Pinecrest Road, Durham, NC 27701",
+    serviceType: "Traditional mobile notarization",
+    status: "Ready for confirmation",
+    signerReadiness: "Signer identity check required at appointment",
+    documentReadiness: "No document package required",
+    notificationStatus: "Confirmation queued",
+    staffOwner: "GenAdmin001",
+    authority: "Authorized staff",
+    nextAction: "Confirm appointment details with client and assigned notary before dispatch.",
+  },
+] as const;
+
 export const orderLifecycleIntakeRecords = [
   {
     id: "OIN-2607-0001",
@@ -1233,6 +1284,12 @@ export function deliveryReceiptsForOrder(orderId: string) {
 export function notaryCompletionReceiptsForOrder(orderId: string) {
   return notaryCompletionReceiptRecords.filter(
     (receipt) => receipt.orderId.toLowerCase() === orderId.toLowerCase(),
+  );
+}
+
+export function appointmentsForOrder(orderId: string) {
+  return appointmentConfirmationRecords.filter(
+    (appointment) => appointment.orderId.toLowerCase() === orderId.toLowerCase(),
   );
 }
 

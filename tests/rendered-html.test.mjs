@@ -653,6 +653,7 @@ test("server-renders role-based portal landing pages", async () => {
   assert.match(genAdminHtml, /Profile Verification/);
   assert.match(genAdminHtml, /Order Operations/);
   assert.match(genAdminHtml, /Order Intake/);
+  assert.match(genAdminHtml, /Appointments/);
   assert.match(genAdminHtml, /Order Closeout/);
   assert.match(genAdminHtml, /Evidence Intake/);
   assert.match(genAdminHtml, /Document Validation/);
@@ -660,6 +661,7 @@ test("server-renders role-based portal landing pages", async () => {
   assert.match(genAdminHtml, /href="\/staff\/requests\/NSR-1001\/profile-verification"/);
   assert.match(genAdminHtml, /href="\/staff\/orders"/);
   assert.match(genAdminHtml, /href="\/staff\/order-intake"/);
+  assert.match(genAdminHtml, /href="\/staff\/appointments"/);
   assert.match(genAdminHtml, /href="\/staff\/order-closeout"/);
   assert.match(genAdminHtml, /href="\/staff\/evidence-intake"/);
   assert.match(genAdminHtml, /href="\/staff\/document-validation"/);
@@ -677,6 +679,7 @@ test("server-renders role-based portal landing pages", async () => {
   assert.match(adminHtml, /Elevated Approval/);
   assert.match(adminHtml, /Order Operations/);
   assert.match(adminHtml, /Order Intake/);
+  assert.match(adminHtml, /Appointments/);
   assert.match(adminHtml, /Order Closeout/);
   assert.match(adminHtml, /Financial Reports/);
   assert.match(adminHtml, /Command Activity/);
@@ -700,6 +703,7 @@ test("server-renders role-based portal landing pages", async () => {
   assert.match(superAdminHtml, /Audit Reporting/);
   assert.match(superAdminHtml, /Order Operations/);
   assert.match(superAdminHtml, /Order Intake/);
+  assert.match(superAdminHtml, /Appointments/);
   assert.match(superAdminHtml, /Order Closeout/);
   assert.match(superAdminHtml, /Command Activity/);
   assert.match(superAdminHtml, /Evidence Intake/);
@@ -846,8 +850,10 @@ test("server-renders permanent portal operation pages", async () => {
   assert.match(orderHtml, /Record Completion Package/);
   assert.match(orderHtml, /Close Order/);
   assert.match(orderHtml, /href="\/staff\/order-intake"/);
+  assert.match(orderHtml, /href="\/staff\/appointments"/);
   assert.match(orderHtml, /href="\/staff\/order-closeout"/);
   assert.match(orderHtml, /Open Intake Queue/);
+  assert.match(orderHtml, /Open Appointments/);
   assert.match(orderHtml, /Open Closeout Console/);
   assert.match(orderHtml, /seller-closing-package\.pdf/);
   assert.match(orderHtml, /href="\/staff\/orders\/ORD-2607-0001\/assignment"/);
@@ -871,6 +877,7 @@ test("server-renders permanent portal operation pages", async () => {
   assert.match(staffOrdersHtml, /Release Validated Documents/);
   assert.match(staffOrdersHtml, /Request Missing Documents/);
   assert.match(staffOrdersHtml, /Route Financial Review/);
+  assert.match(staffOrdersHtml, /Open Appointments/);
   assert.match(staffOrdersHtml, /Open Closeout Console/);
 
   const orderIntakeLocked = await render("/staff/order-intake");
@@ -892,7 +899,28 @@ test("server-renders permanent portal operation pages", async () => {
   assert.match(orderIntakeHtml, /Release Validated Documents/);
   assert.match(orderIntakeHtml, /Confirm Notary Acceptance/);
   assert.match(orderIntakeHtml, /Route Financial Review/);
+  assert.match(orderIntakeHtml, /Open Appointments/);
   assert.match(orderIntakeHtml, /Open Closeout Console/);
+
+  const appointmentsLocked = await render("/staff/appointments");
+  assert.equal(appointmentsLocked.status, 307);
+  assert.match(appointmentsLocked.headers.get("location") ?? "", /signin-with-chatgpt/);
+
+  const appointmentsResponse = await render("/staff/appointments", {
+    "oai-authenticated-user-email": "admin@example.com",
+    "x-notarix-staff-role": "Admin",
+  });
+  assert.equal(appointmentsResponse.status, 200);
+  const appointmentsHtml = await appointmentsResponse.text();
+  assert.match(appointmentsHtml, /Appointment Scheduling And Confirmation Center/);
+  assert.match(appointmentsHtml, /Appointment readiness and confirmation matrix/);
+  assert.match(appointmentsHtml, /APT-2607-0001/);
+  assert.match(appointmentsHtml, /Signer and location confirmation required/);
+  assert.match(appointmentsHtml, /Client notice failed; retry required/);
+  assert.match(appointmentsHtml, /Confirm Appointment/);
+  assert.match(appointmentsHtml, /Retry Client Notice/);
+  assert.match(appointmentsHtml, /Request Missing Documents/);
+  assert.match(appointmentsHtml, /Escalate Appointment Issue/);
 
   const orderCloseoutLocked = await render("/staff/order-closeout");
   assert.equal(orderCloseoutLocked.status, 307);
@@ -1737,6 +1765,16 @@ test("persists command center workflow actions", async () => {
   assert.equal(appointment.targetType, "Order");
   assert.equal(appointment.nextStatus, "Appointment Confirmed");
   assert.match(appointment.auditEvent, /confirmed order appointment/);
+
+  const appointmentFeedbackResponse = await render("/staff/appointments", {
+    "oai-authenticated-user-email": "admin@example.com",
+    "x-notarix-staff-role": "Admin",
+  });
+  assert.equal(appointmentFeedbackResponse.status, 200);
+  const appointmentFeedbackHtml = await appointmentFeedbackResponse.text();
+  assert.match(appointmentFeedbackHtml, /Latest command result/);
+  assert.match(appointmentFeedbackHtml, /Appointment Confirmed/);
+  assert.match(appointmentFeedbackHtml, /confirm-order-appointment[\s\S]*updated[\s\S]*ORD-2607-0001/);
 
   const clientUploadResponse = await requestRoute("/client/order-actions", {
     method: "POST",

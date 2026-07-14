@@ -34,6 +34,7 @@ export default async function OrderCloseoutAndDeliveryConsolePage() {
           <a href="/staff">Staff Home</a>
           <a href="/staff/orders">Orders</a>
           <a href="/staff/order-intake">Order Intake</a>
+          <a href="/staff/appointments">Appointments</a>
           <a href="/staff/document-validation">Document Validation</a>
           <a href="/staff/financial-reports">Financial Reports</a>
           <a href="/notifications">Communications</a>
@@ -191,6 +192,7 @@ export default async function OrderCloseoutAndDeliveryConsolePage() {
               </form>
               <a href="/staff/financial-reports">Open Financial Reports</a>
               <a href="/notifications">Open Communications</a>
+              <a href="/staff/appointments">Open Appointments</a>
               <a href="/staff/retention">Open Retention Controls</a>
               <a href="/orders/ORD-2607-0001">Open Order Case File</a>
             </div>
