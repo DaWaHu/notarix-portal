@@ -24,6 +24,7 @@ export default function ClientOrderManagementConsolePage() {
           <a href="/client">Client Home</a>
           <a href="/client/dashboard">Dashboard</a>
           <a className="nav-cta" href="/client/orders">Orders</a>
+          <a href="/client/orders/ORD-2607-0001/completion">Delivery Receipt</a>
           <a href="/orders/new">New Order</a>
           <a href="/documents">Documents</a>
           <a href="/account/users">Authorized Users</a>
@@ -83,6 +84,7 @@ export default function ClientOrderManagementConsolePage() {
                 </a>
               ))}
               <a href="/orders/new"><span>Create New Order</span></a>
+              <a href="/client/orders/ORD-2607-0001/completion"><span>Delivery Receipt</span></a>
               <a href="/documents"><span>Document Center</span></a>
             </nav>
           </aside>
@@ -151,6 +153,9 @@ export default function ClientOrderManagementConsolePage() {
                         <a className="table-action-link" href={`/orders/${order.id}`}>
                           Open
                         </a>
+                        <span className="evidence-packet-summary">
+                          <a href={`/client/orders/${order.id}/completion`}>Delivery Receipt</a>
+                        </span>
                       </td>
                     </tr>
                   ))}

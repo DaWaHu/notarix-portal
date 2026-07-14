@@ -722,8 +722,10 @@ test("server-renders role-based portal landing pages", async () => {
   assert.match(clientHtml, /Client routing matrix/);
   assert.match(clientHtml, /Authorized Users/);
   assert.match(clientHtml, /Billing status/);
+  assert.match(clientHtml, /Delivery Receipt/);
   assert.match(clientHtml, /href="\/client\/dashboard"/);
   assert.match(clientHtml, /href="\/client\/orders"/);
+  assert.match(clientHtml, /href="\/client\/orders\/ORD-2607-0001\/completion"/);
   assert.match(clientHtml, /href="\/orders\/new"/);
   assert.match(clientHtml, /href="\/account\/users"/);
 
@@ -750,6 +752,7 @@ test("server-renders permanent portal operation pages", async () => {
   assert.match(clientHtml, /ORD-2607-0001/);
   assert.match(clientHtml, /Authorized users/);
   assert.match(clientHtml, /Document upload/);
+  assert.match(clientHtml, /Delivery Receipt/);
 
   const clientOrdersResponse = await render("/client/orders");
   assert.equal(clientOrdersResponse.status, 200);
@@ -763,6 +766,24 @@ test("server-renders permanent portal operation pages", async () => {
   assert.match(clientOrdersHtml, /Submit Replacement Documents/);
   assert.match(clientOrdersHtml, /Acknowledge Correction Notice/);
   assert.match(clientOrdersHtml, /Upload Documents/);
+  assert.match(clientOrdersHtml, /Delivery Receipt/);
+  assert.match(clientOrdersHtml, /href="\/client\/orders\/ORD-2607-0001\/completion"/);
+
+  const clientCompletionResponse = await render("/client/orders/ORD-2607-0001/completion");
+  assert.equal(clientCompletionResponse.status, 200);
+  const clientCompletionHtml = await clientCompletionResponse.text();
+  assert.match(clientCompletionHtml, /Order Delivery Receipt/);
+  assert.match(clientCompletionHtml, /Delivery receipt and completion matrix/);
+  assert.match(clientCompletionHtml, /Completion package/);
+  assert.match(clientCompletionHtml, /Delivered documents/);
+  assert.match(clientCompletionHtml, /Invoice posture/);
+  assert.match(clientCompletionHtml, /Communication receipt/);
+  assert.match(clientCompletionHtml, /Final order receipt/);
+  assert.match(clientCompletionHtml, /Client-visible document register/);
+  assert.match(clientCompletionHtml, /seller-closing-package\.pdf/);
+  assert.match(clientCompletionHtml, /Final receipt available after staff closeout/);
+  assert.doesNotMatch(clientCompletionHtml, /borrower-identification-copy\.pdf/);
+  assert.match(clientCompletionHtml, /Return To Orders/);
 
   const notaryResponse = await render("/notary/dashboard");
   assert.equal(notaryResponse.status, 200);
@@ -1785,6 +1806,13 @@ test("persists command center workflow actions", async () => {
   assert.match(orderCloseoutFeedbackHtml, /Latest command result/);
   assert.match(orderCloseoutFeedbackHtml, /Closed/);
   assert.match(orderCloseoutFeedbackHtml, /close-order[\s\S]*updated[\s\S]*ORD-2607-0001/);
+
+  const clientCompletionFeedbackResponse = await render("/client/orders/ORD-2607-0001/completion");
+  assert.equal(clientCompletionFeedbackResponse.status, 200);
+  const clientCompletionFeedbackHtml = await clientCompletionFeedbackResponse.text();
+  assert.match(clientCompletionFeedbackHtml, /Latest command result/);
+  assert.match(clientCompletionFeedbackHtml, /Closed/);
+  assert.match(clientCompletionFeedbackHtml, /close-order[\s\S]*updated[\s\S]*ORD-2607-0001/);
 
   const formReceiptResponse = await requestRoute("/staff/command-center", {
     method: "POST",

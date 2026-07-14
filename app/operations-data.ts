@@ -332,6 +332,69 @@ export const orderCloseoutRecords = [
   },
 ] as const;
 
+export const orderDeliveryReceiptRecords = [
+  {
+    id: "ODR-2607-0001",
+    orderId: "ORD-2607-0001",
+    receiptArea: "Completion package",
+    clientStatus: "Completion pending",
+    clientVisibleEvidence: "Notarial certificate and completion package receipt",
+    deliveryChannel: "Client portal",
+    deliveredTo: "Avery Coleman",
+    deliveredAt: "Pending completion package validation",
+    accessControl: "Available after staff closeout release",
+    clientNextAction: "Monitor completion status and review delivered documents after staff release.",
+  },
+  {
+    id: "ODR-2607-0002",
+    orderId: "ORD-2607-0001",
+    receiptArea: "Delivered documents",
+    clientStatus: "Release pending",
+    clientVisibleEvidence: "seller-closing-package.pdf and authorized delivery record",
+    deliveryChannel: "Signed portal access",
+    deliveredTo: "Coleman Title Group authorized users",
+    deliveredAt: "Pending staff document release",
+    accessControl: "Validated files only; restricted identity records withheld",
+    clientNextAction: "Wait for release notice before downloading the final package.",
+  },
+  {
+    id: "ODR-2607-0003",
+    orderId: "ORD-2607-0001",
+    receiptArea: "Invoice posture",
+    clientStatus: "Invoice pending",
+    clientVisibleEvidence: "Client billing authority and order completion status",
+    deliveryChannel: "Billing notice",
+    deliveredTo: "Avery Coleman",
+    deliveredAt: "Pending financial review",
+    accessControl: "Invoice issued only after closeout financial controls clear",
+    clientNextAction: "Review invoice when released and contact staff for billing corrections.",
+  },
+  {
+    id: "ODR-2607-0004",
+    orderId: "ORD-2607-0001",
+    receiptArea: "Communication receipt",
+    clientStatus: "Delivery retry required",
+    clientVisibleEvidence: "Document notice delivery log",
+    deliveryChannel: "Email",
+    deliveredTo: "closings@example.com",
+    deliveredAt: "Jul 18 2026 at 4:22 PM ET",
+    accessControl: "Staff retry required before final closeout",
+    clientNextAction: "Confirm the authorized delivery inbox remains correct.",
+  },
+  {
+    id: "ODR-2607-0005",
+    orderId: "ORD-2607-0001",
+    receiptArea: "Final order receipt",
+    clientStatus: "Not closed",
+    clientVisibleEvidence: "Order closeout status, delivery receipts, and retained client-visible records",
+    deliveryChannel: "Client portal",
+    deliveredTo: "Coleman Title Group",
+    deliveredAt: "Pending final closeout",
+    accessControl: "Final receipt available after staff closeout",
+    clientNextAction: "No final action is required until the completion notice is delivered.",
+  },
+] as const;
+
 export const orderLifecycleIntakeRecords = [
   {
     id: "OIN-2607-0001",
@@ -1105,6 +1168,12 @@ export function completionControlsForOrder(orderId: string) {
 export function closeoutControlsForOrder(orderId: string) {
   return orderCloseoutRecords.filter(
     (control) => control.orderId.toLowerCase() === orderId.toLowerCase(),
+  );
+}
+
+export function deliveryReceiptsForOrder(orderId: string) {
+  return orderDeliveryReceiptRecords.filter(
+    (receipt) => receipt.orderId.toLowerCase() === orderId.toLowerCase(),
   );
 }
 

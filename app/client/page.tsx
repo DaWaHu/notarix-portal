@@ -13,6 +13,7 @@ export default function ClientPortalHomePage() {
           <a className="nav-cta" href="/client">Client Home</a>
           <a href="/client/dashboard">Dashboard</a>
           <a href="/client/orders">Orders</a>
+          <a href="/client/orders/ORD-2607-0001/completion">Delivery Receipt</a>
           <a href="/orders/new">New Order</a>
           <a href="/documents">Documents</a>
           <a href="/account/users">Authorized Users</a>
@@ -59,6 +60,7 @@ export default function ClientPortalHomePage() {
               {[
                 ["Dashboard", "/client/dashboard"],
                 ["Order Management", "/client/orders"],
+                ["Delivery Receipt", "/client/orders/ORD-2607-0001/completion"],
                 ["Create Order", "/orders/new"],
                 ["Documents", "/documents"],
                 ["Authorized Users", "/account/users"],
@@ -92,6 +94,7 @@ export default function ClientPortalHomePage() {
                 <tbody>
                   {[
                     ["Orders", "Submit and track notarial orders", "NSC-NC-2607-0001", "Enabled", "Order submission authority approved", "/client/orders"],
+                    ["Delivery Receipt", "Review completed order delivery and closeout posture", "NSC-NC-2607-0001", "Controlled", "Final receipt available after closeout", "/client/orders/ORD-2607-0001/completion"],
                     ["Documents", "Upload and review order files", "NSC-NC-2607-0001", "Enabled", "Document access logged", "/documents"],
                     ["Authorized Users", "Manage named users and permissions", "NSC-NC-2607-0001", "Controlled", "No shared logins", "/account/users"],
                     ["Billing", "Review billing posture and restrictions", "NSC-NC-2607-0001", "Restricted", "Staff approval required", "/settings/organization"],
