@@ -1,4 +1,7 @@
 import {
+  eq,
+} from "drizzle-orm";
+import {
   auditReportRecords,
   accessControlRecords,
   credentialMonitorRecords,
@@ -9,6 +12,8 @@ import {
   retentionPolicyRecords,
   systemHealthRecords,
 } from "../../operations-data";
+import { getOptionalDb } from "../../../db";
+import * as schema from "../../../db/schema";
 import { persistOrderCommandTransition } from "../../order-repository";
 import { evidenceRecords } from "../../evidence-data";
 import type { WorkflowActorRole } from "../requests/workflow";
@@ -142,6 +147,11 @@ export type CommandCenterPersistenceRecord = {
   target: CommandCenterTargetRecord;
   event: CommandCenterEventRecord;
   receipt: CommandCenterReceiptRecord;
+};
+
+type CommandCenterPersistenceResult = {
+  persisted: boolean;
+  reason?: string;
 };
 
 type CommandTargetState = {
@@ -539,6 +549,86 @@ export function getCommandCenterReceipt(
   );
 }
 
+export async function listPersistedCommandCenterReceipts(): Promise<
+  StoredCommandReceipt[]
+> {
+  const db = await getOptionalDb();
+  if (!db) return listCommandCenterReceipts();
+
+  try {
+    const [receiptRows, eventRows, targetRows] = await Promise.all([
+      db.select().from(schema.commandCenterReceipts),
+      db.select().from(schema.commandCenterEvents),
+      db.select().from(schema.commandCenterTargets),
+    ]);
+
+    if (receiptRows.length === 0) return listCommandCenterReceipts();
+
+    const eventsById = new Map(eventRows.map((event) => [event.id, event]));
+    const targetsById = new Map(targetRows.map((target) => [target.id, target]));
+
+    return receiptRows
+      .map((receipt) => {
+        const event = eventsById.get(receipt.eventId);
+        const target = targetsById.get(receipt.targetId);
+        if (!event || !target) return undefined;
+        return commandReceiptFromRows({ event, receipt, target });
+      })
+      .filter((receipt): receipt is StoredCommandReceipt => Boolean(receipt));
+  } catch {
+    return listCommandCenterReceipts();
+  }
+}
+
+export async function listPersistedCommandCenterEvents(): Promise<
+  StoredCommandEvent[]
+> {
+  return (await listPersistedCommandCenterReceipts()).map((receipt) => ({
+    action: receipt.action,
+    actor: receipt.actor,
+    auditEvent: receipt.auditEvent,
+    id: receipt.id,
+    nextStatus: receipt.nextStatus,
+    previousStatus: receipt.previousStatus,
+    role: receipt.role,
+    targetId: receipt.targetId,
+    targetType: receipt.targetType,
+    timestamp: receipt.timestamp,
+  }));
+}
+
+export async function getPersistedCommandCenterReceipt(
+  receiptId: string,
+): Promise<StoredCommandReceipt | undefined> {
+  const db = await getOptionalDb();
+  if (!db) return getCommandCenterReceipt(receiptId);
+
+  try {
+    const [receipt] = await db
+      .select()
+      .from(schema.commandCenterReceipts)
+      .where(eq(schema.commandCenterReceipts.id, receiptId))
+      .limit(1);
+    if (!receipt) return getCommandCenterReceipt(receiptId);
+
+    const [event] = await db
+      .select()
+      .from(schema.commandCenterEvents)
+      .where(eq(schema.commandCenterEvents.id, receipt.eventId))
+      .limit(1);
+    const [target] = await db
+      .select()
+      .from(schema.commandCenterTargets)
+      .where(eq(schema.commandCenterTargets.id, receipt.targetId))
+      .limit(1);
+
+    if (!event || !target) return getCommandCenterReceipt(receiptId);
+    return commandReceiptFromRows({ event, receipt, target });
+  } catch {
+    return getCommandCenterReceipt(receiptId);
+  }
+}
+
 export async function applyCommandCenterAction(
   action: CommandCenterAction,
   actor: string,
@@ -580,6 +670,7 @@ export async function applyCommandCenterAction(
       targetType: definition.targetType,
     });
     const event = appendCommandEvent(store, receipt);
+    await persistCommandCenterReceipt(receipt);
     return {
       action,
       allowed: false,
@@ -612,6 +703,7 @@ export async function applyCommandCenterAction(
       targetType: target.type,
     });
     const event = appendCommandEvent(store, receipt);
+    await persistCommandCenterReceipt(receipt);
     return {
       action,
       allowed: false,
@@ -645,6 +737,7 @@ export async function applyCommandCenterAction(
     targetType: target.type,
   });
   const event = appendCommandEvent(store, receipt);
+  const commandPersistence = await persistCommandCenterReceipt(receipt);
   const orderPersistence =
     target.type === "Order"
       ? await persistOrderCommandTransition({
@@ -662,11 +755,181 @@ export async function applyCommandCenterAction(
     currentStatus: previousStatus,
     event: { ...event },
     nextStatus: definition.nextStatus,
-    persisted: target.type === "Order" ? orderPersistence.persisted : true,
+    persisted: commandPersistence.persisted || target.type !== "Order" || orderPersistence.persisted,
     receipt,
     receiptId: receipt.id,
     targetId: resolvedTargetId,
     targetType: target.type,
+  };
+}
+
+async function persistCommandCenterReceipt(
+  receipt: StoredCommandReceipt,
+): Promise<CommandCenterPersistenceResult> {
+  const db = await getOptionalDb();
+  if (!db) {
+    return {
+      persisted: false,
+      reason: "D1 binding unavailable; command receipt remains in local preview store.",
+    };
+  }
+
+  const createdAtUtc = new Date(receipt.persistence.receipt.createdAtUtc);
+  const updatedAtUtc = new Date(receipt.persistence.target.updatedAtUtc);
+
+  await db
+    .insert(schema.commandCenterTargets)
+    .values({
+      id: receipt.persistence.target.id,
+      sourceHref: receipt.persistence.target.sourceHref,
+      status: receipt.persistence.target.status,
+      targetType: receipt.persistence.target.targetType,
+      updatedAtUtc,
+    })
+    .onConflictDoUpdate({
+      set: {
+        sourceHref: receipt.persistence.target.sourceHref,
+        status: receipt.persistence.target.status,
+        targetType: receipt.persistence.target.targetType,
+        updatedAtUtc,
+      },
+      target: schema.commandCenterTargets.id,
+    });
+
+  await db
+    .insert(schema.commandCenterEvents)
+    .values({
+      action: receipt.persistence.event.action,
+      actor: receipt.persistence.event.actor,
+      actorRole: receipt.persistence.event.actorRole,
+      allowed: receipt.persistence.event.allowed,
+      auditEvent: receipt.persistence.event.auditEvent,
+      authority: receipt.persistence.event.authority,
+      blockedReason: receipt.persistence.event.blockedReason,
+      createdAtUtc,
+      id: receipt.persistence.event.id,
+      nextStatus: receipt.persistence.event.nextStatus,
+      outcome: receipt.persistence.event.outcome,
+      previousStatus: receipt.persistence.event.previousStatus,
+      receiptId: receipt.persistence.event.receiptId,
+      targetId: receipt.persistence.event.targetId,
+      targetType: receipt.persistence.event.targetType,
+    })
+    .onConflictDoUpdate({
+      set: {
+        action: receipt.persistence.event.action,
+        actor: receipt.persistence.event.actor,
+        actorRole: receipt.persistence.event.actorRole,
+        allowed: receipt.persistence.event.allowed,
+        auditEvent: receipt.persistence.event.auditEvent,
+        authority: receipt.persistence.event.authority,
+        blockedReason: receipt.persistence.event.blockedReason,
+        createdAtUtc,
+        nextStatus: receipt.persistence.event.nextStatus,
+        outcome: receipt.persistence.event.outcome,
+        previousStatus: receipt.persistence.event.previousStatus,
+        receiptId: receipt.persistence.event.receiptId,
+        targetId: receipt.persistence.event.targetId,
+        targetType: receipt.persistence.event.targetType,
+      },
+      target: schema.commandCenterEvents.id,
+    });
+
+  await db
+    .insert(schema.commandCenterReceipts)
+    .values({
+      action: receipt.persistence.receipt.action,
+      authority: receipt.persistence.receipt.authority,
+      consoleHref: receipt.persistence.receipt.consoleHref,
+      createdAtUtc,
+      eventId: receipt.persistence.receipt.eventId,
+      id: receipt.persistence.receipt.id,
+      nextRequiredAction: receipt.persistence.receipt.nextRequiredAction,
+      outcome: receipt.persistence.receipt.outcome,
+      retainedForAudit: receipt.persistence.receipt.retainedForAudit,
+      targetId: receipt.persistence.receipt.targetId,
+    })
+    .onConflictDoUpdate({
+      set: {
+        action: receipt.persistence.receipt.action,
+        authority: receipt.persistence.receipt.authority,
+        consoleHref: receipt.persistence.receipt.consoleHref,
+        createdAtUtc,
+        eventId: receipt.persistence.receipt.eventId,
+        nextRequiredAction: receipt.persistence.receipt.nextRequiredAction,
+        outcome: receipt.persistence.receipt.outcome,
+        retainedForAudit: receipt.persistence.receipt.retainedForAudit,
+        targetId: receipt.persistence.receipt.targetId,
+      },
+      target: schema.commandCenterReceipts.id,
+    });
+
+  return { persisted: true };
+}
+
+function commandReceiptFromRows(input: {
+  event: typeof schema.commandCenterEvents.$inferSelect;
+  receipt: typeof schema.commandCenterReceipts.$inferSelect;
+  target: typeof schema.commandCenterTargets.$inferSelect;
+}): StoredCommandReceipt {
+  const createdAtUtc = input.receipt.createdAtUtc.toISOString();
+  const updatedAtUtc = input.target.updatedAtUtc.toISOString();
+
+  return {
+    action: input.receipt.action as CommandCenterAction,
+    actor: input.event.actor,
+    allowed: input.event.allowed,
+    auditEvent: input.event.auditEvent,
+    authority: input.receipt.authority,
+    blockedReason: input.event.blockedReason ?? undefined,
+    consoleHref: input.receipt.consoleHref,
+    id: input.receipt.id,
+    nextRequiredAction: input.receipt.nextRequiredAction,
+    nextStatus: input.event.nextStatus,
+    outcome: input.receipt.outcome,
+    persistence: {
+      event: {
+        action: input.event.action as CommandCenterAction,
+        actor: input.event.actor,
+        actorRole: input.event.actorRole as CommandActorRole,
+        allowed: input.event.allowed,
+        auditEvent: input.event.auditEvent,
+        authority: input.event.authority,
+        blockedReason: input.event.blockedReason ?? undefined,
+        createdAtUtc,
+        id: input.event.id,
+        nextStatus: input.event.nextStatus,
+        outcome: input.event.outcome,
+        previousStatus: input.event.previousStatus,
+        receiptId: input.event.receiptId,
+        targetId: input.event.targetId,
+        targetType: input.event.targetType,
+      },
+      receipt: {
+        action: input.receipt.action as CommandCenterAction,
+        authority: input.receipt.authority,
+        consoleHref: input.receipt.consoleHref,
+        createdAtUtc,
+        eventId: input.receipt.eventId,
+        id: input.receipt.id,
+        nextRequiredAction: input.receipt.nextRequiredAction,
+        outcome: input.receipt.outcome,
+        retainedForAudit: input.receipt.retainedForAudit,
+        targetId: input.receipt.targetId,
+      },
+      target: {
+        id: input.target.id,
+        sourceHref: input.target.sourceHref,
+        status: input.target.status,
+        targetType: input.target.targetType,
+        updatedAtUtc,
+      },
+    },
+    previousStatus: input.event.previousStatus,
+    role: input.event.actorRole as CommandActorRole,
+    targetId: input.receipt.targetId,
+    targetType: input.event.targetType,
+    timestamp: createdAtUtc,
   };
 }
 

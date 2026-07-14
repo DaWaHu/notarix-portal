@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { requireChatGPTUser } from "../../chatgpt-auth";
 import {
   applyCommandCenterAction,
-  listCommandCenterEvents,
-  listCommandCenterReceipts,
+  listPersistedCommandCenterEvents,
+  listPersistedCommandCenterReceipts,
   type CommandCenterAction,
 } from "./store";
 import type { WorkflowActorRole } from "../requests/workflow";
@@ -62,11 +62,15 @@ const validCommandActions = new Set<CommandCenterAction>([
 
 export async function GET() {
   await requireChatGPTUser("/staff/command-center");
+  const [commandEvents, commandReceipts] = await Promise.all([
+    listPersistedCommandCenterEvents(),
+    listPersistedCommandCenterReceipts(),
+  ]);
 
   return Response.json({
     availableActions: Array.from(validCommandActions),
-    commandEvents: listCommandCenterEvents(),
-    commandReceipts: listCommandCenterReceipts(),
+    commandEvents,
+    commandReceipts,
     persistenceTables: [
       "command_center_targets",
       "command_center_events",

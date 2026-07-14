@@ -2274,6 +2274,12 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(orderRepository, /listAppointmentConfirmations/);
   assert.match(orderRepository, /persistOrderCommandTransition/);
   assert.match(commandStore, /await persistOrderCommandTransition/);
+  assert.match(commandStore, /persistCommandCenterReceipt/);
+  assert.match(commandStore, /listPersistedCommandCenterReceipts/);
+  assert.match(commandStore, /getPersistedCommandCenterReceipt/);
+  assert.match(commandStore, /schema\.commandCenterTargets/);
+  assert.match(commandStore, /schema\.commandCenterEvents/);
+  assert.match(commandStore, /schema\.commandCenterReceipts/);
   assert.match(dbIndex, /await import\("cloudflare:workers"\)/);
   assert.match(css, /request-card:nth-child\(even\)/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);

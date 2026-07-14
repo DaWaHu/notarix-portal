@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { requireChatGPTUser } from "../../../chatgpt-auth";
-import { listCommandCenterReceipts } from "../store";
+import { listPersistedCommandCenterReceipts } from "../store";
 
 type ActivityArea = "Communications" | "Credentials" | "Financial" | "Audit";
 
@@ -19,7 +19,7 @@ export default async function CommandCenterActivityPage() {
   const staffRole = requestHeaders.get("x-notarix-staff-role");
   if (staffRole !== "Admin" && staffRole !== "SuperAdmin") notFound();
 
-  const receipts = listCommandCenterReceipts();
+  const receipts = await listPersistedCommandCenterReceipts();
   const completedCount = receipts.filter(
     (receipt) => receipt.outcome === "Completed",
   ).length;

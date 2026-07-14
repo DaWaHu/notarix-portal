@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireChatGPTUser } from "../../../../chatgpt-auth";
-import { getCommandCenterReceipt } from "../../store";
+import { getPersistedCommandCenterReceipt } from "../../store";
 
 type CommandReceiptPageProps = {
   params: Promise<{
@@ -14,7 +14,7 @@ export default async function CommandCenterReceiptPage({
   const { receiptId } = await params;
   await requireChatGPTUser(`/staff/command-center/receipt/${receiptId}`);
 
-  const receipt = getCommandCenterReceipt(receiptId);
+  const receipt = await getPersistedCommandCenterReceipt(receiptId);
   if (!receipt) notFound();
 
   return (
