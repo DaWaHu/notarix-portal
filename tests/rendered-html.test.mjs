@@ -736,10 +736,12 @@ test("server-renders role-based portal landing pages", async () => {
   assert.match(notaryHtml, /NSN-NC-2607-0001/);
   assert.match(notaryHtml, /Notary routing matrix/);
   assert.match(notaryHtml, /Assignments/);
+  assert.match(notaryHtml, /Completion Package/);
   assert.match(notaryHtml, /Payables/);
   assert.match(notaryHtml, /RON eligibility/);
   assert.match(notaryHtml, /href="\/notary\/dashboard"/);
   assert.match(notaryHtml, /href="\/notary\/assignments"/);
+  assert.match(notaryHtml, /href="\/notary\/assignments\/ORD-2607-0001\/completion"/);
   assert.match(notaryHtml, /href="\/credentials\/expiration"/);
   assert.doesNotMatch(notaryHtml, /\b\d{10,11}\b/);
 });
@@ -791,6 +793,7 @@ test("server-renders permanent portal operation pages", async () => {
   assert.match(notaryHtml, /Notary Operations Dashboard/);
   assert.match(notaryHtml, /NSN-NC-2607-0001/);
   assert.match(notaryHtml, /Credential monitor/);
+  assert.match(notaryHtml, /Completion Package/);
 
   const assignmentResponse = await render("/notary/assignments");
   assert.equal(assignmentResponse.status, 200);
@@ -804,7 +807,24 @@ test("server-renders permanent portal operation pages", async () => {
   assert.match(assignmentHtml, /Decline Assignment/);
   assert.match(assignmentHtml, /Confirm Arrival/);
   assert.match(assignmentHtml, /Upload Completion Package/);
+  assert.match(assignmentHtml, /Open Completion Package/);
+  assert.match(assignmentHtml, /href="\/notary\/assignments\/ORD-2607-0001\/completion"/);
   assert.match(assignmentHtml, /Review Credentials/);
+
+  const notaryCompletionResponse = await render("/notary/assignments/ORD-2607-0001/completion");
+  assert.equal(notaryCompletionResponse.status, 200);
+  const notaryCompletionHtml = await notaryCompletionResponse.text();
+  assert.match(notaryCompletionHtml, /Completion Package And Payable Status/);
+  assert.match(notaryCompletionHtml, /Completion package and payable matrix/);
+  assert.match(notaryCompletionHtml, /Assignment acceptance/);
+  assert.match(notaryCompletionHtml, /Appointment attendance/);
+  assert.match(notaryCompletionHtml, /Completion package upload/);
+  assert.match(notaryCompletionHtml, /Credential impact/);
+  assert.match(notaryCompletionHtml, /Payable status/);
+  assert.match(notaryCompletionHtml, /Notary-accessible document register/);
+  assert.match(notaryCompletionHtml, /Upload Completion Package/);
+  assert.match(notaryCompletionHtml, /Notary completion receipts do not approve payment/);
+  assert.doesNotMatch(notaryCompletionHtml, /Client invoice release/);
 
   const newOrderResponse = await render("/orders/new");
   assert.equal(newOrderResponse.status, 200);
@@ -1778,6 +1798,31 @@ test("persists command center workflow actions", async () => {
   assert.match(orderIntakeFeedbackHtml, /Assignment Accepted/);
   assert.match(orderIntakeFeedbackHtml, /notary-accept-assignment[\s\S]*updated[\s\S]*ORD-2607-0001/);
 
+  const notaryCompletionUploadResponse = await requestRoute("/notary/assignment-actions", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "notary-upload-completion-package",
+      targetId: "ORD-2607-0001",
+    }),
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+  assert.equal(notaryCompletionUploadResponse.status, 200);
+  const notaryCompletionUpload = await notaryCompletionUploadResponse.json();
+  assert.equal(notaryCompletionUpload.targetType, "Order");
+  assert.equal(notaryCompletionUpload.nextStatus, "Completion Package Uploaded");
+  assert.equal(notaryCompletionUpload.receipt.role, "Notary");
+  assert.match(notaryCompletionUpload.auditEvent, /uploaded order completion package/);
+
+  const notaryCompletionFeedbackResponse = await render("/notary/assignments/ORD-2607-0001/completion");
+  assert.equal(notaryCompletionFeedbackResponse.status, 200);
+  const notaryCompletionFeedbackHtml = await notaryCompletionFeedbackResponse.text();
+  assert.match(notaryCompletionFeedbackHtml, /Latest command result/);
+  assert.match(notaryCompletionFeedbackHtml, /Completion Package Uploaded/);
+  assert.match(notaryCompletionFeedbackHtml, /notary-upload-completion-package[\s\S]*updated[\s\S]*ORD-2607-0001/);
+
   const closeOrderResponse = await requestRoute("/staff/command-center", {
     method: "POST",
     body: JSON.stringify({
@@ -2025,7 +2070,7 @@ test("persists command center workflow actions", async () => {
   assert.ok(commandState.commandReceipts.length >= 15);
   assert.deepEqual(
     commandState.commandEvents.slice(-3).map((event) => event.nextStatus),
-    ["Assignment Accepted", "Closed", "Consent Recorded"],
+    ["Completion Package Uploaded", "Closed", "Consent Recorded"],
   );
 });
 

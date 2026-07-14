@@ -395,6 +395,59 @@ export const orderDeliveryReceiptRecords = [
   },
 ] as const;
 
+export const notaryCompletionReceiptRecords = [
+  {
+    id: "NCR-2607-0001",
+    orderId: "ORD-2607-0001",
+    receiptArea: "Assignment acceptance",
+    status: "Acceptance required",
+    evidence: "Assigned order, appointment details, and notary acceptance receipt",
+    notaryAction: "Accept or decline assignment after reviewing service type, location, and document availability.",
+    staffReview: "Staff confirms acceptance before appointment confirmation.",
+    payableImpact: "No payable routing until assignment acceptance is recorded.",
+  },
+  {
+    id: "NCR-2607-0002",
+    orderId: "ORD-2607-0001",
+    receiptArea: "Appointment attendance",
+    status: "Pending arrival",
+    evidence: "Arrival confirmation, appointment window, signer location, and completion notes",
+    notaryAction: "Confirm arrival only when physically present and prepared to complete the appointment.",
+    staffReview: "Staff monitors arrival posture and escalates missed appointment issues.",
+    payableImpact: "Attendance confirmation supports completion review but does not release payment by itself.",
+  },
+  {
+    id: "NCR-2607-0003",
+    orderId: "ORD-2607-0001",
+    receiptArea: "Completion package upload",
+    status: "Upload pending",
+    evidence: "Executed documents, notarial certificate, completion notes, and return package custody",
+    notaryAction: "Upload the completion package after the appointment and confirm no required certificate is missing.",
+    staffReview: "Staff validates package custody before client delivery and closeout.",
+    payableImpact: "Payable review begins only after package validation and elevated financial controls clear.",
+  },
+  {
+    id: "NCR-2607-0004",
+    orderId: "ORD-2607-0001",
+    receiptArea: "Credential impact",
+    status: "Monitored",
+    evidence: "Commission, E&O insurance, RON restriction, and assignment eligibility controls",
+    notaryAction: "Keep credential evidence current before accepting restricted services.",
+    staffReview: "Staff may suspend assignment eligibility if credentials expire or become deficient.",
+    payableImpact: "Credential deficiencies can hold future assignments and payable review.",
+  },
+  {
+    id: "NCR-2607-0005",
+    orderId: "ORD-2607-0001",
+    receiptArea: "Payable status",
+    status: "Restricted",
+    evidence: "W-9 control, payable activation status, assignment receipt, and completion package validation",
+    notaryAction: "Monitor payable status; contact support if tax onboarding or payment setup appears incorrect.",
+    staffReview: "Administrator or Super Admin approval is required before payable release.",
+    payableImpact: "Payment remains restricted until W-9, completion, and elevated financial approval are recorded.",
+  },
+] as const;
+
 export const orderLifecycleIntakeRecords = [
   {
     id: "OIN-2607-0001",
@@ -1173,6 +1226,12 @@ export function closeoutControlsForOrder(orderId: string) {
 
 export function deliveryReceiptsForOrder(orderId: string) {
   return orderDeliveryReceiptRecords.filter(
+    (receipt) => receipt.orderId.toLowerCase() === orderId.toLowerCase(),
+  );
+}
+
+export function notaryCompletionReceiptsForOrder(orderId: string) {
+  return notaryCompletionReceiptRecords.filter(
     (receipt) => receipt.orderId.toLowerCase() === orderId.toLowerCase(),
   );
 }

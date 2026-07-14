@@ -15,6 +15,7 @@ export default function NotaryPortalHomePage() {
           <a className="nav-cta" href="/notary">Notary Home</a>
           <a href="/notary/dashboard">Dashboard</a>
           <a href="/notary/assignments">Assignments</a>
+          <a href="/notary/assignments/ORD-2607-0001/completion">Completion Package</a>
           <a href="/credentials/expiration">Credentials</a>
           <a href="/notifications">Notifications</a>
           <a href="/support">Support</a>
@@ -61,6 +62,7 @@ export default function NotaryPortalHomePage() {
               {[
                 ["Dashboard", "/notary/dashboard"],
                 ["Assignments", "/notary/assignments"],
+                ["Completion Package", "/notary/assignments/ORD-2607-0001/completion"],
                 ["Credentials", "/credentials/expiration"],
                 ["Notifications", "/notifications"],
                 ["Support", "/support"],
@@ -93,6 +95,7 @@ export default function NotaryPortalHomePage() {
                 <tbody>
                   {[
                     ["Assignments", "Review active notary work", "NSN-NC-2607-0001", "Enabled", "Credential posture monitored", "/notary/assignments"],
+                    ["Completion Package", "Upload completion package and monitor payable status", "NSN-NC-2607-0001", "Controlled", "Staff validation required before client delivery and payable review", "/notary/assignments/ORD-2607-0001/completion"],
                     ["Credentials", "Track expiration and renewal controls", "NSN-NC-2607-0001", "Monitored", "Replacement evidence required before restrictions clear", "/credentials/expiration"],
                     ["Payables", "Review payable eligibility status", "NSN-NC-2607-0001", "Restricted", "Administrator or Super Admin approval required", "/staff/financial-controls"],
                     ["RON eligibility", "Review remote online notary authority", "NSN-NC-2607-0001", "Restricted", "RON authorization and digital certificate required", "/credentials/expiration"],

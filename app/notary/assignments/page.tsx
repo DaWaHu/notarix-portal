@@ -26,6 +26,7 @@ export default function NotaryAssignmentConsolePage() {
           <a href="/notary">Notary Home</a>
           <a href="/notary/dashboard">Dashboard</a>
           <a className="nav-cta" href="/notary/assignments">Assignments</a>
+          <a href="/notary/assignments/ORD-2607-0001/completion">Completion Package</a>
           <a href="/credentials/expiration">Credentials</a>
           <a href="/notifications">Notifications</a>
           <a href="/support">Support</a>
@@ -85,6 +86,7 @@ export default function NotaryAssignmentConsolePage() {
                 </a>
               ))}
               <a href="/credentials/expiration"><span>Credential Renewal</span></a>
+              <a href="/notary/assignments/ORD-2607-0001/completion"><span>Completion Package</span></a>
               <a href="/notifications"><span>Assignment Notices</span></a>
             </nav>
           </aside>
@@ -154,6 +156,9 @@ export default function NotaryAssignmentConsolePage() {
                         <a className="table-action-link" href={`/orders/${order.id}`}>
                           Open
                         </a>
+                        <span className="evidence-packet-summary">
+                          <a href={`/notary/assignments/${order.id}/completion`}>Completion Package</a>
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -204,6 +209,7 @@ export default function NotaryAssignmentConsolePage() {
                 <button type="submit">Upload Completion Package</button>
               </form>
               <a href="/credentials/expiration">Review Credentials</a>
+              <a href="/notary/assignments/ORD-2607-0001/completion">Open Completion Package</a>
               <a href="/notifications">Review Notices</a>
               <a href="/support">Contact Support</a>
             </div>

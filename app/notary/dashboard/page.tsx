@@ -12,6 +12,9 @@ export default function NotaryDashboardPage() {
         </a>
         <nav aria-label="Notary dashboard navigation">
           <a href="/">Home</a>
+          <a href="/notary">Notary Home</a>
+          <a href="/notary/assignments">Assignments</a>
+          <a href="/notary/assignments/ORD-2607-0001/completion">Completion Package</a>
           <a href="/credentials/expiration">Credentials</a>
           <a href="/notifications">Notifications</a>
           <a className="nav-cta" href="/notary/dashboard">Dashboard</a>
@@ -54,8 +57,15 @@ export default function NotaryDashboardPage() {
           <aside className="console-rail">
             <p className="request-label">Notary actions</p>
             <nav>
-              {["Assignments", "Credentials", "Availability", "Payables", "Support"].map((label) => (
-                <a href={label === "Support" ? "/support" : "#assignments"} key={label}><span>{label}</span></a>
+              {[
+                ["Assignments", "/notary/assignments"],
+                ["Completion Package", "/notary/assignments/ORD-2607-0001/completion"],
+                ["Credentials", "/credentials/expiration"],
+                ["Availability", "#assignments"],
+                ["Payables", "/notary/assignments/ORD-2607-0001/completion#payable-status"],
+                ["Support", "/support"],
+              ].map(([label, href]) => (
+                <a href={href} key={label}><span>{label}</span></a>
               ))}
             </nav>
           </aside>
@@ -88,7 +98,12 @@ export default function NotaryDashboardPage() {
                       <td><mark>{order.status}</mark></td>
                       <td>{order.service}</td>
                       <td>{order.appointment}</td>
-                      <td><a href={`/orders/${order.id}`}>Open</a></td>
+                      <td>
+                        <a href={`/orders/${order.id}`}>Open</a>
+                        <span className="evidence-packet-summary">
+                          <a href={`/notary/assignments/${order.id}/completion`}>Completion Package</a>
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
