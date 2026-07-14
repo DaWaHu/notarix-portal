@@ -1,10 +1,13 @@
 import { credentialMonitorRecords, notaryAssignmentRecords } from "../../operations-data";
+import { CommandStatusPanel } from "../../staff/command-center/CommandStatusPanel";
+import { getLatestCommandCenterReceiptForHref } from "../../staff/command-center/store";
 
 const bernadetteCredentials = credentialMonitorRecords.filter(
   (credential) => credential.owner === "Bernadette W Hudlin",
 );
 
 export default function NotaryAssignmentConsolePage() {
+  const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
   const restrictedCredentials = bernadetteCredentials.filter(
     (credential) =>
       credential.status.toLowerCase().includes("restricted") ||
@@ -174,7 +177,32 @@ export default function NotaryAssignmentConsolePage() {
               <div><dt>Documents</dt><dd>Released only after validation and access classification</dd></div>
               <div><dt>Payables</dt><dd>W-9 and payable controls require elevated approval</dd></div>
             </dl>
+            <CommandStatusPanel
+              receipt={latestOrderReceipt}
+              showStaffLinks={false}
+              title="Notary assignment"
+            />
             <div className="decision-actions">
+              <form action="/notary/assignment-actions" method="post">
+                <input name="action" type="hidden" value="notary-accept-assignment" />
+                <input name="targetId" type="hidden" value="ORD-2607-0001" />
+                <button type="submit">Accept Assignment</button>
+              </form>
+              <form action="/notary/assignment-actions" method="post">
+                <input name="action" type="hidden" value="notary-decline-assignment" />
+                <input name="targetId" type="hidden" value="ORD-2607-0001" />
+                <button type="submit">Decline Assignment</button>
+              </form>
+              <form action="/notary/assignment-actions" method="post">
+                <input name="action" type="hidden" value="notary-confirm-arrival" />
+                <input name="targetId" type="hidden" value="ORD-2607-0001" />
+                <button type="submit">Confirm Arrival</button>
+              </form>
+              <form action="/notary/assignment-actions" method="post">
+                <input name="action" type="hidden" value="notary-upload-completion-package" />
+                <input name="targetId" type="hidden" value="ORD-2607-0001" />
+                <button type="submit">Upload Completion Package</button>
+              </form>
               <a href="/credentials/expiration">Review Credentials</a>
               <a href="/notifications">Review Notices</a>
               <a href="/support">Contact Support</a>

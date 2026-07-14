@@ -751,6 +751,9 @@ test("server-renders permanent portal operation pages", async () => {
   assert.match(clientOrdersHtml, /ORD-2607-0001/);
   assert.match(clientOrdersHtml, /Order progress and document matrix/);
   assert.match(clientOrdersHtml, /Invoice Pending/);
+  assert.match(clientOrdersHtml, /Submit Order Documents/);
+  assert.match(clientOrdersHtml, /Submit Replacement Documents/);
+  assert.match(clientOrdersHtml, /Acknowledge Correction Notice/);
   assert.match(clientOrdersHtml, /Upload Documents/);
 
   const notaryResponse = await render("/notary/dashboard");
@@ -768,6 +771,10 @@ test("server-renders permanent portal operation pages", async () => {
   assert.match(assignmentHtml, /Assignment readiness matrix/);
   assert.match(assignmentHtml, /ORD-2607-0001/);
   assert.match(assignmentHtml, /ORD-2607-0003/);
+  assert.match(assignmentHtml, /Accept Assignment/);
+  assert.match(assignmentHtml, /Decline Assignment/);
+  assert.match(assignmentHtml, /Confirm Arrival/);
+  assert.match(assignmentHtml, /Upload Completion Package/);
   assert.match(assignmentHtml, /Review Credentials/);
 
   const newOrderResponse = await render("/orders/new");
@@ -1634,6 +1641,56 @@ test("persists command center workflow actions", async () => {
   assert.equal(appointment.nextStatus, "Appointment Confirmed");
   assert.match(appointment.auditEvent, /confirmed order appointment/);
 
+  const clientUploadResponse = await requestRoute("/client/order-actions", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "client-upload-order-documents",
+      targetId: "ORD-2607-0001",
+    }),
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+  assert.equal(clientUploadResponse.status, 200);
+  const clientUpload = await clientUploadResponse.json();
+  assert.equal(clientUpload.targetType, "Order");
+  assert.equal(clientUpload.nextStatus, "Client Documents Submitted");
+  assert.equal(clientUpload.receipt.role, "Client");
+  assert.match(clientUpload.auditEvent, /submitted order document upload/);
+
+  const clientFeedbackResponse = await render("/client/orders");
+  assert.equal(clientFeedbackResponse.status, 200);
+  const clientFeedbackHtml = await clientFeedbackResponse.text();
+  assert.match(clientFeedbackHtml, /Latest command result/);
+  assert.match(clientFeedbackHtml, /Client Documents Submitted/);
+  assert.match(clientFeedbackHtml, /client-upload-order-documents[\s\S]*updated[\s\S]*ORD-2607-0001/);
+
+  const notaryAcceptResponse = await requestRoute("/notary/assignment-actions", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "notary-accept-assignment",
+      targetId: "ORD-2607-0001",
+    }),
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+    },
+  });
+  assert.equal(notaryAcceptResponse.status, 200);
+  const notaryAccept = await notaryAcceptResponse.json();
+  assert.equal(notaryAccept.targetType, "Order");
+  assert.equal(notaryAccept.nextStatus, "Assignment Accepted");
+  assert.equal(notaryAccept.receipt.role, "Notary");
+  assert.match(notaryAccept.auditEvent, /accepted notary assignment/);
+
+  const notaryFeedbackResponse = await render("/notary/assignments");
+  assert.equal(notaryFeedbackResponse.status, 200);
+  const notaryFeedbackHtml = await notaryFeedbackResponse.text();
+  assert.match(notaryFeedbackHtml, /Latest command result/);
+  assert.match(notaryFeedbackHtml, /Assignment Accepted/);
+  assert.match(notaryFeedbackHtml, /notary-accept-assignment[\s\S]*updated[\s\S]*ORD-2607-0001/);
+
   const formReceiptResponse = await requestRoute("/staff/command-center", {
     method: "POST",
     body: new URLSearchParams({
@@ -1813,8 +1870,8 @@ test("persists command center workflow actions", async () => {
   assert.equal(orderFeedbackResponse.status, 200);
   const orderFeedbackHtml = await orderFeedbackResponse.text();
   assert.match(orderFeedbackHtml, /Latest command result/);
-  assert.match(orderFeedbackHtml, /Appointment Confirmed/);
-  assert.match(orderFeedbackHtml, /confirm-order-appointment[\s\S]*updated[\s\S]*ORD-2607-0001/);
+  assert.match(orderFeedbackHtml, /Assignment Accepted/);
+  assert.match(orderFeedbackHtml, /notary-accept-assignment[\s\S]*updated[\s\S]*ORD-2607-0001/);
 
   const auditFeedbackResponse = await render("/staff/audit-reports", {
     "oai-authenticated-user-email": "superadmin@example.com",
@@ -1841,11 +1898,11 @@ test("persists command center workflow actions", async () => {
     "command_center_events",
     "command_center_receipts",
   ]);
-  assert.ok(commandState.commandEvents.length >= 13);
-  assert.ok(commandState.commandReceipts.length >= 13);
+  assert.ok(commandState.commandEvents.length >= 15);
+  assert.ok(commandState.commandReceipts.length >= 15);
   assert.deepEqual(
     commandState.commandEvents.slice(-3).map((event) => event.nextStatus),
-    ["Assignment Queued", "Appointment Confirmed", "Consent Recorded"],
+    ["Client Documents Submitted", "Assignment Accepted", "Consent Recorded"],
   );
 });
 

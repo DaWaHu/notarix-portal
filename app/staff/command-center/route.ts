@@ -51,6 +51,13 @@ const validCommandActions = new Set<CommandCenterAction>([
   "confirm-order-appointment",
   "record-completion-package",
   "close-order",
+  "client-upload-order-documents",
+  "client-replace-order-documents",
+  "client-acknowledge-correction",
+  "notary-accept-assignment",
+  "notary-decline-assignment",
+  "notary-confirm-arrival",
+  "notary-upload-completion-package",
 ]);
 
 export async function GET() {

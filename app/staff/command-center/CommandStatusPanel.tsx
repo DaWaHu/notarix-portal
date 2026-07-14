@@ -2,11 +2,13 @@ import type { StoredCommandReceipt } from "./store";
 
 type CommandStatusPanelProps = {
   receipt: StoredCommandReceipt | undefined;
+  showStaffLinks?: boolean;
   title: string;
 };
 
 export function CommandStatusPanel({
   receipt,
+  showStaffLinks = true,
   title,
 }: CommandStatusPanelProps) {
   return (
@@ -29,10 +31,16 @@ export function CommandStatusPanel({
           {receipt.blockedReason ? (
             <p><strong>Blocked reason:</strong> {receipt.blockedReason}</p>
           ) : null}
-          <div className="decision-actions">
-            <a href={`/staff/command-center/receipt/${receipt.id}`}>Open Receipt</a>
-            <a href="/staff/command-center/activity">View Activity Log</a>
-          </div>
+          {showStaffLinks ? (
+            <div className="decision-actions">
+              <a href={`/staff/command-center/receipt/${receipt.id}`}>Open Receipt</a>
+              <a href="/staff/command-center/activity">View Activity Log</a>
+            </div>
+          ) : (
+            <p className="decision-lock-note">
+              Receipt retained for staff audit review.
+            </p>
+          )}
         </>
       ) : (
         <>
@@ -40,9 +48,11 @@ export function CommandStatusPanel({
             Submit a command-center action from this page to create a retained
             receipt and show the result here.
           </p>
-          <div className="decision-actions">
-            <a href="/staff/command-center/activity">View Activity Log</a>
-          </div>
+          {showStaffLinks ? (
+            <div className="decision-actions">
+              <a href="/staff/command-center/activity">View Activity Log</a>
+            </div>
+          ) : null}
         </>
       )}
     </section>

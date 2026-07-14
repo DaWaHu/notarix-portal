@@ -1,10 +1,13 @@
 import { documentRecords, orderOperationRecords } from "../../operations-data";
+import { CommandStatusPanel } from "../../staff/command-center/CommandStatusPanel";
+import { getLatestCommandCenterReceiptForHref } from "../../staff/command-center/store";
 
 const clientOrders = orderOperationRecords.filter(
   (order) => order.client === "Coleman Title Group",
 );
 
 export default function ClientOrderManagementConsolePage() {
+  const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
   const documentCount = documentRecords.filter((document) =>
     clientOrders.some((order) => order.id === document.order),
   ).length;
@@ -171,7 +174,27 @@ export default function ClientOrderManagementConsolePage() {
               <div><dt>Billing</dt><dd>Invoice terms remain staff and financial-control governed</dd></div>
               <div><dt>Notifications</dt><dd>Email and phone delivery require delivery logs and consent posture</dd></div>
             </dl>
+            <CommandStatusPanel
+              receipt={latestOrderReceipt}
+              showStaffLinks={false}
+              title="Client order"
+            />
             <div className="decision-actions">
+              <form action="/client/order-actions" method="post">
+                <input name="action" type="hidden" value="client-upload-order-documents" />
+                <input name="targetId" type="hidden" value="ORD-2607-0001" />
+                <button type="submit">Submit Order Documents</button>
+              </form>
+              <form action="/client/order-actions" method="post">
+                <input name="action" type="hidden" value="client-replace-order-documents" />
+                <input name="targetId" type="hidden" value="ORD-2607-0001" />
+                <button type="submit">Submit Replacement Documents</button>
+              </form>
+              <form action="/client/order-actions" method="post">
+                <input name="action" type="hidden" value="client-acknowledge-correction" />
+                <input name="targetId" type="hidden" value="ORD-2607-0001" />
+                <button type="submit">Acknowledge Correction Notice</button>
+              </form>
               <a href="/orders/new">Create Order</a>
               <a href="/documents">Upload Documents</a>
               <a href="/notifications">Review Notices</a>

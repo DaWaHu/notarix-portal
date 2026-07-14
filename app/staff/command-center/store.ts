@@ -12,6 +12,8 @@ import {
 import { evidenceRecords } from "../../evidence-data";
 import type { WorkflowActorRole } from "../requests/workflow";
 
+export type CommandActorRole = WorkflowActorRole | "Client" | "Notary";
+
 export type CommandCenterAction =
   | "retry-failed-notification"
   | "record-phone-consent"
@@ -54,13 +56,20 @@ export type CommandCenterAction =
   | "confirm-notary-acceptance"
   | "confirm-order-appointment"
   | "record-completion-package"
-  | "close-order";
+  | "close-order"
+  | "client-upload-order-documents"
+  | "client-replace-order-documents"
+  | "client-acknowledge-correction"
+  | "notary-accept-assignment"
+  | "notary-decline-assignment"
+  | "notary-confirm-arrival"
+  | "notary-upload-completion-package";
 
 export type StoredCommandEvent = {
   id: string;
   action: CommandCenterAction;
   actor: string;
-  role: WorkflowActorRole;
+  role: CommandActorRole;
   targetId: string;
   targetType:
     | "Notification"
@@ -104,7 +113,7 @@ export type CommandCenterEventRecord = {
   targetId: string;
   targetType: StoredCommandEvent["targetType"];
   actor: string;
-  actorRole: WorkflowActorRole;
+  actorRole: CommandActorRole;
   authority: string;
   allowed: boolean;
   outcome: StoredCommandReceipt["outcome"];
@@ -155,7 +164,7 @@ const commandDefinitions: Record<
   {
     targetType: StoredCommandEvent["targetType"];
     defaultTargetId: string;
-    authority: "AnyStaff" | "AdminOrSuperAdmin" | "SuperAdmin";
+    authority: "AnyStaff" | "AdminOrSuperAdmin" | "SuperAdmin" | "ClientUser" | "AssignedNotary";
     nextStatus: string;
     auditVerb: string;
   }
@@ -454,6 +463,55 @@ const commandDefinitions: Record<
     nextStatus: "Closed",
     targetType: "Order",
   },
+  "client-upload-order-documents": {
+    auditVerb: "submitted order document upload for validation",
+    authority: "ClientUser",
+    defaultTargetId: "ORD-2607-0001",
+    nextStatus: "Client Documents Submitted",
+    targetType: "Order",
+  },
+  "client-replace-order-documents": {
+    auditVerb: "submitted replacement order documents",
+    authority: "ClientUser",
+    defaultTargetId: "ORD-2607-0001",
+    nextStatus: "Replacement Documents Submitted",
+    targetType: "Order",
+  },
+  "client-acknowledge-correction": {
+    auditVerb: "acknowledged order correction notice",
+    authority: "ClientUser",
+    defaultTargetId: "ORD-2607-0001",
+    nextStatus: "Client Correction Acknowledged",
+    targetType: "Order",
+  },
+  "notary-accept-assignment": {
+    auditVerb: "accepted notary assignment",
+    authority: "AssignedNotary",
+    defaultTargetId: "ORD-2607-0001",
+    nextStatus: "Assignment Accepted",
+    targetType: "Order",
+  },
+  "notary-decline-assignment": {
+    auditVerb: "declined notary assignment",
+    authority: "AssignedNotary",
+    defaultTargetId: "ORD-2607-0001",
+    nextStatus: "Assignment Declined",
+    targetType: "Order",
+  },
+  "notary-confirm-arrival": {
+    auditVerb: "confirmed appointment arrival",
+    authority: "AssignedNotary",
+    defaultTargetId: "ORD-2607-0001",
+    nextStatus: "Notary Arrival Confirmed",
+    targetType: "Order",
+  },
+  "notary-upload-completion-package": {
+    auditVerb: "uploaded order completion package",
+    authority: "AssignedNotary",
+    defaultTargetId: "ORD-2607-0001",
+    nextStatus: "Completion Package Uploaded",
+    targetType: "Order",
+  },
 };
 
 export function listCommandCenterEvents(): StoredCommandEvent[] {
@@ -483,7 +541,7 @@ export function getCommandCenterReceipt(
 export function applyCommandCenterAction(
   action: CommandCenterAction,
   actor: string,
-  role: WorkflowActorRole,
+  role: CommandActorRole,
   targetId?: string,
 ): {
   action: CommandCenterAction;
@@ -703,7 +761,7 @@ function storeReceipt(
     blockedReason?: string;
     currentStatus: string;
     nextStatus: string;
-    role: WorkflowActorRole;
+    role: CommandActorRole;
     targetId: string;
     targetType: StoredCommandEvent["targetType"];
   },
@@ -938,17 +996,42 @@ function nextRequiredAction(
   if (action === "close-order") {
     return "Retain closeout receipts with order audit, delivery, invoice, payable, and document retention records.";
   }
+  if (action === "client-upload-order-documents") {
+    return "Route uploaded client documents into evidence intake, malware validation, custody review, and staff release controls.";
+  }
+  if (action === "client-replace-order-documents") {
+    return "Restart document validation and notify staff that replacement evidence is ready for review.";
+  }
+  if (action === "client-acknowledge-correction") {
+    return "Keep the correction acknowledgement with the order communications record and wait for corrected materials.";
+  }
+  if (action === "notary-accept-assignment") {
+    return "Notify staff and client that the assignment is accepted and appointment confirmation may continue.";
+  }
+  if (action === "notary-decline-assignment") {
+    return "Return the order to assignment review and prevent appointment confirmation until a new notary is selected.";
+  }
+  if (action === "notary-confirm-arrival") {
+    return "Record arrival confirmation with the order file and monitor completion package upload after service.";
+  }
+  if (action === "notary-upload-completion-package") {
+    return "Route the completion package to document validation, delivery review, invoice release, and payable controls.";
+  }
   return "Track the escalated exception through restricted audit review.";
 }
 
 function canUseAuthority(
   authority: (typeof commandDefinitions)[CommandCenterAction]["authority"],
-  role: WorkflowActorRole,
+  role: CommandActorRole,
 ): boolean {
-  if (authority === "AnyStaff") return true;
+  if (authority === "AnyStaff") {
+    return role === "GenAdmin" || role === "Admin" || role === "SuperAdmin";
+  }
   if (authority === "AdminOrSuperAdmin") {
     return role === "Admin" || role === "SuperAdmin";
   }
+  if (authority === "ClientUser") return role === "Client";
+  if (authority === "AssignedNotary") return role === "Notary";
   return role === "SuperAdmin";
 }
 
@@ -957,6 +1040,8 @@ function authorityLabel(
 ): string {
   if (authority === "AnyStaff") return "Authorized staff";
   if (authority === "AdminOrSuperAdmin") return "Administrator or Super Admin";
+  if (authority === "ClientUser") return "Authorized client user";
+  if (authority === "AssignedNotary") return "Assigned notary";
   return "Super Admin";
 }
 
