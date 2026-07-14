@@ -39,6 +39,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
           <a href="/client/orders">Client Orders</a>
           <a href="/notary/assignments">Notary Assignments</a>
           <a href="/staff/orders">Staff Orders</a>
+          <a href="/staff/order-intake">Order Intake</a>
           <a href="/documents">Documents</a>
           <a className="nav-cta" href={`/orders/${order.id}`}>Order File</a>
         </nav>
@@ -315,6 +316,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 <input name="targetId" type="hidden" value={order.id} />
                 <button type="submit">Close Order</button>
               </form>
+              <a href="/staff/order-intake">Open Intake Queue</a>
               <a href={`/staff/orders/${order.id}/assignment`}>Manage Assignment</a>
               <a href="/notifications">Open Communications</a>
             </div>

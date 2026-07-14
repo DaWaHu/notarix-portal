@@ -31,6 +31,7 @@ export default async function OrderOperationsCommandCenterPage() {
           <a href="/">Home</a>
           <a href="/staff">Staff Home</a>
           <a href="/staff/requests">Staff Queue</a>
+          <a href="/staff/order-intake">Order Intake</a>
           <a href="/staff/document-validation">Document Validation</a>
           <a href="/staff/financial-reports">Financial Reports</a>
           <a href="/notifications">Communications</a>

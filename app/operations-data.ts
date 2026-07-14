@@ -263,6 +263,74 @@ export const orderCompletionRecords = [
   },
 ] as const;
 
+export const orderLifecycleIntakeRecords = [
+  {
+    id: "OIN-2607-0001",
+    orderId: "ORD-2607-0001",
+    source: "Client portal",
+    intakeType: "Order document upload",
+    submittedBy: "Avery Coleman",
+    submittedAt: "Jul 18 2026 at 4:15 PM ET",
+    status: "Validation required",
+    linkedEvidence: "seller-closing-package.pdf",
+    staffOwner: "GenAdmin003",
+    authority: "Document validation before release",
+    nextAction: "Review file type, malware scan, hash, custody, and access classification before release.",
+  },
+  {
+    id: "OIN-2607-0002",
+    orderId: "ORD-2607-0002",
+    source: "Client portal",
+    intakeType: "Replacement document request",
+    submittedBy: "Marisol Grant",
+    submittedAt: "Pending client response",
+    status: "Awaiting upload",
+    linkedEvidence: "Replacement document package",
+    staffOwner: "GenAdmin003",
+    authority: "Authorized staff review",
+    nextAction: "Keep order in document review until replacement upload is received and validated.",
+  },
+  {
+    id: "OIN-2607-0003",
+    orderId: "ORD-2607-0001",
+    source: "Notary portal",
+    intakeType: "Assignment acceptance",
+    submittedBy: "Bernadette W Hudlin",
+    submittedAt: "Pending notary response",
+    status: "Acceptance required",
+    linkedEvidence: "Assignment acceptance receipt",
+    staffOwner: "Admin",
+    authority: "Administrator or Super Admin",
+    nextAction: "Confirm notary acceptance and then proceed to appointment confirmation.",
+  },
+  {
+    id: "OIN-2607-0004",
+    orderId: "ORD-2607-0001",
+    source: "Notary portal",
+    intakeType: "Completion package",
+    submittedBy: "Bernadette W Hudlin",
+    submittedAt: "Pending appointment completion",
+    status: "Locked",
+    linkedEvidence: "Executed documents and notarial certificate",
+    staffOwner: "Admin",
+    authority: "Completion validation before closeout",
+    nextAction: "After upload, route package to validation, delivery review, invoice release, and payable controls.",
+  },
+  {
+    id: "OIN-2607-0005",
+    orderId: "ORD-2607-0003",
+    source: "Notary portal",
+    intakeType: "Appointment confirmation",
+    submittedBy: "Bernadette W Hudlin",
+    submittedAt: "Pending confirmation",
+    status: "Ready",
+    linkedEvidence: "Arrival and completion notes",
+    staffOwner: "GenAdmin001",
+    authority: "Authorized staff review",
+    nextAction: "Confirm appointment details and keep closeout locked until notarial certificate is returned.",
+  },
+] as const;
+
 export const documentRecords = [
   {
     id: "DOC-2607-0001",
@@ -962,5 +1030,11 @@ export function lifecycleForOrder(orderId: string) {
 export function completionControlsForOrder(orderId: string) {
   return orderCompletionRecords.filter(
     (control) => control.orderId.toLowerCase() === orderId.toLowerCase(),
+  );
+}
+
+export function lifecycleIntakeForOrder(orderId: string) {
+  return orderLifecycleIntakeRecords.filter(
+    (record) => record.orderId.toLowerCase() === orderId.toLowerCase(),
   );
 }

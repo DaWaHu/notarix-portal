@@ -40,6 +40,7 @@ const roleConfig: Record<
       ["Staff Queue", "/staff/requests", "Review access requests and open profile verification."],
       ["Profile Verification", "/staff/requests/NSR-1001/profile-verification", "Verify notary and client profile sections."],
       ["Order Operations", "/staff/orders", "Review order assignment, document, communication, and control posture."],
+      ["Order Intake", "/staff/order-intake", "Review client and notary lifecycle submissions before staff release."],
       ["Evidence Review", "/evidence/EV-IDENTITY-DOCUMENT-ANALYSIS", "Open restricted evidence through logged access."],
       ["Evidence Intake", "/staff/evidence-intake", "Review uploaded evidence custody, validation, and access controls."],
       ["Document Validation", "/staff/document-validation", "Review malware scan, hash, storage, and release status."],
@@ -64,6 +65,7 @@ const roleConfig: Record<
     actions: [
       ["Elevated Approval", "/staff/elevated-approval", "Review files ready for final approval."],
       ["Order Operations", "/staff/orders", "Control order assignment, document release, communication, and escalation."],
+      ["Order Intake", "/staff/order-intake", "Route portal order submissions into validation, finance, and closeout review."],
       ["Financial Controls", "/staff/financial-controls", "Approve billing and payable activation where authorized."],
       ["Evidence Intake", "/staff/evidence-intake", "Review uploaded evidence before profile, order, or finance release."],
       ["Document Validation", "/staff/document-validation", "Control malware validation, quarantine, and evidence release."],
@@ -93,6 +95,7 @@ const roleConfig: Record<
     actions: [
       ["Audit Reporting", "/staff/audit-reports", "Review immutable audit events and retention holds."],
       ["Order Operations", "/staff/orders", "Control order lifecycle, assignment, document release, and operational holds."],
+      ["Order Intake", "/staff/order-intake", "Review role-submitted order lifecycle events and closeout handoffs."],
       ["Financial Reports", "/staff/financial-reports", "Review ledger reports and correction locks."],
       ["Financial Controls", "/staff/financial-controls", "Control payable, billing, and ledger restrictions."],
       ["Evidence Intake", "/staff/evidence-intake", "Review evidence custody, restricted access, and validation posture."],

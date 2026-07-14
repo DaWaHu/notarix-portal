@@ -652,11 +652,13 @@ test("server-renders role-based portal landing pages", async () => {
   assert.match(genAdminHtml, /Final approval, financial activation, and restricted audit reports are unavailable/);
   assert.match(genAdminHtml, /Profile Verification/);
   assert.match(genAdminHtml, /Order Operations/);
+  assert.match(genAdminHtml, /Order Intake/);
   assert.match(genAdminHtml, /Evidence Intake/);
   assert.match(genAdminHtml, /Document Validation/);
   assert.match(genAdminHtml, /Retention/);
   assert.match(genAdminHtml, /href="\/staff\/requests\/NSR-1001\/profile-verification"/);
   assert.match(genAdminHtml, /href="\/staff\/orders"/);
+  assert.match(genAdminHtml, /href="\/staff\/order-intake"/);
   assert.match(genAdminHtml, /href="\/staff\/evidence-intake"/);
   assert.match(genAdminHtml, /href="\/staff\/document-validation"/);
   assert.match(genAdminHtml, /href="\/notifications"/);
@@ -672,6 +674,7 @@ test("server-renders role-based portal landing pages", async () => {
   assert.match(adminHtml, /Admin Operations Home/);
   assert.match(adminHtml, /Elevated Approval/);
   assert.match(adminHtml, /Order Operations/);
+  assert.match(adminHtml, /Order Intake/);
   assert.match(adminHtml, /Financial Reports/);
   assert.match(adminHtml, /Command Activity/);
   assert.match(adminHtml, /Evidence Intake/);
@@ -693,6 +696,7 @@ test("server-renders role-based portal landing pages", async () => {
   assert.match(superAdminHtml, /Super Admin Operations Home/);
   assert.match(superAdminHtml, /Audit Reporting/);
   assert.match(superAdminHtml, /Order Operations/);
+  assert.match(superAdminHtml, /Order Intake/);
   assert.match(superAdminHtml, /Command Activity/);
   assert.match(superAdminHtml, /Evidence Intake/);
   assert.match(superAdminHtml, /Document Validation/);
@@ -796,6 +800,8 @@ test("server-renders permanent portal operation pages", async () => {
   assert.match(orderHtml, /Confirm Appointment/);
   assert.match(orderHtml, /Record Completion Package/);
   assert.match(orderHtml, /Close Order/);
+  assert.match(orderHtml, /href="\/staff\/order-intake"/);
+  assert.match(orderHtml, /Open Intake Queue/);
   assert.match(orderHtml, /seller-closing-package\.pdf/);
   assert.match(orderHtml, /href="\/staff\/orders\/ORD-2607-0001\/assignment"/);
   assert.match(orderHtml, /href="\/evidence\/DOC-2607-0001"/);
@@ -818,6 +824,26 @@ test("server-renders permanent portal operation pages", async () => {
   assert.match(staffOrdersHtml, /Release Validated Documents/);
   assert.match(staffOrdersHtml, /Request Missing Documents/);
   assert.match(staffOrdersHtml, /Route Financial Review/);
+
+  const orderIntakeLocked = await render("/staff/order-intake");
+  assert.equal(orderIntakeLocked.status, 307);
+  assert.match(orderIntakeLocked.headers.get("location") ?? "", /signin-with-chatgpt/);
+
+  const orderIntakeResponse = await render("/staff/order-intake", {
+    "oai-authenticated-user-email": "admin@example.com",
+    "x-notarix-staff-role": "Admin",
+  });
+  assert.equal(orderIntakeResponse.status, 200);
+  const orderIntakeHtml = await orderIntakeResponse.text();
+  assert.match(orderIntakeHtml, /Order Lifecycle Intake Queue/);
+  assert.match(orderIntakeHtml, /Portal submission and staff routing matrix/);
+  assert.match(orderIntakeHtml, /Client portal/);
+  assert.match(orderIntakeHtml, /Notary portal/);
+  assert.match(orderIntakeHtml, /Order document upload/);
+  assert.match(orderIntakeHtml, /Completion package/);
+  assert.match(orderIntakeHtml, /Release Validated Documents/);
+  assert.match(orderIntakeHtml, /Confirm Notary Acceptance/);
+  assert.match(orderIntakeHtml, /Route Financial Review/);
 
   const documentResponse = await render("/documents");
   assert.equal(documentResponse.status, 200);
@@ -1690,6 +1716,16 @@ test("persists command center workflow actions", async () => {
   assert.match(notaryFeedbackHtml, /Latest command result/);
   assert.match(notaryFeedbackHtml, /Assignment Accepted/);
   assert.match(notaryFeedbackHtml, /notary-accept-assignment[\s\S]*updated[\s\S]*ORD-2607-0001/);
+
+  const orderIntakeFeedbackResponse = await render("/staff/order-intake", {
+    "oai-authenticated-user-email": "admin@example.com",
+    "x-notarix-staff-role": "Admin",
+  });
+  assert.equal(orderIntakeFeedbackResponse.status, 200);
+  const orderIntakeFeedbackHtml = await orderIntakeFeedbackResponse.text();
+  assert.match(orderIntakeFeedbackHtml, /Latest command result/);
+  assert.match(orderIntakeFeedbackHtml, /Assignment Accepted/);
+  assert.match(orderIntakeFeedbackHtml, /notary-accept-assignment[\s\S]*updated[\s\S]*ORD-2607-0001/);
 
   const formReceiptResponse = await requestRoute("/staff/command-center", {
     method: "POST",
