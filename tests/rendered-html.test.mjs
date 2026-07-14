@@ -781,7 +781,14 @@ test("server-renders permanent portal operation pages", async () => {
   assert.equal(orderResponse.status, 200);
   const orderHtml = await orderResponse.text();
   assert.match(orderHtml, /Order Case File/);
-  assert.match(orderHtml, /Service, signer, document, and assignment record/);
+  assert.match(orderHtml, /Central System Record/);
+  assert.match(orderHtml, /Service, parties, lifecycle, and closeout record/);
+  assert.match(orderHtml, /Order lifecycle and authority matrix/);
+  assert.match(orderHtml, /Closeout checklist and release controls/);
+  assert.match(orderHtml, /Confirm Notary Acceptance/);
+  assert.match(orderHtml, /Confirm Appointment/);
+  assert.match(orderHtml, /Record Completion Package/);
+  assert.match(orderHtml, /Close Order/);
   assert.match(orderHtml, /seller-closing-package\.pdf/);
   assert.match(orderHtml, /href="\/staff\/orders\/ORD-2607-0001\/assignment"/);
   assert.match(orderHtml, /href="\/evidence\/DOC-2607-0001"/);
@@ -1256,7 +1263,10 @@ test("protects staff-only assignment operations", async () => {
   const html = await response.text();
   assert.match(html, /Notary Assignment Review/);
   assert.match(html, /Assignment control matrix/);
-  assert.match(html, /Assign Notary/);
+  assert.match(html, /Queue Assignment/);
+  assert.match(html, /Confirm Acceptance/);
+  assert.match(html, /Request Credential Review/);
+  assert.match(html, /Keep Order On Hold/);
   assert.match(html, /Staff identity required/);
 });
 
@@ -1606,6 +1616,24 @@ test("persists command center workflow actions", async () => {
   assert.equal(orderAssignment.nextStatus, "Assignment Queued");
   assert.match(orderAssignment.auditEvent, /queued notary assignment review/);
 
+  const appointmentResponse = await requestRoute("/staff/command-center", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "confirm-order-appointment",
+      targetId: "ORD-2607-0001",
+    }),
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      "oai-authenticated-user-email": "staff@example.com",
+    },
+  });
+  assert.equal(appointmentResponse.status, 200);
+  const appointment = await appointmentResponse.json();
+  assert.equal(appointment.targetType, "Order");
+  assert.equal(appointment.nextStatus, "Appointment Confirmed");
+  assert.match(appointment.auditEvent, /confirmed order appointment/);
+
   const formReceiptResponse = await requestRoute("/staff/command-center", {
     method: "POST",
     body: new URLSearchParams({
@@ -1695,6 +1723,7 @@ test("persists command center workflow actions", async () => {
   assert.match(activityHtml, /require-mfa-passkey-reset/);
   assert.match(activityHtml, /verify-provider-integration/);
   assert.match(activityHtml, /assign-notary/);
+  assert.match(activityHtml, /confirm-order-appointment/);
   assert.match(activityHtml, /Administrator or Super Admin authority is required/);
   assert.match(activityHtml, /href="\/staff\/command-center\/receipt\/CMD-2607-/);
   assert.match(activityHtml, /Production command activity should be retained in append-only audit storage/);
@@ -1784,8 +1813,8 @@ test("persists command center workflow actions", async () => {
   assert.equal(orderFeedbackResponse.status, 200);
   const orderFeedbackHtml = await orderFeedbackResponse.text();
   assert.match(orderFeedbackHtml, /Latest command result/);
-  assert.match(orderFeedbackHtml, /Assignment Queued/);
-  assert.match(orderFeedbackHtml, /assign-notary[\s\S]*updated[\s\S]*ORD-2607-0002/);
+  assert.match(orderFeedbackHtml, /Appointment Confirmed/);
+  assert.match(orderFeedbackHtml, /confirm-order-appointment[\s\S]*updated[\s\S]*ORD-2607-0001/);
 
   const auditFeedbackResponse = await render("/staff/audit-reports", {
     "oai-authenticated-user-email": "superadmin@example.com",
@@ -1812,11 +1841,11 @@ test("persists command center workflow actions", async () => {
     "command_center_events",
     "command_center_receipts",
   ]);
-  assert.ok(commandState.commandEvents.length >= 12);
-  assert.ok(commandState.commandReceipts.length >= 12);
+  assert.ok(commandState.commandEvents.length >= 13);
+  assert.ok(commandState.commandReceipts.length >= 13);
   assert.deepEqual(
     commandState.commandEvents.slice(-3).map((event) => event.nextStatus),
-    ["Integration Verified", "Assignment Queued", "Consent Recorded"],
+    ["Assignment Queued", "Appointment Confirmed", "Consent Recorded"],
   );
 });
 

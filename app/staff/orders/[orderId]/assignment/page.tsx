@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { requireChatGPTUser } from "../../../../chatgpt-auth";
-import { credentialMonitorRecords, findOrderRecord } from "../../../../operations-data";
+import { credentialMonitorRecords, findOrderOperationRecord } from "../../../../operations-data";
+import { CommandStatusPanel } from "../../../command-center/CommandStatusPanel";
+import { getLatestCommandCenterReceiptForHref } from "../../../command-center/store";
 
 type StaffAssignmentPageProps = {
   params: Promise<{ orderId: string }>;
@@ -8,9 +10,10 @@ type StaffAssignmentPageProps = {
 
 export default async function StaffAssignmentPage({ params }: StaffAssignmentPageProps) {
   const { orderId } = await params;
-  const order = findOrderRecord(orderId);
+  const order = findOrderOperationRecord(orderId);
   if (!order) notFound();
   await requireChatGPTUser(`/staff/orders/${order.id}/assignment`);
+  const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
 
   return (
     <main className="staff-page">
@@ -40,7 +43,7 @@ export default async function StaffAssignmentPage({ params }: StaffAssignmentPag
         <aside>
           <p>Order</p>
           <strong>{order.id}</strong>
-          <span>{order.status}</span>
+          <span>{order.orderStatus}</span>
         </aside>
       </section>
 
@@ -106,10 +109,28 @@ export default async function StaffAssignmentPage({ params }: StaffAssignmentPag
               <div><dt>Credential monitor</dt><dd>{credentialMonitorRecords.length} active records</dd></div>
               <div><dt>Audit attribution</dt><dd>Staff identity required</dd></div>
             </dl>
+            <CommandStatusPanel receipt={latestOrderReceipt} title="Assignment" />
             <div className="decision-actions">
-              <button type="button" disabled>Assign Notary</button>
-              <button type="button">Request Credential Review</button>
-              <button type="button">Keep Unassigned</button>
+              <form action="/staff/command-center" method="post">
+                <input name="action" type="hidden" value="assign-notary" />
+                <input name="targetId" type="hidden" value={order.id} />
+                <button type="submit">Queue Assignment</button>
+              </form>
+              <form action="/staff/command-center" method="post">
+                <input name="action" type="hidden" value="confirm-notary-acceptance" />
+                <input name="targetId" type="hidden" value={order.id} />
+                <button type="submit">Confirm Acceptance</button>
+              </form>
+              <form action="/staff/command-center" method="post">
+                <input name="action" type="hidden" value="escalate-restriction" />
+                <input name="targetId" type="hidden" value="CRD-2607-0003" />
+                <button type="submit">Request Credential Review</button>
+              </form>
+              <form action="/staff/command-center" method="post">
+                <input name="action" type="hidden" value="hold-order" />
+                <input name="targetId" type="hidden" value={order.id} />
+                <button type="submit">Keep Order On Hold</button>
+              </form>
             </div>
           </aside>
         </div>

@@ -105,6 +105,164 @@ export const notaryAssignmentRecords = orderOperationRecords.filter(
   (order) => order.notary !== "Unassigned",
 );
 
+export const orderLifecycleRecords = [
+  {
+    orderId: "ORD-2607-0001",
+    stage: "Intake",
+    status: "Complete",
+    owner: "Client",
+    authority: "Client authorized user",
+    timestamp: "Jul 18 2026 at 4:10 PM ET",
+    evidence: "Order request and client profile authority",
+    nextAction: "Retain intake record with order case file.",
+  },
+  {
+    orderId: "ORD-2607-0001",
+    stage: "Document validation",
+    status: "Release pending",
+    owner: "Admin",
+    authority: "Administrator or Super Admin",
+    timestamp: "Jul 18 2026 at 4:20 PM ET",
+    evidence: "seller-closing-package.pdf and borrower-identification-copy.pdf",
+    nextAction: "Release validated documents after access classification is confirmed.",
+  },
+  {
+    orderId: "ORD-2607-0001",
+    stage: "Notary assignment",
+    status: "Acceptance required",
+    owner: "Admin",
+    authority: "Administrator or Super Admin",
+    timestamp: "Jul 18 2026 at 4:24 PM ET",
+    evidence: "NSN-NC-2607-0001 assignment eligibility",
+    nextAction: "Confirm notary acceptance before appointment confirmation.",
+  },
+  {
+    orderId: "ORD-2607-0001",
+    stage: "Appointment confirmation",
+    status: "Pending",
+    owner: "GenAdmin001",
+    authority: "Authorized staff",
+    timestamp: "Jul 18 2026 at 4:28 PM ET",
+    evidence: "Jul 22 2026 at 10:30 AM ET appointment window",
+    nextAction: "Confirm client, signer, notary, location, and document package availability.",
+  },
+  {
+    orderId: "ORD-2607-0001",
+    stage: "Completion package",
+    status: "Locked",
+    owner: "Assigned notary",
+    authority: "Assigned notary and staff review",
+    timestamp: "Pending",
+    evidence: "Notarial certificate, completion notes, return documents",
+    nextAction: "Unlock after appointment is completed and package is uploaded.",
+  },
+  {
+    orderId: "ORD-2607-0001",
+    stage: "Closeout",
+    status: "Locked",
+    owner: "Admin",
+    authority: "Administrator or Super Admin",
+    timestamp: "Pending",
+    evidence: "Invoice, payable, delivery confirmation, and audit receipts",
+    nextAction: "Close only after documents, billing, payable, and communications are complete.",
+  },
+  {
+    orderId: "ORD-2607-0002",
+    stage: "Intake",
+    status: "Complete",
+    owner: "Client",
+    authority: "Client authorized user",
+    timestamp: "Jul 18 2026 at 4:35 PM ET",
+    evidence: "Electronic notarization request",
+    nextAction: "Confirm client authority and service eligibility.",
+  },
+  {
+    orderId: "ORD-2607-0002",
+    stage: "Document validation",
+    status: "Replacement requested",
+    owner: "GenAdmin003",
+    authority: "Authorized staff",
+    timestamp: "Jul 18 2026 at 4:42 PM ET",
+    evidence: "Restricted document review",
+    nextAction: "Wait for replacement upload and malware validation.",
+  },
+  {
+    orderId: "ORD-2607-0002",
+    stage: "Notary assignment",
+    status: "Unassigned",
+    owner: "Admin",
+    authority: "Administrator or Super Admin",
+    timestamp: "Pending",
+    evidence: "RON authority and notary availability required",
+    nextAction: "Queue notary assignment after document and RON controls clear.",
+  },
+  {
+    orderId: "ORD-2607-0003",
+    stage: "Intake",
+    status: "Complete",
+    owner: "Client",
+    authority: "Consumer intake",
+    timestamp: "Jul 18 2026 at 4:50 PM ET",
+    evidence: "Mobile notarization request",
+    nextAction: "Confirm appointment and signer identity requirements.",
+  },
+  {
+    orderId: "ORD-2607-0003",
+    stage: "Appointment confirmation",
+    status: "Ready",
+    owner: "GenAdmin001",
+    authority: "Authorized staff",
+    timestamp: "Jul 18 2026 at 4:54 PM ET",
+    evidence: "Jul 24 2026 at 6:00 PM ET appointment window",
+    nextAction: "Confirm appointment details with client and assigned notary.",
+  },
+] as const;
+
+export const orderCompletionRecords = [
+  {
+    orderId: "ORD-2607-0001",
+    requirement: "Notary acceptance",
+    status: "Required",
+    evidence: "Assigned notary acceptance receipt",
+    owner: "Admin",
+  },
+  {
+    orderId: "ORD-2607-0001",
+    requirement: "Appointment confirmation",
+    status: "Pending",
+    evidence: "Client and notary confirmation notice",
+    owner: "GenAdmin001",
+  },
+  {
+    orderId: "ORD-2607-0001",
+    requirement: "Completion package",
+    status: "Locked",
+    evidence: "Executed documents, notarial certificate, and completion notes",
+    owner: "Assigned notary",
+  },
+  {
+    orderId: "ORD-2607-0001",
+    requirement: "Invoice release",
+    status: "Held",
+    evidence: "Client invoice and ledger report",
+    owner: "Administrator",
+  },
+  {
+    orderId: "ORD-2607-0001",
+    requirement: "Notary payable",
+    status: "Restricted",
+    evidence: "W-9 and payable activation control",
+    owner: "Administrator or Super Admin",
+  },
+  {
+    orderId: "ORD-2607-0001",
+    requirement: "Closeout audit",
+    status: "Locked",
+    evidence: "Command receipts, delivery log, and financial controls",
+    owner: "Super Admin",
+  },
+] as const;
+
 export const documentRecords = [
   {
     id: "DOC-2607-0001",
@@ -783,8 +941,26 @@ export function findOrderRecord(orderId: string) {
   );
 }
 
+export function findOrderOperationRecord(orderId: string) {
+  return orderOperationRecords.find(
+    (order) => order.id.toLowerCase() === orderId.toLowerCase(),
+  );
+}
+
 export function documentsForOrder(orderId: string) {
   return documentRecords.filter(
     (document) => document.order.toLowerCase() === orderId.toLowerCase(),
+  );
+}
+
+export function lifecycleForOrder(orderId: string) {
+  return orderLifecycleRecords.filter(
+    (stage) => stage.orderId.toLowerCase() === orderId.toLowerCase(),
+  );
+}
+
+export function completionControlsForOrder(orderId: string) {
+  return orderCompletionRecords.filter(
+    (control) => control.orderId.toLowerCase() === orderId.toLowerCase(),
   );
 }

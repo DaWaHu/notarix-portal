@@ -47,6 +47,10 @@ const validCommandActions = new Set<CommandCenterAction>([
   "escalate-order-issue",
   "request-missing-documents",
   "route-order-financial-review",
+  "confirm-notary-acceptance",
+  "confirm-order-appointment",
+  "record-completion-package",
+  "close-order",
 ]);
 
 export async function GET() {

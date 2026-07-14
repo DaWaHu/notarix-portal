@@ -50,7 +50,11 @@ export type CommandCenterAction =
   | "release-order-documents"
   | "escalate-order-issue"
   | "request-missing-documents"
-  | "route-order-financial-review";
+  | "route-order-financial-review"
+  | "confirm-notary-acceptance"
+  | "confirm-order-appointment"
+  | "record-completion-package"
+  | "close-order";
 
 export type StoredCommandEvent = {
   id: string;
@@ -420,6 +424,34 @@ const commandDefinitions: Record<
     authority: "AdminOrSuperAdmin",
     defaultTargetId: "ORD-2607-0001",
     nextStatus: "Financial Review Routed",
+    targetType: "Order",
+  },
+  "confirm-notary-acceptance": {
+    auditVerb: "confirmed notary assignment acceptance",
+    authority: "AdminOrSuperAdmin",
+    defaultTargetId: "ORD-2607-0001",
+    nextStatus: "Notary Accepted",
+    targetType: "Order",
+  },
+  "confirm-order-appointment": {
+    auditVerb: "confirmed order appointment",
+    authority: "AnyStaff",
+    defaultTargetId: "ORD-2607-0001",
+    nextStatus: "Appointment Confirmed",
+    targetType: "Order",
+  },
+  "record-completion-package": {
+    auditVerb: "recorded order completion package",
+    authority: "AdminOrSuperAdmin",
+    defaultTargetId: "ORD-2607-0001",
+    nextStatus: "Completion Package Received",
+    targetType: "Order",
+  },
+  "close-order": {
+    auditVerb: "closed order case file",
+    authority: "AdminOrSuperAdmin",
+    defaultTargetId: "ORD-2607-0001",
+    nextStatus: "Closed",
     targetType: "Order",
   },
 };
@@ -893,6 +925,18 @@ function nextRequiredAction(
   }
   if (action === "route-order-financial-review") {
     return "Keep invoice and payable activity restricted until financial review is completed.";
+  }
+  if (action === "confirm-notary-acceptance") {
+    return "Notify the client and assigned notary that assignment is accepted and appointment confirmation may proceed.";
+  }
+  if (action === "confirm-order-appointment") {
+    return "Keep appointment confirmation with the order file and monitor document availability before signing.";
+  }
+  if (action === "record-completion-package") {
+    return "Route the completion package through document validation, delivery, invoice, and payable controls.";
+  }
+  if (action === "close-order") {
+    return "Retain closeout receipts with order audit, delivery, invoice, payable, and document retention records.";
   }
   return "Track the escalated exception through restricted audit review.";
 }
