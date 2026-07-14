@@ -31,6 +31,27 @@ export type EvidenceStorageControlRecord = EvidenceRecord & {
   updatedAtUtc: string;
 };
 
+export type EvidenceAccessReceipt = {
+  accessUrlExpiresAtUtc: string | null;
+  actor: string;
+  actorRole: string;
+  blockedReason?: string;
+  createdAtUtc: string;
+  evidenceId: string;
+  id: string;
+  outcome: "Issued" | "Blocked";
+  reason: string;
+  signedUrl?: string;
+};
+
+export type EvidenceMalwareScanUpdate = {
+  evidenceId: string;
+  malwareStatus: string;
+  provider: string;
+  providerReceipt: string;
+  validationStatus: string;
+};
+
 export const evidenceStorageContract = {
   access:
     "Evidence files must be opened through signed access after authorization, malware validation, custody classification, and audit attribution.",
@@ -40,7 +61,31 @@ export const evidenceStorageContract = {
     "Files cannot be released into profile, order, RON, payable, or audit workflows until malware validation is complete or provider integrity is recorded.",
   custody:
     "Evidence metadata, scan status, access class, retention rule, and release eligibility are tracked separately from the file object.",
+  receipts:
+    "Signed access decisions and malware scan callbacks create retained evidence receipts for audit review.",
 } as const;
+
+type EvidenceStorageOverride = Partial<
+  Pick<
+    EvidenceStorageControlRecord,
+    | "accessUrlStatus"
+    | "encryptionStatus"
+    | "malwareProvider"
+    | "malwareStatus"
+    | "providerReceipt"
+    | "releaseBlockedReason"
+    | "releaseEligibility"
+    | "storageStatus"
+    | "updatedAtUtc"
+    | "validationStatus"
+  >
+>;
+
+const globalEvidenceStore = globalThis as typeof globalThis & {
+  __notarixEvidenceAccessReceipts?: EvidenceAccessReceipt[];
+  __notarixEvidenceStorageOverrides?: Record<string, EvidenceStorageOverride>;
+  __notarixEvidenceMalwareEvents?: EvidenceMalwareScanUpdate[];
+};
 
 export async function listEvidenceStorageControls(): Promise<
   EvidenceStorageControlRecord[]
@@ -56,7 +101,7 @@ export async function listEvidenceStorageControls(): Promise<
       const modeled = evidenceRecords.find(
         (record) => record.id === row.evidenceId,
       );
-      return {
+      return applyEvidenceOverride({
         ...(modeled ?? fallbackEvidenceRecord(row)),
         accessLevel: row.accessLevel,
         accessUrlStatus: accessUrlStatusFor(row.releaseEligibility),
@@ -88,7 +133,7 @@ export async function listEvidenceStorageControls(): Promise<
         storageStatus: row.encryptionStatus,
         updatedAtUtc: row.updatedAtUtc.toISOString(),
         validationStatus: row.validationStatus,
-      };
+      });
     });
   } catch {
     return evidenceRecords.map(buildEvidenceStorageControl);
@@ -135,7 +180,7 @@ export function buildEvidenceStorageControl(
     record.orderId ?? record.requestId ?? "provider"
   }/${record.id}/${record.fileName}`;
 
-  return {
+  return applyEvidenceOverride({
     ...record,
     accessUrlStatus: accessUrlStatusFor(releaseEligibility),
     bucketName: "notarix-production-evidence",
@@ -151,6 +196,148 @@ export function buildEvidenceStorageControl(
     storageProvider: "Cloudflare R2 compatible encrypted object storage",
     updatedAtUtc: "2026-07-18T21:00:00.000Z",
     validationStatus: validationStatusFor(record),
+  });
+}
+
+export async function requestEvidenceSignedAccess(input: {
+  actor: string;
+  actorRole: string;
+  evidenceId: string;
+  reason: string;
+}): Promise<EvidenceAccessReceipt> {
+  const evidence = await getEvidenceStorageControl(input.evidenceId);
+  const createdAt = evidenceWorkflowTimestampUtc();
+  const id = nextEvidenceReceiptId();
+
+  if (!evidence || evidence.releaseEligibility !== "Release Eligible") {
+    const receipt: EvidenceAccessReceipt = {
+      accessUrlExpiresAtUtc: null,
+      actor: input.actor,
+      actorRole: input.actorRole,
+      blockedReason:
+        evidence?.releaseBlockedReason ??
+        "Evidence record was not found or is unavailable for signed access.",
+      createdAtUtc: createdAt,
+      evidenceId: input.evidenceId,
+      id,
+      outcome: "Blocked",
+      reason: input.reason,
+    };
+    await persistEvidenceAccessReceipt(receipt);
+    return receipt;
+  }
+
+  const receipt: EvidenceAccessReceipt = {
+    accessUrlExpiresAtUtc: "2026-07-18T21:15:00.000Z",
+    actor: input.actor,
+    actorRole: input.actorRole,
+    createdAtUtc: createdAt,
+    evidenceId: evidence.id,
+    id,
+    outcome: "Issued",
+    reason: input.reason,
+    signedUrl: buildSignedEvidenceUrl(evidence),
+  };
+  await persistEvidenceAccessReceipt(receipt);
+  return receipt;
+}
+
+export async function listEvidenceAccessReceipts(): Promise<
+  EvidenceAccessReceipt[]
+> {
+  const db = await getOptionalDb();
+  if (!db) return getLocalEvidenceAccessReceipts();
+
+  try {
+    const rows = await db.select().from(schema.evidenceAccessReceipts);
+    if (rows.length === 0) return getLocalEvidenceAccessReceipts();
+    return rows.map((row) => ({
+      accessUrlExpiresAtUtc: row.accessUrlExpiresAtUtc?.toISOString() ?? null,
+      actor: row.actor,
+      actorRole: row.actorRole,
+      blockedReason: row.blockedReason ?? undefined,
+      createdAtUtc: row.createdAtUtc.toISOString(),
+      evidenceId: row.evidenceId,
+      id: row.id,
+      outcome: row.outcome,
+      reason: row.reason,
+      signedUrl: row.signedUrl ?? undefined,
+    }));
+  } catch {
+    return getLocalEvidenceAccessReceipts();
+  }
+}
+
+export async function recordEvidenceMalwareScanUpdate(
+  input: EvidenceMalwareScanUpdate,
+) {
+  const evidence = await getEvidenceStorageControl(input.evidenceId);
+  if (!evidence) {
+    return {
+      available: false,
+      error: "Evidence record not found",
+      evidenceId: input.evidenceId,
+    };
+  }
+
+  const releaseEligibility = releaseEligibilityAfterProviderUpdate(
+    evidence,
+    input.malwareStatus,
+  );
+  const releaseBlockedReason =
+    releaseEligibility === "Release Eligible"
+      ? "No release block"
+      : releaseBlockedReasonFor(evidence, releaseEligibility);
+  const updatedAt = evidenceWorkflowTimestampUtc();
+  const override: EvidenceStorageOverride = {
+    accessUrlStatus: accessUrlStatusFor(releaseEligibility),
+    encryptionStatus: "Encrypted object stored",
+    malwareProvider: input.provider,
+    malwareStatus: input.malwareStatus,
+    providerReceipt: input.providerReceipt,
+    releaseBlockedReason,
+    releaseEligibility,
+    storageStatus: "Encrypted object stored",
+    updatedAtUtc: updatedAt,
+    validationStatus: input.validationStatus,
+  };
+  getEvidenceOverrides()[input.evidenceId] = override;
+  getLocalMalwareEvents().push(input);
+
+  const db = await getOptionalDb();
+  if (db) {
+    const timestamp = new Date(updatedAt);
+    await db
+      .update(schema.evidenceStorageControls)
+      .set({
+        encryptionStatus: override.encryptionStatus,
+        malwareProvider: override.malwareProvider,
+        malwareStatus: override.malwareStatus,
+        providerReceipt: override.providerReceipt,
+        releaseBlockedReason: override.releaseBlockedReason,
+        releaseEligibility: override.releaseEligibility,
+        updatedAtUtc: timestamp,
+        validationStatus: override.validationStatus,
+      })
+      .where(eq(schema.evidenceStorageControls.evidenceId, input.evidenceId));
+    await db.insert(schema.evidenceMalwareScanEvents).values({
+      callbackReceivedAtUtc: timestamp,
+      evidenceId: input.evidenceId,
+      id: `EMS-2607-${String(getLocalMalwareEvents().length).padStart(4, "0")}`,
+      malwareStatus: input.malwareStatus,
+      provider: input.provider,
+      providerReceipt: input.providerReceipt,
+      releaseEligibility,
+      validationStatus: input.validationStatus,
+    });
+  }
+
+  return {
+    available: true,
+    evidenceId: input.evidenceId,
+    releaseBlockedReason,
+    releaseEligibility,
+    updatedAtUtc: updatedAt,
   };
 }
 
@@ -260,4 +447,86 @@ function accessUrlStatusFor(releaseEligibility: string): string {
   return releaseEligibility === "Release Eligible"
     ? "Signed access URL may be issued after authorization"
     : "Signed access URL blocked until release controls clear";
+}
+
+async function persistEvidenceAccessReceipt(receipt: EvidenceAccessReceipt) {
+  getLocalEvidenceAccessReceipts().push(receipt);
+  const db = await getOptionalDb();
+  if (!db) return;
+
+  await db.insert(schema.evidenceAccessReceipts).values({
+    accessUrlExpiresAtUtc: receipt.accessUrlExpiresAtUtc
+      ? new Date(receipt.accessUrlExpiresAtUtc)
+      : null,
+    actor: receipt.actor,
+    actorRole: receipt.actorRole,
+    blockedReason: receipt.blockedReason,
+    createdAtUtc: new Date(receipt.createdAtUtc),
+    evidenceId: receipt.evidenceId,
+    id: receipt.id,
+    outcome: receipt.outcome,
+    reason: receipt.reason,
+    signedUrl: receipt.signedUrl,
+  });
+}
+
+function buildSignedEvidenceUrl(evidence: EvidenceStorageControlRecord): string {
+  return `/evidence/${evidence.id}/signed?receipt=${nextEvidenceReceiptPreviewToken(evidence.id)}`;
+}
+
+function releaseEligibilityAfterProviderUpdate(
+  evidence: EvidenceStorageControlRecord,
+  malwareStatus: string,
+): EvidenceReleaseEligibility {
+  if (malwareStatus.toLowerCase().includes("quarantine")) return "Quarantine";
+  if (!malwareStatus.toLowerCase().includes("complete")) {
+    return "Malware Validation Required";
+  }
+  if (evidence.accessLevel.toLowerCase().includes("restricted")) {
+    return "Restricted Hold";
+  }
+  return "Release Eligible";
+}
+
+function applyEvidenceOverride(
+  record: EvidenceStorageControlRecord,
+): EvidenceStorageControlRecord {
+  const override = getEvidenceOverrides()[record.id];
+  if (!override) return record;
+  return {
+    ...record,
+    ...override,
+    accessUrlStatus:
+      override.accessUrlStatus ??
+      accessUrlStatusFor(override.releaseEligibility ?? record.releaseEligibility),
+    scanStatus: override.malwareStatus ?? record.scanStatus,
+    storageStatus: override.storageStatus ?? record.storageStatus,
+  };
+}
+
+function getEvidenceOverrides() {
+  globalEvidenceStore.__notarixEvidenceStorageOverrides ??= {};
+  return globalEvidenceStore.__notarixEvidenceStorageOverrides;
+}
+
+function getLocalEvidenceAccessReceipts() {
+  globalEvidenceStore.__notarixEvidenceAccessReceipts ??= [];
+  return globalEvidenceStore.__notarixEvidenceAccessReceipts;
+}
+
+function getLocalMalwareEvents() {
+  globalEvidenceStore.__notarixEvidenceMalwareEvents ??= [];
+  return globalEvidenceStore.__notarixEvidenceMalwareEvents;
+}
+
+function nextEvidenceReceiptId(): string {
+  return `EVR-2607-${String(getLocalEvidenceAccessReceipts().length + 1).padStart(4, "0")}`;
+}
+
+function nextEvidenceReceiptPreviewToken(evidenceId: string): string {
+  return `${evidenceId.toLowerCase()}-${getLocalEvidenceAccessReceipts().length + 1}`;
+}
+
+function evidenceWorkflowTimestampUtc(): string {
+  return "2026-07-18T21:00:00.000Z";
 }

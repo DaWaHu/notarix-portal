@@ -107,6 +107,53 @@ export const evidenceStorageControls = sqliteTable(
   ],
 );
 
+export const evidenceAccessReceipts = sqliteTable(
+  "evidence_access_receipts",
+  {
+    id: text("id").primaryKey(),
+    evidenceId: text("evidence_id")
+      .notNull()
+      .references(() => evidenceStorageControls.evidenceId),
+    actor: text("actor").notNull(),
+    actorRole: text("actor_role").notNull(),
+    reason: text("reason").notNull(),
+    outcome: text("outcome", { enum: ["Issued", "Blocked"] }).notNull(),
+    signedUrl: text("signed_url"),
+    blockedReason: text("blocked_reason"),
+    accessUrlExpiresAtUtc: integer("access_url_expires_at_utc", {
+      mode: "timestamp",
+    }),
+    createdAtUtc: integer("created_at_utc", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("evidence_access_receipts_evidence_idx").on(table.evidenceId),
+    index("evidence_access_receipts_actor_idx").on(table.actor),
+    index("evidence_access_receipts_outcome_idx").on(table.outcome),
+  ],
+);
+
+export const evidenceMalwareScanEvents = sqliteTable(
+  "evidence_malware_scan_events",
+  {
+    id: text("id").primaryKey(),
+    evidenceId: text("evidence_id")
+      .notNull()
+      .references(() => evidenceStorageControls.evidenceId),
+    provider: text("provider").notNull(),
+    providerReceipt: text("provider_receipt").notNull(),
+    malwareStatus: text("malware_status").notNull(),
+    validationStatus: text("validation_status").notNull(),
+    releaseEligibility: text("release_eligibility").notNull(),
+    callbackReceivedAtUtc: integer("callback_received_at_utc", {
+      mode: "timestamp",
+    }).notNull(),
+  },
+  (table) => [
+    index("evidence_malware_scan_events_evidence_idx").on(table.evidenceId),
+    index("evidence_malware_scan_events_provider_idx").on(table.provider),
+  ],
+);
+
 export const workflowAuditEvents = sqliteTable(
   "workflow_audit_events",
   {

@@ -206,7 +206,14 @@ export default async function EvidenceViewerPage({
               </div>
             </dl>
             <div className="decision-actions">
-              <button type="button">Record Access Note</button>
+              <form action={`/evidence/${evidence.id}/access`} method="post">
+                <input
+                  name="reason"
+                  type="hidden"
+                  value="Staff evidence viewer access request"
+                />
+                <button type="submit">Request Signed Access</button>
+              </form>
               <button type="button">Flag Evidence Issue</button>
               <button type="button">Request Replacement</button>
             </div>

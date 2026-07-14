@@ -3,8 +3,8 @@
 Date: Jul 14 2026
 Workspace: `/Users/hudlinbe/Desktop/100 Notarix Signing`
 Branch: `codex/notarix-portal-checkpoint`
-Latest checkpoint: Evidence storage controls checkpoint pending current commit
-Verification status: `npm test` passed, 33 of 33 tests passing
+Latest checkpoint: Evidence signed access and malware callback controls pending current commit
+Verification status: `npm test` passed, 34 of 34 tests passing
 
 ## Executive Summary
 
@@ -27,6 +27,7 @@ It increased again after adding SuperAdmin-only idempotent D1 seed/reconciliatio
 It increased again after centralizing staff route access, role normalization, and command-center authority checks behind a shared RBAC policy module.
 It increased again after binding protected staff routes and workflow endpoints to production identity-provider claim headers for role, MFA/passkey status, device trust, and session assurance.
 It increased again after adding D1 evidence storage controls for encrypted object keys, malware validation status, release eligibility, and custody metadata.
+It increased again after adding signed evidence access decisions, malware scan callback updates, and retained evidence access receipts.
 
 ## Latest Commits
 
@@ -37,6 +38,7 @@ It increased again after adding D1 evidence storage controls for encrypted objec
 - `62766df Expand order persistence schema and repository`
 - `8ae8110 Add executive project handoff report`
 - `ce08168 Add admin platform configuration center`
+- `1ee5fc9 Add evidence storage control repository`
 
 ## Completed Since Prior Handoff
 
@@ -131,6 +133,20 @@ Completed:
 - Document validation now reads from the storage-control repository and blocks release when storage or malware controls are incomplete.
 - Governance tests now protect the evidence storage schema, migration, repository, and seed path.
 
+### Evidence Signed Access and Malware Callback Controls
+
+Completed:
+
+- Added D1 schema tables for evidence signed-access receipts and malware scan callback events.
+- Added migration `drizzle/0004_evidence_access_and_scan_events.sql`.
+- Added `/evidence/:evidenceId/access` for staff-only signed access decisions and receipt retrieval.
+- Added `/staff/evidence-malware-callback` for Admin/SuperAdmin malware scan result updates.
+- Evidence access now returns a blocked receipt until storage binding and release controls clear.
+- Malware callback updates evidence storage state, provider receipt, validation status, release eligibility, and release block reason.
+- Once release controls clear, signed access requests issue a retained receipt with actor, role, reason, target, timestamp, outcome, signed URL, and expiration.
+- Evidence viewer now requests signed access instead of showing a passive access note button.
+- Tests now verify blocked access, malware callback release, issued signed access, and receipt retrieval.
+
 ## Core Pages Completed
 
 ### Public and Access
@@ -201,6 +217,7 @@ Completed:
 
 - `/documents`
 - `/evidence/DOC-2607-0001`
+- `/evidence/:evidenceId/access`
 - `/notifications`
 
 ## Current Architecture Notes
@@ -225,6 +242,9 @@ Completed:
   - `x-notarix-device-trust`
   - `x-notarix-session-assurance`
 - Tests intentionally assert these persistence boundaries so future work does not regress into seed-only behavior.
+- Evidence access and malware scan callback behavior now lives in:
+  - `app/evidence/[evidenceId]/access/route.ts`
+  - `app/staff/evidence-malware-callback/route.ts`
 
 ## Production Gaps Remaining
 
@@ -233,8 +253,8 @@ Completed:
 - Configure production D1 binding and apply migrations.
 - Connect the selected production identity provider so it emits the required Notarix Signings claim headers.
 - Confirm production deployment strips or ignores preview-only staff-role headers before application routing.
-- Connect encrypted file storage, likely R2 or equivalent object storage, to the evidence repository.
-- Connect malware scanning provider callbacks and update D1 scan status after provider results.
+- Bind encrypted file storage credentials and object APIs, likely R2 or equivalent object storage, to the evidence repository.
+- Bind malware scanning provider callback authentication and provider webhook verification.
 - Add real email provider and phone/SMS provider.
 - Add notification consent and delivery callback handling.
 - Add production audit immutability strategy.
@@ -244,8 +264,8 @@ Completed:
 
 ### Important Next Layer
 
-- Issue signed evidence access URLs only after release controls clear.
-- Persist evidence access receipts as append-only audit records.
+- Replace local signed evidence URL preview tokens with provider-issued R2/S3 signed URLs.
+- Add webhook signature verification for malware scan callbacks.
 - Persist financial ledger controls and payment release state.
 - Persist credential expiration records and renewal reminders.
 - Add admin seed/reconciliation tools for records that start in local modeled data.
@@ -253,17 +273,17 @@ Completed:
 
 ## Recommended Next Task
 
-Start with **evidence object storage binding, signed URL issuance, and malware scan callbacks**.
+Start with **notification provider binding and delivery callbacks**.
 
-Reason: the application now has D1-backed evidence storage controls and release-blocking logic. The next critical production blocker is connecting those controls to real encrypted object storage, signed URL issuance, and malware scanner provider callbacks.
+Reason: the evidence workflow now has D1-backed storage controls, signed access decisions, malware callback updates, and receipt retention. The next critical production blocker is replacing modeled notification behavior with provider-backed email/SMS delivery, consent enforcement, delivery callbacks, retry handling, and visible communication receipts.
 
 Recommended scope:
 
-1. Add object storage binding abstraction for evidence files.
-2. Add signed URL issuance policy tied to release eligibility and staff access claims.
-3. Add malware scan callback/update endpoint for provider results.
-4. Persist evidence access receipts with actor, role, target, reason, timestamp, and outcome.
-5. Keep local preview fallback active when object storage and malware provider bindings are absent.
+1. Add email/SMS provider abstraction.
+2. Persist outbound communication jobs and provider receipts.
+3. Add delivery callback endpoint for delivered, failed, bounced, and opted-out statuses.
+4. Enforce consent before profile approval, order notifications, and phone messages.
+5. Keep local preview fallback active when production providers are absent.
 
 ## Verification Snapshot
 
@@ -276,7 +296,7 @@ npm test
 Result:
 
 ```text
-33 tests passing
+34 tests passing
 ```
 
 Last whitespace check:
@@ -296,7 +316,7 @@ Result: clean.
 3. Confirm latest commit:
    `git log --oneline -5`
 4. Start task:
-   Begin evidence object storage binding, signed URL issuance, and malware scan callbacks.
+   Begin notification provider binding and delivery callbacks.
 5. Run:
    `npm test`
 6. Commit the checkpoint.

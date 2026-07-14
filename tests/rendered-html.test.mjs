@@ -1089,11 +1089,71 @@ test("server-renders the protected evidence file viewer", async () => {
   assert.match(html, /Signed access URL blocked until release controls clear/);
   assert.match(html, /Retain under tax onboarding and payable control policy/);
   assert.match(html, /Access audit/);
-  assert.match(html, /Record Access Note/);
+  assert.match(html, /Request Signed Access/);
   assert.match(html, /Flag Evidence Issue/);
   assert.match(html, /Request Replacement/);
   assert.match(html, /href="\/staff\/requests\/NSR-1001\/profile-verification"/);
   assert.match(html, /href="\/documents"/);
+});
+
+test("records evidence signed access receipts after malware callback clears release controls", async () => {
+  const staffHeaders = {
+    "content-type": "application/json",
+    "oai-authenticated-user-email": "staff@example.com",
+  };
+
+  const blockedResponse = await requestRoute("/evidence/DOC-2607-0001/access", {
+    body: JSON.stringify({ reason: "Pre-scan release attempt" }),
+    headers: staffHeaders,
+    method: "POST",
+  });
+  assert.equal(blockedResponse.status, 409);
+  const blockedReceipt = await blockedResponse.json();
+  assert.equal(blockedReceipt.outcome, "Blocked");
+  assert.match(
+    blockedReceipt.blockedReason,
+    /Encrypted object storage binding|Malware validation required/,
+  );
+
+  const callbackResponse = await requestRoute("/staff/evidence-malware-callback", {
+    body: JSON.stringify({
+      evidenceId: "DOC-2607-0001",
+      malwareStatus: "Malware validation complete",
+      provider: "Production malware scanning provider",
+      providerReceipt: "SCAN-DOC-2607-0001",
+      validationStatus: "File type and SHA-256 validated",
+    }),
+    headers: {
+      ...staffHeaders,
+      "x-notarix-staff-role": "Admin",
+    },
+    method: "POST",
+  });
+  assert.equal(callbackResponse.status, 200);
+  const callbackResult = await callbackResponse.json();
+  assert.equal(callbackResult.releaseEligibility, "Release Eligible");
+
+  const issuedResponse = await requestRoute("/evidence/DOC-2607-0001/access", {
+    body: JSON.stringify({ reason: "Released after malware validation" }),
+    headers: staffHeaders,
+    method: "POST",
+  });
+  assert.equal(issuedResponse.status, 200);
+  const issuedReceipt = await issuedResponse.json();
+  assert.equal(issuedReceipt.outcome, "Issued");
+  assert.match(issuedReceipt.signedUrl, /\/evidence\/DOC-2607-0001\/signed\?receipt=/);
+
+  const receiptResponse = await requestRoute("/evidence/DOC-2607-0001/access", {
+    headers: staffHeaders,
+  });
+  assert.equal(receiptResponse.status, 200);
+  const receiptBody = await receiptResponse.json();
+  assert.equal(receiptBody.evidenceId, "DOC-2607-0001");
+  assert.ok(receiptBody.receipts.length >= 2);
+  assert.ok(
+    receiptBody.receipts.some((receipt) => receipt.outcome === "Blocked"),
+  );
+  assert.ok(receiptBody.receipts.some((receipt) => receipt.outcome === "Issued"));
 });
 
 test("server-renders the protected evidence upload and intake review workspace", async () => {
@@ -2382,6 +2442,18 @@ test("keeps product rules in the local governance file", async () => {
     new URL("../drizzle/0003_evidence_storage_controls.sql", import.meta.url),
     "utf8",
   );
+  const evidenceAccessMigration = await readFile(
+    new URL("../drizzle/0004_evidence_access_and_scan_events.sql", import.meta.url),
+    "utf8",
+  );
+  const evidenceAccessRoute = await readFile(
+    new URL("../app/evidence/[evidenceId]/access/route.ts", import.meta.url),
+    "utf8",
+  );
+  const evidenceMalwareCallbackRoute = await readFile(
+    new URL("../app/staff/evidence-malware-callback/route.ts", import.meta.url),
+    "utf8",
+  );
   const packageJson = await readFile(
     new URL("../package.json", import.meta.url),
     "utf8",
@@ -2416,6 +2488,8 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(schema, /orderDeliveryReceipts/);
   assert.match(schema, /notaryCompletionReceipts/);
   assert.match(schema, /evidenceStorageControls/);
+  assert.match(schema, /evidenceAccessReceipts/);
+  assert.match(schema, /evidenceMalwareScanEvents/);
   assert.match(commandMigration, /CREATE TABLE `command_center_targets`/);
   assert.match(commandMigration, /CREATE TABLE `command_center_events`/);
   assert.match(commandMigration, /CREATE TABLE `command_center_receipts`/);
@@ -2430,12 +2504,27 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(evidenceStorageMigration, /storage_provider/);
   assert.match(evidenceStorageMigration, /malware_status/);
   assert.match(evidenceStorageMigration, /release_eligibility/);
+  assert.match(evidenceAccessMigration, /CREATE TABLE `evidence_access_receipts`/);
+  assert.match(evidenceAccessMigration, /CREATE TABLE `evidence_malware_scan_events`/);
+  assert.match(evidenceAccessMigration, /signed_url/);
+  assert.match(evidenceAccessMigration, /provider_receipt/);
   assert.match(evidenceRepository, /evidenceStorageContract/);
   assert.match(evidenceRepository, /listEvidenceStorageControls/);
   assert.match(evidenceRepository, /getEvidenceStorageControl/);
+  assert.match(evidenceRepository, /requestEvidenceSignedAccess/);
+  assert.match(evidenceRepository, /listEvidenceAccessReceipts/);
+  assert.match(evidenceRepository, /recordEvidenceMalwareScanUpdate/);
   assert.match(evidenceRepository, /schema\.evidenceStorageControls/);
+  assert.match(evidenceRepository, /schema\.evidenceAccessReceipts/);
+  assert.match(evidenceRepository, /schema\.evidenceMalwareScanEvents/);
   assert.match(evidenceRepository, /Cloudflare R2 compatible encrypted object storage/);
   assert.match(evidenceRepository, /Malware validation complete/);
+  assert.match(evidenceAccessRoute, /requestEvidenceSignedAccess/);
+  assert.match(evidenceAccessRoute, /listEvidenceAccessReceipts/);
+  assert.match(evidenceAccessRoute, /requireStaffRouteAccess/);
+  assert.match(evidenceMalwareCallbackRoute, /recordEvidenceMalwareScanUpdate/);
+  assert.match(evidenceMalwareCallbackRoute, /Admin/);
+  assert.match(evidenceMalwareCallbackRoute, /SuperAdmin/);
   assert.match(orderRepository, /orderRepositoryPersistenceContract/);
   assert.match(orderRepository, /D1-first repository/);
   assert.match(orderRepository, /listOrderOperations/);
