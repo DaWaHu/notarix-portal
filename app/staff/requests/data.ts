@@ -1,8 +1,17 @@
 export type AccessRequestStatus =
+  | "Contact Received"
+  | "NSR Created"
   | "Pending Review"
   | "Invitation Sent"
+  | "Profile Invitation Sent"
   | "Profile Completion Pending"
+  | "Profile Submitted"
   | "Credential Verification"
+  | "GenAdmin Verification"
+  | "Corrections Requested"
+  | "Ready for Elevated Approval"
+  | "Admin/Super Admin Review"
+  | "Approved"
   | "Active"
   | "Rejected"
   | "On Hold";
@@ -11,7 +20,6 @@ export type AccessRequest = {
   id: string;
   type: "Client" | "Notary";
   approvedProfileNumber: string | null;
-  projectedProfileNumber: string;
   name: string;
   organization: string;
   email: string;
@@ -58,18 +66,19 @@ export type ActivationDecision = {
 export const activationDecisions: ActivationDecision[] = [
   {
     slug: "approve",
-    label: "Approve Profile",
+    label: "Final Approval",
     outcome: "Activate verified portal profile",
     authority: "Administrator or Super Admin",
     staffAction:
-      "Confirm every required profile item is verified, record the reviewer decision, and activate only the permissions approved for this profile.",
+      "Confirm General Admin verification is complete, review the restricted audit report, record the elevated approver decision, and activate only the permissions approved for this profile.",
     portalEffect:
       "Client or notary portal access becomes active. RON and financial permissions remain separate controlled capabilities.",
     auditEntry:
-      "Profile approved, portal status changed to Active, approving staff member recorded.",
+      "Profile approved, portal status changed to Active, approving staff member recorded, email notice queued, and phone notification recorded when consent exists.",
     safeguards: [
       "RON access remains disabled unless remote authorization, RON training, and digital certificate records are verified.",
       "Payable changes require Administrator or Super Admin approval.",
+      "Email and phone notifications require a recorded delivery log and communication-consent check.",
       "Credential expiration monitoring begins immediately after activation.",
     ],
   },
@@ -87,6 +96,7 @@ export const activationDecisions: ActivationDecision[] = [
     safeguards: [
       "Do not expose internal notes that contain restricted credential or financial review details.",
       "Correction notices must use the formatted phone number and approved contact email.",
+      "Applicants may edit only the sections returned for correction.",
       "Expired or missing credentials cannot be overridden by a General Admin.",
     ],
   },
@@ -109,13 +119,59 @@ export const activationDecisions: ActivationDecision[] = [
   },
 ];
 
+export const generalAdminReviewers = [
+  "GenAdmin001",
+  "GenAdmin002",
+  "GenAdmin003",
+  "GenAdmin004",
+  "GenAdmin005",
+] as const;
+
+export const activationAuditRequirements = [
+  "General Admin verification completion",
+  "Approving staff identifier",
+  "Approval date and time with time zone",
+  "Previous status and new status",
+  "Assigned NSN or NSC number when activation succeeds",
+  "Open credential exceptions, if any",
+  "Email approval notice delivery log",
+  "Phone or SMS approval notice consent and delivery log",
+  "Administrator or Super Admin authorization for financial permission changes",
+] as const;
+
+export const profileLifecycleStages = [
+  "Contact Received",
+  "NSR Created",
+  "Profile Invitation Sent",
+  "Profile Submitted",
+  "GenAdmin Verification",
+  "Corrections Requested",
+  "Ready for Elevated Approval",
+  "Admin/Super Admin Review",
+  "Approved",
+  "Active",
+] as const;
+
+export const finalActivationControls = [
+  "Portal access",
+  "Order submission access",
+  "Document upload and retrieval access",
+  "Billing or payable access",
+  "RON access when applicable",
+  "Approved profile number assignment",
+  "Email approval notification",
+  "Phone or SMS approval notification with consent",
+  "Credential and expiration monitoring",
+] as const;
+
 export const notaryProfileVerificationItems: ProfileVerificationItem[] = [
   {
     section: "Identity",
     requirement: "Government identification",
-    evidence: "Driver's license verification record",
+    evidence: "Identity proofing provider record with document analysis and camera-based liveness check",
     status: "Pending",
-    reviewerNote: "Confirm name, state, expiration date, and verification method.",
+    reviewerNote:
+      "Confirm name, state, expiration date, verification method, and provider result before activation.",
   },
   {
     section: "Commission",
@@ -153,6 +209,14 @@ export const notaryProfileVerificationItems: ProfileVerificationItem[] = [
     reviewerNote: "RON must remain disabled unless all remote authorization evidence is verified.",
   },
   {
+    section: "Tax",
+    requirement: "W-9 form",
+    evidence: "Completed W-9 or approved tax onboarding record",
+    status: "Pending",
+    reviewerNote:
+      "Required before payable activation. General Admin may review status but cannot approve financial changes.",
+  },
+  {
     section: "Payables",
     requirement: "Payment setup",
     evidence: "Payable onboarding document",
@@ -165,23 +229,66 @@ export const clientProfileVerificationItems: ProfileVerificationItem[] = [
   {
     section: "Organization",
     requirement: "Business identity",
-    evidence: "Organization name, authorized representative, and service jurisdiction",
+    evidence: "Business registration, firm profile, or client entity record",
     status: "Pending",
-    reviewerNote: "Confirm the organization is eligible for currently offered Notarix services.",
+    reviewerNote:
+      "Confirm legal entity, client type, operating address, and service jurisdiction before activation.",
   },
   {
-    section: "Users",
-    requirement: "Authorized users",
-    evidence: "Named account administrator and permitted order submitters",
+    section: "Authority",
+    requirement: "Authorized representative",
+    evidence: "Signer authority, attorney record, title company officer, or account administrator attestation",
     status: "Pending",
-    reviewerNote: "No shared accounts. Staff must confirm who can submit orders.",
+    reviewerNote:
+      "Verify the person requesting access may bind the organization and approve portal users.",
+  },
+  {
+    section: "Contact",
+    requirement: "Client contact record",
+    evidence: "Primary contact, billing contact, phone numbers, and mailing address",
+    status: "Pending",
+    reviewerNote:
+      "Confirm operational contact, billing contact, and approved notification channels.",
   },
   {
     section: "Billing",
-    requirement: "Billing contact",
-    evidence: "Billing contact email and payment preference",
+    requirement: "Billing and payment setup",
+    evidence: "Billing authorization, W-9 when required, invoice terms, or payment method approval",
+    status: "Restricted",
+    reviewerNote:
+      "Financial permissions and invoice terms require Administrator or Super Admin approval.",
+  },
+  {
+    section: "Users",
+    requirement: "Authorized portal users",
+    evidence: "Named account administrator and permitted order submitters",
     status: "Pending",
-    reviewerNote: "Order permissions remain limited until financial review is complete.",
+    reviewerNote:
+      "No shared accounts. Staff must confirm who can submit orders and manage documents.",
+  },
+  {
+    section: "Documents",
+    requirement: "Document handling rules",
+    evidence: "Upload permissions, document retention needs, and delivery instructions",
+    status: "Pending",
+    reviewerNote:
+      "Confirm who may upload, retrieve, replace, and receive documents before order access is enabled.",
+  },
+  {
+    section: "Orders",
+    requirement: "Order submission authority",
+    evidence: "Requested service types, jurisdiction, and order approval limits",
+    status: "Pending",
+    reviewerNote:
+      "Confirm the client may request mobile, electronic, RON, loan signing, or general notarial services.",
+  },
+  {
+    section: "Compliance",
+    requirement: "Risk and compliance review",
+    evidence: "Client category, service risk, document sensitivity, and escalation flags",
+    status: "Pending",
+    reviewerNote:
+      "Escalate unusual document handling, payment, identity, or jurisdictional risk before activation.",
   },
 ];
 
@@ -190,7 +297,6 @@ export const accessRequests: AccessRequest[] = [
     id: "NSR-1001",
     type: "Notary",
     approvedProfileNumber: null,
-    projectedProfileNumber: "NSN-NC-2607-0001",
     name: "Bernadette W Hudlin",
     organization: "DaWaHu Collective, LLC",
     email: "hudlinbe@example.com",
@@ -232,7 +338,6 @@ export const accessRequests: AccessRequest[] = [
     id: "NSR-1002",
     type: "Client",
     approvedProfileNumber: null,
-    projectedProfileNumber: "NSC-NC-2607-0001",
     name: "Avery Coleman",
     organization: "Coleman Title Group",
     email: "avery@example.com",
@@ -274,7 +379,6 @@ export const accessRequests: AccessRequest[] = [
     id: "NSR-1003",
     type: "Notary",
     approvedProfileNumber: null,
-    projectedProfileNumber: "NSN-SC-2607-0001",
     name: "Jordan Ellis",
     organization: "Independent Notary",
     email: "jordan@example.com",
@@ -312,12 +416,55 @@ export const accessRequests: AccessRequest[] = [
       "Jul 10 2026 at 8:35 AM ET - Credential verification opened.",
     ],
   },
+  {
+    id: "NSR-1004",
+    type: "Client",
+    approvedProfileNumber: null,
+    name: "Marisol Grant",
+    organization: "Grant & Ledger Law PLLC",
+    email: "marisol@example.com",
+    phone: "555-456-7890",
+    jurisdiction: "NC",
+    service: "Mobile and electronic notarial services",
+    status: "Ready for Elevated Approval",
+    received: "Jul 11 2026",
+    nextAction: "Administrator or Super Admin final approval required.",
+    risk: "Standard",
+    reviewer: "GenAdmin002",
+    invitationTarget: "Client organization profile completion",
+    invitationUrl: "/profile/complete/NSR-1004",
+    notes:
+      "General Admin verification is complete. Elevated approval must confirm order permissions, billing controls, user authority, and final NSC assignment before activation.",
+    eligibilityItems: [
+      "Legal organization identity verified.",
+      "Authorized representative confirmed.",
+      "Billing contact and payment preference reviewed.",
+      "Requested service access confirmed.",
+    ],
+    credentialItems: [
+      "Business registration verified.",
+      "Authorized user roster reviewed.",
+      "Document handling rules reviewed.",
+      "Billing authorization queued for elevated approval.",
+    ],
+    activationItems: [
+      "Review restricted audit report.",
+      "Generate NSC only after final approval.",
+      "Activate client portal and approved order permissions.",
+      "Send approval email and phone notification if consent exists.",
+    ],
+    auditEvents: [
+      "Jul 11 2026 at 9:30 AM ET - Client profile submitted.",
+      "Jul 11 2026 at 2:15 PM ET - GenAdmin002 marked verification complete.",
+    ],
+  },
 ];
 
 export const statusCounts = [
-  ["Pending Review", "1", "New requests awaiting staff intake."],
-  ["Profile Pending", "1", "Invitations sent, profile not complete."],
-  ["Credential Review", "1", "Eligibility and commission review."],
+  ["NSR Created", "1", "Contact requests converted to staff intake records."],
+  ["Profile Pending", "1", "Profile invitations sent or awaiting submission."],
+  ["GenAdmin Review", "1", "Submitted profiles under verification."],
+  ["Elevated Approval", "1", "Files ready for Administrator or Super Admin review."],
   ["Active", "0", "Approved portal profiles."],
 ] as const;
 
@@ -343,6 +490,15 @@ export function profileNumberLabel(type: AccessRequest["type"]): string {
   return type === "Notary"
     ? "Notarix Signing Notary Number"
     : "Notarix Signing Client Number";
+}
+
+export function profileNumberAssignmentRule(type: AccessRequest["type"]): string {
+  const prefix = profileNumberPrefix(type);
+  return `${prefix} is generated transactionally at approval so numbering follows actual activation order.`;
+}
+
+export function profileNumberFormatExample(type: AccessRequest["type"]): string {
+  return type === "Notary" ? "NSN-NC-2607-0001" : "NSC-NC-2607-0001";
 }
 
 export function canActivateProfile(request: AccessRequest): boolean {

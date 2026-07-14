@@ -13,9 +13,12 @@ export default async function StaffRequestsPage() {
         <nav aria-label="Staff navigation">
           <a href="/">Home</a>
           <a href="/portal">Access Form</a>
+          <a href="/staff/elevated-approval">Elevated Approval</a>
+          <a href="/staff/financial-controls">Financial Controls</a>
           <a className="nav-cta" href="/staff/requests">
             Staff Queue
           </a>
+          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
         </nav>
       </header>
 
@@ -87,7 +90,15 @@ export default async function StaffRequestsPage() {
                 <a href={`/staff/requests/${request.id}/profile-verification`}>
                   Profile Verification
                 </a>
-                <button type="button">Send Invitation</button>
+                {request.status === "Ready for Elevated Approval" ? (
+                  <a href={`/staff/elevated-approval/${request.id}`}>
+                    Final Approval
+                  </a>
+                ) : null}
+                <form action={`/staff/workflow/${request.id}`} method="post">
+                  <input name="action" type="hidden" value="send-profile-invitation" />
+                  <button type="submit">Send Invitation</button>
+                </form>
               </div>
             </div>
           </article>
@@ -105,6 +116,9 @@ export default async function StaffRequestsPage() {
         <nav aria-label="Staff footer navigation">
           <a href="/">Home</a>
           <a href="/portal">Access Form</a>
+          <a href="/staff/elevated-approval">Elevated Approval</a>
+          <a href="/staff/financial-controls">Financial Controls</a>
+          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
           <a href="mailto:support@notarix.live">support@notarix.live</a>
         </nav>
         <p>Authorized staff use only. Review activity should remain auditable.</p>

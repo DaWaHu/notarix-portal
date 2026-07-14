@@ -46,11 +46,13 @@ export default async function StaffInvitationPage({
           <img src="/notarix-logo.png" alt="Notarix Signings" />
         </a>
         <nav aria-label="Staff invitation navigation">
+          <a href="/">Home</a>
           <a href="/staff/requests">Staff Queue</a>
           <a href={`/staff/requests/${request.id}`}>Review Record</a>
           <a className="nav-cta" href={`/staff/requests/${request.id}/invitation`}>
             Invitation
           </a>
+          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
         </nav>
       </header>
 
@@ -128,7 +130,7 @@ export default async function StaffInvitationPage({
             </div>
             <div>
               <dt>Post-send status</dt>
-              <dd>Profile Completion Pending</dd>
+              <dd>Profile Invitation Sent</dd>
             </div>
             <div>
               <dt>Security rule</dt>
@@ -165,8 +167,9 @@ export default async function StaffInvitationPage({
           <p className="request-label">After completion</p>
           <ul>
             <li>Staff receives profile-completion notification.</li>
-            <li>Credential and billing review resumes from staff queue.</li>
-            <li>Activation occurs only after final staff decision.</li>
+            <li>Submitted profile moves to GenAdmin Verification.</li>
+            <li>Correction requests reopen only the flagged profile sections.</li>
+            <li>Activation occurs only after Administrator or Super Admin final approval.</li>
           </ul>
         </article>
       </section>

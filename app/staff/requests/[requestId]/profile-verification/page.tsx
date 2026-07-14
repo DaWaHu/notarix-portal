@@ -12,13 +12,6 @@ type StaffProfileVerificationPageProps = {
   }>;
 };
 
-const verificationSummary = [
-  ["Submitted profile", "Received", "Profile completion received for staff review."],
-  ["Credentials", "Pending", "Each required record must be verified before activation."],
-  ["Portal status", "Inactive", "Portal access remains disabled until final approval."],
-  ["Financial access", "Restricted", "Payable permissions require elevated approval."],
-] as const;
-
 export default async function StaffProfileVerificationPage({
   params,
 }: StaffProfileVerificationPageProps) {
@@ -32,35 +25,66 @@ export default async function StaffProfileVerificationPage({
   const pendingCount = verificationItems.filter(
     (item) => item.status !== "Verified",
   ).length;
+  const verificationSummary =
+    request.type === "Notary"
+      ? [
+          ["Activation", "Locked", `${pendingCount} required controls unresolved.`],
+          ["Credential posture", "Pending", "Identity, commission, insurance, RON, tax, and payable records."],
+          ["RON authority", "Restricted", "Remote services remain disabled until authorization is verified."],
+          ["Financial authority", "Restricted", "W-9 and payable activation require elevated approval."],
+        ]
+      : [
+          ["Activation", "Locked", `${pendingCount} required controls unresolved.`],
+          ["Client authority", "Pending", "Organization, representative, users, orders, and compliance records."],
+          ["Order access", "Restricted", "Client order submission remains disabled until authority is verified."],
+          ["Billing authority", "Restricted", "Billing setup and payment terms require elevated approval."],
+        ];
+  const reviewScope =
+    request.type === "Notary"
+      ? "credential evidence, payable readiness, RON authority, and activation restrictions"
+      : "organization authority, billing readiness, user access, document controls, order permissions, and activation restrictions";
 
   return (
     <main className="staff-page">
       <header className="staff-header">
         <a className="brand" href="/">
           <img src="/notarix-logo.png" alt="Notarix Signings" />
+          <span>Secure Staff Operations</span>
         </a>
         <nav aria-label="Profile verification navigation">
+          <a href="/">Home</a>
           <a href="/staff/requests">Staff Queue</a>
           <a href={`/staff/requests/${request.id}`}>Request Review</a>
           <a className="nav-cta" href={`/profile/complete/${request.id}`}>
             Submitted Profile
           </a>
+          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
         </nav>
       </header>
 
       <section className="review-hero">
         <div>
-          <p className="kicker">Profile verification workspace</p>
-          <h1>{request.id}</h1>
+          <p className="kicker">Staff Verification Console · Controlled Access</p>
+          <h1>
+            {request.type === "Notary"
+              ? "Notary Profile Verification"
+              : "Client Profile Verification"}
+          </h1>
+          <div className="console-meta" aria-label="Profile verification metadata">
+            <span>{request.id}</span>
+            <span>{request.type} profile</span>
+            <span>{request.status}</span>
+            <span>{pendingCount} items unresolved</span>
+          </div>
           <p>
-            Verify the submitted profile, credential evidence, payable readiness,
-            and activation restrictions before Notarix staff enables portal access.
+            Verify the submitted profile, {reviewScope} before Notarix Signings
+            enables portal access.
           </p>
         </div>
         <aside>
-          <p>Activation decision</p>
-          <strong>{pendingCount} items require review</strong>
-          <span>Account remains inactive until staff approval is complete.</span>
+          <p>Operational hold</p>
+          <strong>Activation prohibited</strong>
+          <span>{pendingCount} controls require staff verification and audit attribution.</span>
         </aside>
       </section>
 

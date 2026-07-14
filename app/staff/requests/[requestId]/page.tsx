@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireChatGPTUser } from "../../../chatgpt-auth";
-import { findAccessRequest } from "../data";
+import { findAccessRequest, profileLifecycleStages } from "../data";
 
 type StaffRequestReviewPageProps = {
   params: Promise<{
@@ -24,11 +24,13 @@ export default async function StaffRequestReviewPage({
           <img src="/notarix-logo.png" alt="Notarix Signings" />
         </a>
         <nav aria-label="Staff review navigation">
+          <a href="/">Home</a>
           <a href="/staff/requests">Staff Queue</a>
           <a href="/portal">Access Form</a>
           <a className="nav-cta" href={`/staff/requests/${request.id}`}>
             Open Review
           </a>
+          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
         </nav>
       </header>
 
@@ -117,6 +119,18 @@ export default async function StaffRequestReviewPage({
         <ReviewChecklist title="Eligibility review" items={request.eligibilityItems} />
         <ReviewChecklist title="Credential review" items={request.credentialItems} />
         <ReviewChecklist title="Activation requirements" items={request.activationItems} />
+      </section>
+
+      <section className="review-panel audit-panel" aria-label="Profile lifecycle">
+        <div className="review-panel-heading">
+          <p className="request-label">Operational workflow</p>
+          <h2>Profile lifecycle path</h2>
+        </div>
+        <ol>
+          {profileLifecycleStages.map((stage) => (
+            <li key={stage}>{stage}</li>
+          ))}
+        </ol>
       </section>
 
       <section className="review-panel audit-panel" aria-label="Audit history">

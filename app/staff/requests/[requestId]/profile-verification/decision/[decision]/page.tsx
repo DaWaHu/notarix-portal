@@ -1,10 +1,14 @@
 import { notFound } from "next/navigation";
 import { requireChatGPTUser } from "../../../../../../chatgpt-auth";
 import {
+  activationAuditRequirements,
   activationDecisions,
   canActivateProfile,
   findAccessRequest,
+  generalAdminReviewers,
   getProfileVerificationItems,
+  profileNumberAssignmentRule,
+  profileNumberFormatExample,
   profileNumberLabel,
   type ActivationDecisionSlug,
 } from "../../../../data";
@@ -47,6 +51,7 @@ export default async function StaffProfileDecisionPage({
           <img src="/notarix-logo.png" alt="Notarix Signings" />
         </a>
         <nav aria-label="Activation decision navigation">
+          <a href="/">Home</a>
           <a href="/staff/requests">Staff Queue</a>
           <a href={`/staff/requests/${request.id}/profile-verification`}>
             Profile Verification
@@ -54,6 +59,7 @@ export default async function StaffProfileDecisionPage({
           <a className="nav-cta" href={`/staff/requests/${request.id}`}>
             Request Review
           </a>
+          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
         </nav>
       </header>
 
@@ -76,7 +82,7 @@ export default async function StaffProfileDecisionPage({
           </strong>
           <span>
             {request.approvedProfileNumber ??
-              `Approval will assign ${request.projectedProfileNumber}`}
+              `${profileNumberPrefixText(request.type)} generated at approval`}
           </span>
         </aside>
       </section>
@@ -93,8 +99,7 @@ export default async function StaffProfileDecisionPage({
             <p className="decision-lock-note">
               Approval is blocked because stored verification records still contain
               pending, deficient, or restricted items. The {profileNumberLabel(request.type)}{" "}
-              is reserved as {request.projectedProfileNumber} and must not be assigned
-              until activation is complete.
+              must be generated at activation, not reserved before approval.
             </p>
           ) : null}
           <div className="decision-impact-grid">
@@ -138,8 +143,16 @@ export default async function StaffProfileDecisionPage({
               <dd>{request.approvedProfileNumber ?? "Not assigned"}</dd>
             </div>
             <div>
-              <dt>Reserved on approval</dt>
-              <dd>{request.projectedProfileNumber}</dd>
+              <dt>Activation assignment</dt>
+              <dd>Not reserved before activation</dd>
+            </div>
+            <div>
+              <dt>Numbering rule</dt>
+              <dd>{profileNumberAssignmentRule(request.type)}</dd>
+            </div>
+            <div>
+              <dt>Format example</dt>
+              <dd>{profileNumberFormatExample(request.type)}</dd>
             </div>
             <div>
               <dt>Current status</dt>
@@ -182,6 +195,39 @@ export default async function StaffProfileDecisionPage({
           </div>
         </aside>
       </section>
+
+      <section className="decision-workspace" aria-label="Internal audit accountability">
+        <article className="review-panel">
+          <p className="request-label">Internal audit report</p>
+          <h2>Approval accountability</h2>
+          <div className="decision-impact-grid">
+            {activationAuditRequirements.map((requirement) => (
+              <section key={requirement}>
+                <p>Audit field</p>
+                <strong>{requirement}</strong>
+              </section>
+            ))}
+          </div>
+        </article>
+
+        <aside className="review-panel decision-panel">
+          <p className="request-label">General admin tracking</p>
+          <h2>Reviewer identities</h2>
+          <div className="compact-verification-list">
+            {generalAdminReviewers.map((reviewer) => (
+              <section key={reviewer}>
+                <span>Staff ID</span>
+                <strong>{reviewer}</strong>
+                <p>Actions must be attributable in the internal audit report.</p>
+              </section>
+            ))}
+          </div>
+        </aside>
+      </section>
     </main>
   );
+}
+
+function profileNumberPrefixText(type: "Client" | "Notary"): string {
+  return type === "Notary" ? "NSN" : "NSC";
 }

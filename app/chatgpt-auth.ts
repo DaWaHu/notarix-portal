@@ -85,7 +85,10 @@ export function localStaffCookieName(): string {
 }
 
 export function isLocalDevHost(host: string | null): boolean {
-  return host === "localhost:3000" || host === "127.0.0.1:3000";
+  if (!host) return false;
+  const hostname = host.split(":")[0];
+
+  return hostname === "localhost" || hostname === "127.0.0.1";
 }
 
 export function safeAuthReturnPath(value: string | null): string {

@@ -20,6 +20,7 @@ const notarySections = [
   "Address and contact",
   "Phone verification",
   "Payable setup",
+  "W-9 form",
   "Background check",
   "E&O insurance",
   "Identity verification",
@@ -35,6 +36,7 @@ const notaryProfileLinks = [
   ["Address and Contact", "#address-contact"],
   ["Phone Verification", "#phone-verification"],
   ["Payable Setup", "#payable-setup"],
+  ["W-9 Form", "#w9-form"],
   ["Background Check", "#background-check"],
   ["E&O Insurance", "#eo-insurance"],
   ["Identity Verification", "#identity-verification"],
@@ -48,7 +50,12 @@ const notaryProfileLinks = [
 const clientProfileLinks = [
   ["Overview", "#profile-overview"],
   ["Client Type", "#client-type"],
+  ["Organization", "#client-organization"],
+  ["Addresses", "#client-addresses"],
+  ["Billing", "#client-billing"],
   ["Authorized Users", "#authorized-users"],
+  ["Document Rules", "#document-rules"],
+  ["Service Access", "#service-access"],
   ["Submit", "#submit-profile"],
 ] as const;
 
@@ -60,6 +67,7 @@ const credentialOverviewItems = [
   "Notary Commission",
   "RON Training",
   "RON Digital Certificate",
+  "W-9 Form",
   "Payable Onboarding",
 ];
 
@@ -84,24 +92,53 @@ export default async function ProfileCompletionPage({
     : "Complete your client profile";
 
   return (
-    <main className="profile-page">
-      <header className="portal-header compact">
-        <div className="brand" aria-label="Notarix Signings">
+    <main className="staff-page profile-page">
+      <header className="staff-header">
+        <a className="brand" href="/">
           <img src="/notarix-logo.png" alt="Notarix Signings" />
-        </div>
-        <nav aria-label="Profile completion navigation">
           <span>Secure Profile Completion</span>
+        </a>
+        <nav aria-label="Profile completion navigation">
+          <a href="/">Home</a>
+          <a className="nav-cta" href="#submit-profile">Submit Profile</a>
         </nav>
       </header>
 
-      <section className="profile-hero">
-        <p className="kicker">Notarix Signings onboarding</p>
-        <h1>{profileTitle}</h1>
-        <p>
-          Complete the required profile sections for {request.organization}.
-          Notarix staff will review the submission before any portal access,
-          financial permissions, or RON capabilities are activated.
-        </p>
+      <section className="review-hero profile-hero">
+        <div>
+          <p className="kicker">Profile Invitation Sent · Secure Completion</p>
+          <h1>{profileTitle}</h1>
+          <div className="console-meta" aria-label="Profile completion metadata">
+            <span>{request.id}</span>
+            <span>{request.type} profile</span>
+            <span>{request.status}</span>
+          </div>
+          <p>
+            Complete the required profile sections for {request.organization}.
+            Notarix staff will review the submission before any portal access,
+            financial permissions, order access, or RON capabilities are activated.
+          </p>
+        </div>
+        <aside>
+          <p>Next status</p>
+          <strong>Profile Submitted</strong>
+          <span>Submission routes this file to GenAdmin Verification.</span>
+        </aside>
+      </section>
+
+      <section className="verification-summary" aria-label="Profile completion process">
+        {[
+          ["Step 1", "Complete profile", "Provide required identity, authority, contact, credential, billing, or payable data."],
+          ["Step 2", "Upload evidence", "Attach certificates, forms, rosters, authorizations, and supporting records."],
+          ["Step 3", "Submit for review", "Submitted records lock for staff review unless corrections are requested."],
+          ["Step 4", "Verification", "GenAdmin verifies before Administrator or Super Admin final approval."],
+        ].map(([label, value, description]) => (
+          <article key={label}>
+            <p>{label}</p>
+            <strong>{value}</strong>
+            <span>{description}</span>
+          </article>
+        ))}
       </section>
 
       <section className="profile-layout" aria-label="Profile completion workspace">
@@ -166,11 +203,26 @@ export default async function ProfileCompletionPage({
             />
           </label>
 
+          <section className="profile-note" aria-label="Submission and notification consent">
+            <p>
+              Selecting submit moves this profile to GenAdmin Verification. The
+              submitted profile is locked for staff review, except for sections
+              returned through a correction request.
+            </p>
+            <label className="check-row">
+              <input name="Approval notification consent" type="checkbox" />
+              I consent to receive profile approval notices by email and by phone
+              message at the phone number provided. Message and data rates may
+              apply.
+            </label>
+          </section>
+
           <div className="form-actions">
             <button type="button">Submit Profile for Staff Review</button>
             <p>
-              Submission notifies Notarix staff. Access remains inactive until
-              verification is complete.
+              Submission notifies Notarix staff and changes the record to Profile
+              Submitted. Access remains inactive until GenAdmin verification and
+              Administrator or Super Admin final approval are complete.
             </p>
           </div>
         </form>
@@ -217,18 +269,159 @@ function ClientProfileFields() {
           </select>
         </label>
         <label>
-          Billing contact email
-          <input name="Billing contact email" type="email" />
+          Client relationship
+          <select name="Client relationship" defaultValue="">
+            <option value="">Select relationship</option>
+            <option>Closing client</option>
+            <option>Recurring title partner</option>
+            <option>Law firm account</option>
+            <option>One-time customer</option>
+            <option>Business account</option>
+          </select>
         </label>
       </div>
-      <label id="authorized-users">
-        Authorized users
-        <textarea
-          name="Authorized users"
-          rows={4}
-          placeholder="List authorized users who may submit Notarix Signings orders."
+
+      <ProfileSection
+        id="client-organization"
+        title="Organization authority"
+        note="Staff must confirm who controls the client account before order, document, or billing access is enabled."
+      >
+        <div className="field-row">
+          <label>
+            Legal entity or customer name
+            <input name="Legal entity or customer name" placeholder="Coleman Title Group" />
+          </label>
+          <label>
+            DBA or office name
+            <input name="DBA or office name" placeholder="Coleman Title - Raleigh Office" />
+          </label>
+        </div>
+        <div className="field-row">
+          <label>
+            Authorized representative
+            <input name="Authorized representative" placeholder="Avery Coleman" />
+          </label>
+          <label>
+            Representative title
+            <input name="Representative title" placeholder="Managing Attorney or Escrow Officer" />
+          </label>
+        </div>
+        <DocumentAttachment
+          label="Authority or business verification"
+          note="Attach bar lookup, title company registration, business registration, or signed account authority."
         />
-      </label>
+      </ProfileSection>
+
+      <ProfileSection
+        id="client-addresses"
+        title="Client addresses and phone numbers"
+        note="Business, mailing, and billing addresses may differ. Staff verifies which address controls notices and billing."
+      >
+        <label>
+          Business Address
+          <input name="Business Address" placeholder="210 Market Street, Raleigh, NC 27601" />
+        </label>
+        <label>
+          Mailing Address
+          <input name="Mailing Address" placeholder="PO Box 2110, Raleigh, NC 27602" />
+        </label>
+        <div className="field-row">
+          <label>
+            Office Phone
+            <input name="Office Phone" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="555-234-6789" />
+          </label>
+          <label>
+            Billing Phone
+            <input name="Billing Phone" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="555-456-7890" />
+          </label>
+        </div>
+      </ProfileSection>
+
+      <ProfileSection
+        id="client-billing"
+        title="Billing and payment authorization"
+        note="Invoice terms, payment methods, and billing changes require Administrator or Super Admin approval."
+      >
+        <div className="field-row">
+          <label>
+            Billing contact email
+            <input name="Billing contact email" type="email" />
+          </label>
+          <label>
+            Payment preference
+            <select name="Payment preference" defaultValue="">
+              <option value="">Select payment preference</option>
+              <option>Invoice after service</option>
+              <option>Card on file</option>
+              <option>ACH authorization</option>
+              <option>Payment before service</option>
+            </select>
+          </label>
+        </div>
+        <DocumentAttachment
+          label="Billing authorization"
+          note="Attach signed billing authorization, engagement agreement, or approved payment terms."
+        />
+      </ProfileSection>
+
+      <ProfileSection
+        id="authorized-users"
+        title="Authorized portal users"
+        note="Each user should receive an individual account. Shared accounts should not be approved."
+      >
+        <label>
+          Authorized users
+          <textarea
+            name="Authorized users"
+            rows={4}
+            placeholder="List authorized users who may submit Notarix Signings orders."
+          />
+        </label>
+        <label>
+          Approved email domain
+          <input name="Approved email domain" placeholder="coleman-title.example" />
+        </label>
+        <DocumentAttachment
+          label="Authorized user roster"
+          note="Attach a roster when multiple employees may submit orders or upload documents."
+        />
+      </ProfileSection>
+
+      <ProfileSection
+        id="document-rules"
+        title="Document handling rules"
+        note="Staff must know who may upload, replace, retrieve, or receive notarized documents."
+      >
+        <label>
+          Document delivery instructions
+          <textarea
+            name="Document delivery instructions"
+            rows={4}
+            placeholder="Describe secure delivery, return documents, retention needs, and restricted recipients."
+          />
+        </label>
+      </ProfileSection>
+
+      <ProfileSection
+        id="service-access"
+        title="Requested service access"
+        note="Order permissions remain disabled until the requested service types and jurisdiction are approved."
+      >
+        <div className="checklist-grid compact">
+          {[
+            "Mobile notarial services",
+            "Electronic notarization",
+            "Remote online notarization",
+            "Loan signing appointments",
+            "General notary appointments",
+          ].map((service) => (
+            <label className="check-row" key={service}>
+              <input name="Requested service access" type="checkbox" />
+              {service}
+            </label>
+          ))}
+        </div>
+      </ProfileSection>
     </>
   );
 }
@@ -354,7 +547,28 @@ function NotaryProfileFields() {
         </p>
         <DocumentAttachment
           label="Payable onboarding document"
-          note="Attach W-9, payment authorization, or external provider confirmation."
+          note="Attach payment authorization or external provider confirmation. W-9 is collected separately."
+        />
+      </ProfileSection>
+
+      <ProfileSection
+        id="w9-form"
+        title="W-9 form"
+        note="A completed W-9 is required before payable activation. Financial review and tax record handling require elevated staff controls."
+      >
+        <div className="field-row">
+          <label>
+            W-9 Legal Name
+            <input name="W-9 Legal Name" />
+          </label>
+          <label>
+            W-9 Business Name
+            <input name="W-9 Business Name" />
+          </label>
+        </div>
+        <DocumentAttachment
+          label="Completed W-9 Form"
+          note="Attach the completed W-9. General Admin may view completion status but cannot approve payable activation."
         />
       </ProfileSection>
 
@@ -422,7 +636,7 @@ function NotaryProfileFields() {
       <ProfileSection
         id="identity-verification"
         title="Identity verification"
-        note="Driver's license or government ID verification must be recorded without exposing unnecessary ID data to general staff."
+        note="Identity verification must use an approved provider capable of document analysis, camera-based selfie capture, and liveness checks from a phone or computer."
       >
         <div className="field-row three-column">
           <label>
@@ -447,9 +661,9 @@ function NotaryProfileFields() {
             Verification Type
             <select name="Verification Type" defaultValue="">
               <option value="">Select verification type</option>
-              <option>Manual staff review</option>
-              <option>Credential analysis provider</option>
-              <option>RON provider verification</option>
+              <option>Identity proofing provider with selfie and liveness check</option>
+              <option>RON provider credential analysis</option>
+              <option>Manual exception review with Administrator approval</option>
             </select>
           </label>
           <label>
@@ -457,9 +671,24 @@ function NotaryProfileFields() {
             <input name="ID Expiration Date" placeholder="Dec 31 2026" />
           </label>
         </div>
+        <div className="field-row">
+          <label>
+            Identity Proofing Provider
+            <input name="Identity Proofing Provider" placeholder="Approved identity verification provider" />
+          </label>
+          <label>
+            Liveness / Selfie Result
+            <select name="Liveness / Selfie Result" defaultValue="">
+              <option value="">Select result</option>
+              <option>Passed</option>
+              <option>Failed</option>
+              <option>Manual escalation required</option>
+            </select>
+          </label>
+        </div>
         <DocumentAttachment
-          label="Government ID or Driver's License Verification"
-          note="Attach verified ID record or credential-analysis confirmation."
+          label="Identity Proofing Result"
+          note="Attach provider result showing document analysis, selfie/liveness check, and staff verification outcome."
         />
       </ProfileSection>
 
