@@ -8,7 +8,8 @@ import {
 import {
   activateStoredProfile,
   appendStoredNotifications,
-  getStoredAccessRequest,
+  getPersistedAccessRequest,
+  persistStoredAccessRequest,
   updateRequestStatus,
 } from "../../requests/store";
 
@@ -32,7 +33,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const { requestId } = await context.params;
   await requireChatGPTUser(`/staff/workflow/${requestId}`);
 
-  const profileRequest = getStoredAccessRequest(requestId);
+  const profileRequest = await getPersistedAccessRequest(requestId);
   if (!profileRequest) notFound();
 
   return Response.json({
@@ -52,7 +53,7 @@ export async function POST(request: Request, context: RouteContext) {
   const { requestId } = await context.params;
   const user = await requireChatGPTUser(`/staff/workflow/${requestId}`);
 
-  const profileRequest = getStoredAccessRequest(requestId);
+  const profileRequest = await getPersistedAccessRequest(requestId);
   if (!profileRequest) notFound();
 
   const payload = await safeJson(request);
@@ -96,10 +97,14 @@ export async function POST(request: Request, context: RouteContext) {
       transition.notifications,
     );
   }
+  const persistence = storedRequest
+    ? await persistStoredAccessRequest(storedRequest)
+    : { persisted: false };
 
   return Response.json({
     ...transition,
     persisted: true,
+    persistence,
     storedRequest: {
       auditEventCount: storedRequest?.storedAuditEvents.length ?? 0,
       notifications: storedRequest?.storedNotifications ?? [],

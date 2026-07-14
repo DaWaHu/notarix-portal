@@ -2216,6 +2216,10 @@ test("keeps product rules in the local governance file", async () => {
     new URL("../app/staff/command-center/store.ts", import.meta.url),
     "utf8",
   );
+  const workflowStore = await readFile(
+    new URL("../app/staff/requests/store.ts", import.meta.url),
+    "utf8",
+  );
   const commandMigration = await readFile(
     new URL("../drizzle/0001_watery_doorman.sql", import.meta.url),
     "utf8",
@@ -2280,6 +2284,12 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(commandStore, /schema\.commandCenterTargets/);
   assert.match(commandStore, /schema\.commandCenterEvents/);
   assert.match(commandStore, /schema\.commandCenterReceipts/);
+  assert.match(workflowStore, /getPersistedAccessRequest/);
+  assert.match(workflowStore, /persistStoredAccessRequest/);
+  assert.match(workflowStore, /schema\.accessRequests/);
+  assert.match(workflowStore, /schema\.profileVerificationItems/);
+  assert.match(workflowStore, /schema\.workflowAuditEvents/);
+  assert.match(workflowStore, /schema\.workflowNotifications/);
   assert.match(dbIndex, /await import\("cloudflare:workers"\)/);
   assert.match(css, /request-card:nth-child\(even\)/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);

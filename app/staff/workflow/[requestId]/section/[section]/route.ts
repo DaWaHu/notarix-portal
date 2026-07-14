@@ -5,7 +5,8 @@ import {
   type WorkflowSectionTransition,
 } from "../../../../requests/workflow";
 import {
-  getStoredAccessRequest,
+  getPersistedAccessRequest,
+  persistStoredAccessRequest,
   updateVerificationSection,
 } from "../../../../requests/store";
 
@@ -26,7 +27,7 @@ export async function POST(request: Request, context: SectionRouteContext) {
   const { requestId, section } = await context.params;
   const user = await requireChatGPTUser(`/staff/workflow/${requestId}/section/${section}`);
 
-  const profileRequest = getStoredAccessRequest(requestId);
+  const profileRequest = await getPersistedAccessRequest(requestId);
   if (!profileRequest) notFound();
 
   const payload = await safeJson(request);
@@ -59,10 +60,14 @@ export async function POST(request: Request, context: SectionRouteContext) {
     user.fullName ?? user.email,
     transition.auditEvent,
   );
+  const persistence = storedRequest
+    ? await persistStoredAccessRequest(storedRequest)
+    : { persisted: false };
 
   return Response.json({
     ...transition,
     persisted: true,
+    persistence,
     storedRequest: {
       auditEventCount: storedRequest?.storedAuditEvents.length ?? 0,
       sectionStatus:
