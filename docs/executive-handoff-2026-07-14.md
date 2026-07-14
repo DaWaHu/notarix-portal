@@ -1,343 +1,237 @@
 # Notarix Signings Executive Handoff
 
-Date: Jul 14 2026  
-Workspace: `/Users/hudlinbe/Desktop/100 Notarix Signing`  
-Branch: `codex/notarix-portal-checkpoint`  
-Latest checkpoint: `ce08168 Add admin platform configuration center`  
+Date: Jul 14 2026
+Workspace: `/Users/hudlinbe/Desktop/100 Notarix Signing`
+Branch: `codex/notarix-portal-checkpoint`
+Latest checkpoint: `1e3f2d6 Persist profile workflow state to D1`
 Verification status: `npm test` passed, 31 of 31 tests passing
 
 ## Executive Summary
 
-The Notarix Signings portal has reached a strong product-build milestone. The portal now includes mature, role-based operational workspaces for staff, clients, and notaries, with a consistent executive console composition across profile verification, order operations, appointment controls, signer readiness, evidence, financials, notifications, closeout, and platform configuration.
+The Notarix Signings portal is now past the page-build phase and is moving through production hardening. The portal has a consistent executive operations composition across staff, client, and notary experiences, and the core workflow endpoints are no longer just returning transition contracts. Major operational records now have D1-backed persistence paths with local preview fallback.
 
-The work completed today moved the platform from a set of strong workflow pages into a more unified operational system. The Order is now treated as the central system record across intake, assignment, signer readiness, appointment confirmation, document validation, completion package, delivery receipt, payable posture, closeout, and command activity.
+The Order remains the central system record. The profile request remains the central onboarding record before approval. Command-center receipts now function as the audit bridge between visible workflow actions and stored operational state.
 
-The current product is not yet production-deployed, but it is now far enough along that the remaining work should shift from creating more core pages to binding the workflows to production-grade services: persistent data, identity provider enforcement, encrypted storage, malware scanning, real notifications, financial provider integration, monitoring, backups, and deployment configuration.
+The product is not production-deployed yet. The remaining work is primarily infrastructure and provider binding: production identity provider MFA/passkeys, D1 deployment/seeding, encrypted file storage, malware scanning provider, notification providers, financial provider integration, backups, retention enforcement, audit immutability, monitoring, and final deployment configuration.
 
 ## Current Progress Status
 
-### Portal UI and Workflow Coverage
+Portal UI and workflow coverage: 90 percent to 93 percent complete.
 
-Estimated completion: 88 percent to 92 percent.
+Backend persistence and workflow hardening: 60 percent to 68 percent complete.
 
-This includes the designed portal experience, route coverage, role views, staff consoles, client and notary pages, order workflow pages, command feedback, and compliance-aware page composition.
+Overall full deployment readiness: 72 percent to 78 percent complete.
 
-### Backend and Production Services
+This estimate increased because the latest work moved profile workflow state, order workflow state, and command-center audit receipts from in-memory-only behavior toward D1-backed persistence with preview fallback.
 
-Estimated completion: 45 percent to 55 percent.
+## Latest Commits
 
-The app has modeled data, command receipts, workflow endpoints, and schema groundwork, but still needs full production database binding, provider integrations, encrypted object storage, malware scanning, identity-provider enforcement, and immutable audit infrastructure.
+- `1e3f2d6 Persist profile workflow state to D1`
+- `5b43824 Persist command center receipts to D1`
+- `e768733 Persist order workflow actions through repository`
+- `62766df Expand order persistence schema and repository`
+- `8ae8110 Add executive project handoff report`
+- `ce08168 Add admin platform configuration center`
 
-### Overall Full Deployment Readiness
+## Completed Since Prior Handoff
 
-Estimated completion: 65 percent to 70 percent.
-
-The product surface is advanced. The remaining deployment risk is mostly infrastructure, provider binding, persistence hardening, security enforcement, and end-to-end production testing.
-
-## Completed Major Workstreams
-
-### Brand and Composition Foundation
-
-- Mature Notarix Signings visual direction established.
-- Consistent operational console layout established:
-  - top secure staff/client/notary header
-  - executive hero
-  - status summary cards
-  - left console rail
-  - central control matrix
-  - right command/control panel
-- Pages now feel like a secured operations portal rather than disconnected prototypes.
-
-### Role-Based Portal Routing
+### Order Persistence Foundation
 
 Completed:
 
-- Staff role landing page
-- GenAdmin routing
-- Admin routing
-- SuperAdmin routing
-- Client portal home
-- Notary portal home
-- Role-appropriate navigation and access notes
+- Added D1 schema tables for order operational records.
+- Added order lifecycle, signer readiness, appointments, closeout, client delivery receipts, and notary completion receipts.
+- Generated migration `drizzle/0002_magical_thena.sql`.
+- Added `app/order-repository.ts` as the D1-first order data access boundary.
+- Updated staff, client, and notary order pages to read through the repository.
 
-Important routes:
+### Order Workflow Action Persistence
+
+Completed:
+
+- Command-center order actions now update stored order operational status through the repository when D1 is available.
+- Local preview fallback remains active when the Cloudflare `DB` binding is absent.
+- Staff, client, and notary action endpoints await persisted workflow transitions.
+
+### Command Center Audit Persistence
+
+Completed:
+
+- Command-center actions now persist target, event, and receipt records into D1 when available.
+- Command activity log is D1-first.
+- Individual command receipt pages are D1-first.
+- In-memory store remains available for local preview and tests.
+- Governance tests now protect command-center D1 persistence functions.
+
+### Profile Workflow Persistence
+
+Completed:
+
+- Profile workflow state is D1-backed when the database binding is available.
+- Access requests persist to `access_requests`.
+- Verification sections persist to `profile_verification_items`.
+- Workflow audit events persist to `workflow_audit_events`.
+- Workflow notifications persist to `workflow_notifications`.
+- `/staff/workflow/:requestId` reads D1-first and writes successful transitions back to D1.
+- `/staff/workflow/:requestId/section/:section` reads D1-first and writes section verification changes back to D1.
+- Local preview fallback remains intact.
+
+## Core Pages Completed
+
+### Public and Access
+
+- `/`
+- `/portal`
+- `/signin-with-chatgpt`
+
+### Staff
 
 - `/staff`
-- `/client`
-- `/notary`
-
-### Profile Intake and Verification
-
-Completed:
-
-- Contact/access request intake
-- Profile invitation flow
-- Notary profile completion
-- Client profile completion
-- Notary profile verification console
-- Client profile verification console
-- Profile correction response
-- Elevated approval
-- Activation completion route
-- Restricted profile audit report
-- Two-step approval logic concept: GenAdmin verification, then Admin or SuperAdmin final approval
-
-Important routes:
-
-- `/portal`
-- `/profile/complete/NSR-1001`
-- `/profile/complete/NSR-1002`
 - `/staff/requests`
+- `/staff/requests/NSR-1001`
 - `/staff/requests/NSR-1001/profile-verification`
+- `/staff/requests/NSR-1002/profile-verification`
 - `/staff/elevated-approval`
-
-### Evidence and Document Controls
-
-Completed:
-
-- Evidence file viewer
-- Evidence intake review page
-- Document vault
-- Document malware and validation queue
-- Restricted evidence posture
-- Client-safe document filtering on client completion receipt
-- Staff-only evidence, malware, and audit language
-
-Important routes:
-
-- `/documents`
-- `/evidence/DOC-2607-0001`
-- `/staff/evidence-intake`
-- `/staff/document-validation`
-
-### Financial Controls
-
-Completed:
-
-- Financial controls workspace
-- Financial reporting and payment ledger center
-- Payable restriction modeling
-- W-9 restriction language
-- Ledger correction controls
-- Payment hold command feedback
-
-Important routes:
-
+- `/staff/elevated-approval/NSR-1001`
 - `/staff/financial-controls`
 - `/staff/financial-reports`
+- `/staff/audit-reports`
+- `/staff/evidence-intake`
+- `/staff/document-validation`
+- `/staff/retention`
+- `/staff/system-health`
+- `/staff/access-control`
+- `/staff/integrations`
+- `/staff/platform`
 
-### Notifications and Communications
+### Command Center
 
-Completed:
+- `/staff/command-center`
+- `/staff/command-center/activity`
+- `/staff/command-center/receipt/:receiptId`
 
-- Notification delivery log / communications center
-- Email and phone-message approval notice records
-- Consent posture
-- Failed notice retry handling
-- Communications command feedback
+### Profile Owner
 
-Important route:
+- `/profile/complete/NSR-1001`
+- `/profile/complete/NSR-1002`
+- `/profile/corrections/NSR-1001`
+- `/profile/active/NSR-1001`
 
-- `/notifications`
-
-### Credential Expiration and Renewal
-
-Completed:
-
-- Credential expiration / renewal monitoring center
-- Notary commission monitoring
-- E&O insurance renewal posture
-- RON digital certificate restrictions
-- Client billing authorization monitoring
-- Renewal reminder command feedback
-
-Important route:
-
-- `/credentials/expiration`
-
-### Order Operations Lifecycle
-
-Completed:
-
-- Order Operations Command Center
-- Order Lifecycle Intake Queue
-- Order Case File
-- Staff assignment operations
-- Signer Readiness and Identity Check Center
-- Appointment Scheduling and Confirmation Center
-- Order Closeout and Delivery Console
-- Client Order Management Console
-- Client Order Delivery Receipt
-- Notary Assignment Console
-- Notary Completion Package and Payable Status View
-
-Important routes:
+### Orders
 
 - `/staff/orders`
 - `/staff/order-intake`
 - `/staff/signers`
 - `/staff/appointments`
 - `/staff/order-closeout`
+- `/staff/orders/ORD-2607-0001/assignment`
 - `/orders/ORD-2607-0001`
+
+### Client
+
+- `/client`
+- `/client/dashboard`
 - `/client/orders`
 - `/client/orders/ORD-2607-0001/completion`
+
+### Notary
+
+- `/notary`
+- `/notary/dashboard`
 - `/notary/assignments`
 - `/notary/assignments/ORD-2607-0001/completion`
+- `/credentials/expiration`
 
-### Command Center and Workflow Feedback
+### Documents and Communications
 
-Completed:
+- `/documents`
+- `/evidence/DOC-2607-0001`
+- `/notifications`
 
-- Command center endpoint
-- Command receipt page
-- Command activity log
-- Visible status feedback on source pages
-- Staff, client, and notary workflow actions
-- Blocked command retention
-- Persistence contract for command targets, events, and receipts
+## Current Architecture Notes
 
-Important routes:
+- D1 access is guarded behind `getOptionalDb()` in `db/index.ts`.
+- The Cloudflare `cloudflare:workers` import is lazy-loaded so Node-based local tests do not break.
+- Local preview remains intentionally seed-backed when `DB` is unavailable.
+- D1-first modules now include:
+  - `app/order-repository.ts`
+  - `app/staff/command-center/store.ts`
+  - `app/staff/requests/store.ts`
+- Tests intentionally assert these persistence boundaries so future work does not regress into seed-only behavior.
 
-- `/staff/command-center`
-- `/staff/command-center/activity`
-- `/staff/command-center/receipt/:receiptId`
+## Production Gaps Remaining
 
-### Security, Retention, Platform Readiness
+### Critical Before Deployment
 
-Completed:
+- Configure production D1 binding and apply migrations.
+- Add seed/import routine for initial access requests, profile items, order records, command targets, and operational reference data.
+- Bind real identity provider with MFA, passkeys, device controls, and role claims.
+- Replace local preview staff-role headers with provider-backed RBAC.
+- Add encrypted file storage, likely R2 or equivalent object storage.
+- Add malware scanning provider and block file release until scan completion.
+- Add real email provider and phone/SMS provider.
+- Add notification consent and delivery callback handling.
+- Add production audit immutability strategy.
+- Add backup and restore verification.
+- Add environment-specific secrets management.
+- Add deployment configuration for the selected host.
 
-- Access Control Center
-- System Health and Recovery Center
-- Provider Integration Status Center
-- Retention and Records Policy Center
-- Super Admin Audit Reporting Center
-- Admin Platform Configuration Center
+### Important Next Layer
 
-Important routes:
+- Persist evidence metadata and file custody to D1/R2.
+- Persist document validation results and malware scan outcomes.
+- Persist financial ledger controls and payment release state.
+- Persist credential expiration records and renewal reminders.
+- Add admin seed/reconciliation tools for records that start in local modeled data.
+- Add role-claim tests for GenAdmin, Admin, SuperAdmin, Client, and Notary.
 
-- `/staff/access-control`
-- `/staff/system-health`
-- `/staff/integrations`
-- `/staff/retention`
-- `/staff/audit-reports`
-- `/staff/platform`
+## Recommended Next Task
 
-## Most Recent Completed Checkpoints
+Start with **D1 seed and reconciliation tooling**.
 
-- `ce08168 Add admin platform configuration center`
-- `21aa802 Add staff signer readiness center`
-- `2e71a27 Add staff appointment confirmation center`
-- `bd3f61c Add notary completion package view`
-- `9d1abc9 Add client order delivery receipt view`
-- `f3e0062 Complete staff order closeout console`
-- `d0dab2a Complete staff order lifecycle intake queue`
-- `11e7e5b Connect client and notary order lifecycle actions`
-- `78a7f2a Complete order case file lifecycle workflow`
-- `45f6bbd Checkpoint Notarix portal operations foundation`
+Reason: the application now has D1-backed persistence paths, but production deployment needs a reliable way to populate baseline operational records into D1. Without seeding/reconciliation, pages can fall back locally in preview but production D1 may start empty.
 
-## Current Verified State
+Recommended scope:
 
-The working tree was clean at the time of this handoff.
+1. Create a seed module or script for baseline data.
+2. Seed access requests and profile verification items.
+3. Seed order operational records and lifecycle records.
+4. Seed command-center targets for notifications, credentials, ledger, evidence, retention, system, access, integrations, and orders.
+5. Make seeding idempotent through upsert logic.
+6. Add a test or governance assertion confirming seed coverage.
 
-The test suite passed:
+## Verification Snapshot
 
-```text
+Last verified command:
+
+```bash
 npm test
-31 tests passed
-0 failed
 ```
 
-The build route surface includes the key portal areas:
+Result:
 
-- public landing and access intake
-- profile completion and activation
-- staff request and verification pages
-- client portal pages
-- notary portal pages
-- order lifecycle pages
-- evidence and document pages
-- financial pages
-- notification pages
-- security, retention, audit, integration, and platform configuration pages
+```text
+31 tests passing
+```
 
-## What Not To Duplicate Tomorrow
+Last whitespace check:
 
-Do not rebuild or redesign these from scratch:
+```bash
+git diff --check
+```
 
-- Notary profile verification page
-- Client profile verification page
-- Role-based landing pages
-- Command center activity log
-- Evidence/file viewer
-- Evidence intake
-- Document malware validation queue
-- Financial controls
-- Financial reporting and ledger center
-- Notification delivery log
-- Credential expiration center
-- Order operations page
-- Order intake queue
-- Order case file
-- Signer readiness center
-- Appointment confirmation center
-- Client order delivery receipt
-- Notary completion package view
-- Order closeout console
-- Platform configuration center
+Result: clean.
 
-If refinement is needed, refine these existing pages in place.
+## Immediate Start Instructions For Next Session
 
-## Remaining Required Work
-
-### Highest Priority Next Work
-
-1. Start binding modeled records to real persistent storage.
-2. Expand database-backed repositories beyond current workflow and command contracts.
-3. Decide the production identity provider and role-claim structure.
-4. Design encrypted file storage binding with signed access URLs.
-5. Define provider integration credentials and environment separation.
-
-### Production Infrastructure Still Needed
-
-- Database binding for all profile, order, signer, appointment, document, notification, financial, and configuration records.
-- Production identity provider with MFA, passkeys, device controls, RBAC claims, and session policy.
-- Encrypted object storage for evidence and order documents.
-- Signed document access URLs.
-- Malware scanning provider and quarantine workflow.
-- Email/SMS/phone delivery provider with callbacks, retry handling, and consent enforcement.
-- Payment/accounting provider for invoices, notary payables, W-9/tax onboarding, ledger exports, and correction controls.
-- Immutable audit storage or append-only audit strategy.
-- Backup, restore, monitoring, and incident response workflows.
-- Deployment environment configuration.
-- Domain, DNS, secrets, and provider credentials.
-
-### Product Pages That May Still Be Useful
-
-These are not as urgent as persistence/provider work, but may be useful:
-
-- Admin user-management detail page for staff accounts.
-- Client billing settings page refinement.
-- Notary payable history page.
-- Calendar or schedule board view.
-- Super Admin deployment readiness checklist.
-- Production launch checklist page.
-
-## Recommended Next Step Tomorrow
-
-Recommended next step: **begin database persistence expansion for the order/profile operational records**.
-
-The portal has enough page coverage now. The best move is to stop adding broad new UI surfaces temporarily and make the system more real underneath.
-
-Suggested first technical target:
-
-1. Define database tables for order records, order lifecycle records, signer readiness, appointments, closeout controls, delivery receipts, and notary completion receipts.
-2. Replace selected `operations-data.ts` arrays with repository functions.
-3. Keep the current modeled data as seed data.
-4. Preserve the page composition and route behavior exactly while swapping the data source.
-5. Extend tests so pages render from the repository layer, not only local constants.
-
-## Executive Assessment
-
-The Notarix Signings portal is in a strong position. The executive-operations design language is now consistent, the role structure is clear, and the order lifecycle has been substantially mapped from intake through closeout. The main risk is no longer page coverage. The main risk is production readiness: persistence, identity, file security, provider integrations, immutable audit, and deployment controls.
-
-Tomorrow should focus on converting the current modeled system into a production-capable system without disturbing the page composition we worked hard to establish.
+1. Open workspace:
+   `/Users/hudlinbe/Desktop/100 Notarix Signing`
+2. Confirm status:
+   `git status --short`
+3. Confirm latest commit:
+   `git log --oneline -5`
+4. Start task:
+   Build idempotent D1 seed/reconciliation tooling for baseline profile, order, and command-center records.
+5. Run:
+   `npm test`
+6. Commit the checkpoint.
