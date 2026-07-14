@@ -2,9 +2,9 @@ export const notificationProviderEnvironmentContract = {
   credentials:
     "Email and SMS provider credentials must be injected through environment secrets, never source files.",
   email:
-    "Email delivery can bind NOTARIX_EMAIL_API_KEY, SENDGRID_API_KEY, or an equivalent provider key.",
+    "Email delivery can bind NOTARIX_EMAIL_API_KEY, SENDGRID_API_KEY, or an equivalent provider key. SendGrid-style event callbacks should carry a notificationId in custom_args or unique_args.",
   sms:
-    "SMS and phone delivery can bind NOTARIX_SMS_API_KEY, TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, or equivalent provider credentials.",
+    "SMS and phone delivery can bind NOTARIX_SMS_API_KEY, TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, or equivalent provider credentials. Twilio-style status callbacks should include MessageSid, MessageStatus or SmsStatus, and notificationId.",
   webhooks:
     "Provider callbacks must be verified with HMAC-SHA256 over timestamp and raw request body before delivery state changes are accepted.",
 } as const;
@@ -58,6 +58,38 @@ export async function getNotificationProviderBinding(channel: string) {
     ),
     provider: "Production email provider",
     requiredSecrets: [...notificationProviderSecretNames.emailApiKey],
+  };
+}
+
+export async function getNotificationProviderEnvironmentStatus() {
+  const env = await getRuntimeEnv();
+  return {
+    email: {
+      configured: Boolean(
+        firstEnvValue(env, notificationProviderSecretNames.emailApiKey),
+      ),
+      provider: "Production email provider",
+      requiredKeys: notificationProviderSecretNames.emailApiKey,
+      webhookConfigured: Boolean(
+        firstEnvValue(env, notificationProviderSecretNames.emailWebhookSecret),
+      ),
+      webhookSecretKeys: notificationProviderSecretNames.emailWebhookSecret,
+    },
+    sms: {
+      accountConfigured: Boolean(
+        firstEnvValue(env, notificationProviderSecretNames.smsAccountId),
+      ),
+      configured: Boolean(firstEnvValue(env, notificationProviderSecretNames.smsApiKey)),
+      provider: "Production SMS and voice provider",
+      requiredKeys: [
+        ...notificationProviderSecretNames.smsApiKey,
+        ...notificationProviderSecretNames.smsAccountId,
+      ],
+      webhookConfigured: Boolean(
+        firstEnvValue(env, notificationProviderSecretNames.smsWebhookSecret),
+      ),
+      webhookSecretKeys: notificationProviderSecretNames.smsWebhookSecret,
+    },
   };
 }
 

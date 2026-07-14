@@ -1749,6 +1749,73 @@ test("records notification provider dispatch, consent, and delivery callbacks", 
   assert.match(updatedHtml, /Delivered/);
   assert.match(updatedHtml, /TEL-NTF-2607-0002/);
   assert.match(updatedHtml, /Recorded consent/);
+
+  const sendGridBody = JSON.stringify([
+    {
+      custom_args: { notificationId: "NTF-2607-0004" },
+      event: "delivered",
+      sg_message_id: "sendgrid-message-id",
+    },
+  ]);
+  const sendGridCallbackResponse = await requestRoute(
+    "/notifications/provider-callback",
+    {
+      body: sendGridBody,
+      headers: signedNotificationCallbackHeaders(sendGridBody, "sendgrid"),
+      method: "POST",
+    },
+  );
+  assert.equal(sendGridCallbackResponse.status, 200);
+  const sendGridCallback = await sendGridCallbackResponse.json();
+  assert.equal(sendGridCallback.nextStatus, "Delivered");
+  assert.equal(sendGridCallback.providerMessageId, "sendgrid-message-id");
+
+  const twilioBody =
+    "notificationId=NTF-2607-0002&MessageSid=SM26070002&MessageStatus=delivered";
+  const twilioCallbackResponse = await requestRoute(
+    "/notifications/provider-callback",
+    {
+      body: twilioBody,
+      headers: {
+        ...signedNotificationCallbackHeaders(twilioBody, "twilio"),
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      method: "POST",
+    },
+  );
+  assert.equal(twilioCallbackResponse.status, 200);
+  const twilioCallback = await twilioCallbackResponse.json();
+  assert.equal(twilioCallback.nextStatus, "Delivered");
+  assert.equal(twilioCallback.providerMessageId, "SM26070002");
+});
+
+test("reports provider environment readiness without exposing secrets", async () => {
+  const lockedResponse = await requestRoute("/staff/provider-environment", {
+    headers: {
+      "content-type": "application/json",
+      "oai-authenticated-user-email": "staff@example.com",
+    },
+  });
+  assert.equal(lockedResponse.status, 404);
+
+  const response = await requestRoute("/staff/provider-environment", {
+    headers: {
+      "content-type": "application/json",
+      "oai-authenticated-user-email": "admin@example.com",
+      "x-notarix-staff-role": "Admin",
+    },
+  });
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.notificationProviders.email.configured, false);
+  assert.equal(body.notificationProviders.email.webhookConfigured, false);
+  assert.equal(body.notificationProviders.sms.configured, false);
+  assert.equal(body.notificationProviders.sms.webhookConfigured, false);
+  assert.deepEqual(body.notificationProviders.email.requiredKeys, [
+    "NOTARIX_EMAIL_API_KEY",
+    "SENDGRID_API_KEY",
+  ]);
+  assert.ok(!JSON.stringify(body).includes("local-preview-notification-webhook-secret"));
 });
 
 test("protects staff-only assignment operations", async () => {
@@ -2543,6 +2610,10 @@ test("keeps product rules in the local governance file", async () => {
     new URL("../app/notification-provider-config.ts", import.meta.url),
     "utf8",
   );
+  const notificationDeploymentDoc = await readFile(
+    new URL("../docs/notification-provider-deployment.md", import.meta.url),
+    "utf8",
+  );
   const commandStore = await readFile(
     new URL("../app/staff/command-center/store.ts", import.meta.url),
     "utf8",
@@ -2605,6 +2676,10 @@ test("keeps product rules in the local governance file", async () => {
   );
   const notificationCallbackRoute = await readFile(
     new URL("../app/notifications/provider-callback/route.ts", import.meta.url),
+    "utf8",
+  );
+  const providerEnvironmentRoute = await readFile(
+    new URL("../app/staff/provider-environment/route.ts", import.meta.url),
     "utf8",
   );
   const packageJson = await readFile(
@@ -2707,14 +2782,27 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(notificationDispatchRoute, /requireStaffRouteAccess/);
   assert.match(notificationCallbackRoute, /recordNotificationProviderCallback/);
   assert.match(notificationCallbackRoute, /verifyNotificationProviderWebhook/);
+  assert.match(notificationCallbackRoute, /sg_message_id/);
+  assert.match(notificationCallbackRoute, /MessageStatus/);
   assert.match(notificationProviderConfig, /notificationProviderEnvironmentContract/);
   assert.match(notificationProviderConfig, /x-notarix-provider-signature/);
   assert.match(notificationProviderConfig, /SENDGRID_API_KEY/);
   assert.match(notificationProviderConfig, /TWILIO_AUTH_TOKEN/);
   assert.match(notificationProviderConfig, /NOTARIX_NOTIFICATION_WEBHOOK_SECRET/);
+  assert.match(notificationProviderConfig, /getNotificationProviderEnvironmentStatus/);
   assert.match(notificationProviderConfig, /HMAC/);
   assert.match(notificationProviderConfig, /crypto\.subtle/);
   assert.match(notificationProviderConfig, /constantTimeEqual/);
+  assert.match(providerEnvironmentRoute, /getNotificationProviderEnvironmentStatus/);
+  assert.match(providerEnvironmentRoute, /Admin/);
+  assert.match(providerEnvironmentRoute, /SuperAdmin/);
+  assert.match(notificationDeploymentDoc, /Notification Provider Deployment Contract/);
+  assert.match(notificationDeploymentDoc, /appgprj_6a516eb2e3908191b8b57cedf686b8e4/);
+  assert.match(notificationDeploymentDoc, /SENDGRID_API_KEY/);
+  assert.match(notificationDeploymentDoc, /TWILIO_AUTH_TOKEN/);
+  assert.match(notificationDeploymentDoc, /\/notifications\/provider-callback/);
+  assert.match(notificationDeploymentDoc, /SendGrid-style event payload/);
+  assert.match(notificationDeploymentDoc, /Twilio-style form callback/);
   assert.match(orderRepository, /orderRepositoryPersistenceContract/);
   assert.match(orderRepository, /D1-first repository/);
   assert.match(orderRepository, /listOrderOperations/);

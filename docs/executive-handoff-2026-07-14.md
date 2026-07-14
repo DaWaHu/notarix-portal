@@ -3,8 +3,8 @@
 Date: Jul 14 2026
 Workspace: `/Users/hudlinbe/Desktop/100 Notarix Signing`
 Branch: `codex/notarix-portal-checkpoint`
-Latest checkpoint: Notification provider environment binding and webhook signature verification pending current commit
-Verification status: `npm test` passed, 35 of 35 tests passing
+Latest checkpoint: Notification provider deployment contract and native callback validation pending current commit
+Verification status: `npm test` passed, 36 of 36 tests passing
 
 ## Executive Summary
 
@@ -30,6 +30,7 @@ It increased again after adding D1 evidence storage controls for encrypted objec
 It increased again after adding signed evidence access decisions, malware scan callback updates, and retained evidence access receipts.
 It increased again after adding notification provider dispatch, delivery callbacks, retained provider events, and consent records.
 It increased again after binding notification providers to environment-secret configuration and replacing callback signature presence checks with HMAC-SHA256 verification.
+It increased again after adding provider-native callback normalization for SendGrid-style email events and Twilio-style SMS callbacks, plus an Admin/SuperAdmin provider environment readiness endpoint.
 
 ## Latest Commits
 
@@ -180,6 +181,10 @@ Completed:
 - Production runtimes require provider webhook secrets from environment bindings.
 - HMAC comparison uses a constant-time comparison helper.
 - Dispatch records now distinguish configured provider credentials from local preview or unconfigured provider state.
+- Added `/staff/provider-environment` for Admin/SuperAdmin readiness checks without exposing secret values.
+- Added `docs/notification-provider-deployment.md` with Sites runtime secret names, callback URL, supported provider payloads, and deployment validation steps.
+- `/notifications/provider-callback` now normalizes internal JSON callbacks, SendGrid-style event payloads, and Twilio-style form callbacks.
+- Current Sites runtime status checked: no notification provider environment variables are configured yet.
 
 ## Core Pages Completed
 
@@ -255,6 +260,7 @@ Completed:
 - `/notifications`
 - `/notifications/:notificationId/dispatch`
 - `/notifications/provider-callback`
+- `/staff/provider-environment`
 
 ## Current Architecture Notes
 
@@ -287,6 +293,8 @@ Completed:
   - `app/notifications/provider-callback/route.ts`
 - Notification provider environment binding and webhook verification now lives in:
   - `app/notification-provider-config.ts`
+- Notification provider deployment runbook now lives in:
+  - `docs/notification-provider-deployment.md`
 
 ## Production Gaps Remaining
 
@@ -297,7 +305,7 @@ Completed:
 - Confirm production deployment strips or ignores preview-only staff-role headers before application routing.
 - Bind encrypted file storage credentials and object APIs, likely R2 or equivalent object storage, to the evidence repository.
 - Bind malware scanning provider callback authentication and provider webhook verification.
-- Configure real production email/SMS secrets in the deployment environment.
+- Configure real production email/SMS secrets in the Sites deployment environment.
 - Confirm selected provider callback payload format and signature headers before production cutover.
 - Add production audit immutability strategy.
 - Add backup and restore verification.
@@ -317,13 +325,13 @@ Completed:
 
 ## Recommended Next Task
 
-Start with **deployment environment configuration and provider-specific callback contract validation**.
+Start with **adding actual Sites runtime secret values for the selected email/SMS providers**.
 
-Reason: the notification workflow now has D1-backed delivery records, dispatch events, consent retention, provider callback updates, environment-secret credential binding, and HMAC webhook verification. The next critical production blocker is configuring the actual deployment environment and confirming the selected email/SMS provider callback contract.
+Reason: the notification workflow now has D1-backed delivery records, dispatch events, consent retention, provider callback updates, environment-secret credential binding, HMAC webhook verification, SendGrid-style callback normalization, Twilio-style callback normalization, and a safe readiness endpoint. The current blocker is that Sites has no notification provider secrets configured.
 
 Recommended scope:
 
-1. Add production secrets for selected email and SMS providers.
+1. Add production secrets for selected email and SMS providers in Sites.
 2. Confirm callback URLs for the provider control plane.
 3. Validate provider-native payload shape against `/notifications/provider-callback`.
 4. Add retry/backoff and suppression policy for failed, bounced, or opted-out delivery.
@@ -340,7 +348,7 @@ npm test
 Result:
 
 ```text
-35 tests passing
+36 tests passing
 ```
 
 Last whitespace check:
@@ -360,7 +368,7 @@ Result: clean.
 3. Confirm latest commit:
    `git log --oneline -5`
 4. Start task:
-   Begin deployment environment configuration and provider-specific callback contract validation.
+   Add actual Sites runtime secret values for the selected email/SMS providers.
 5. Run:
    `npm test`
 6. Commit the checkpoint.
