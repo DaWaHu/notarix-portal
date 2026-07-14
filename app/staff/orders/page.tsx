@@ -32,6 +32,7 @@ export default async function OrderOperationsCommandCenterPage() {
           <a href="/staff">Staff Home</a>
           <a href="/staff/requests">Staff Queue</a>
           <a href="/staff/order-intake">Order Intake</a>
+          <a href="/staff/order-closeout">Order Closeout</a>
           <a href="/staff/document-validation">Document Validation</a>
           <a href="/staff/financial-reports">Financial Reports</a>
           <a href="/notifications">Communications</a>
@@ -205,6 +206,7 @@ export default async function OrderOperationsCommandCenterPage() {
                 <input name="targetId" type="hidden" value="ORD-2607-0001" />
                 <button type="submit">Route Financial Review</button>
               </form>
+              <a href="/staff/order-closeout">Open Closeout Console</a>
               <form action="/staff/command-center" method="post">
                 <input name="action" type="hidden" value="hold-order" />
                 <input name="targetId" type="hidden" value="ORD-2607-0002" />

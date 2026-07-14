@@ -263,6 +263,75 @@ export const orderCompletionRecords = [
   },
 ] as const;
 
+export const orderCloseoutRecords = [
+  {
+    id: "OCL-2607-0001",
+    orderId: "ORD-2607-0001",
+    control: "Completion package validation",
+    status: "Locked",
+    evidence: "Executed documents, notarial certificate, completion notes, and notary upload receipt",
+    owner: "Admin",
+    authority: "Administrator or Super Admin",
+    lastUpdated: "Pending appointment completion",
+    nextAction: "Record completion package after notary upload and validate custody before client delivery.",
+  },
+  {
+    id: "OCL-2607-0002",
+    orderId: "ORD-2607-0001",
+    control: "Client document delivery",
+    status: "Release pending",
+    evidence: "Validated document package, delivery recipient, and signed access link",
+    owner: "Admin",
+    authority: "Administrator or Super Admin",
+    lastUpdated: "Jul 18 2026 at 4:20 PM ET",
+    nextAction: "Release validated documents only after access classification and recipient authorization are confirmed.",
+  },
+  {
+    id: "OCL-2607-0003",
+    orderId: "ORD-2607-0001",
+    control: "Client invoice release",
+    status: "Held",
+    evidence: "Client billing authority, invoice terms, and order completion status",
+    owner: "Administrator",
+    authority: "Administrator or Super Admin",
+    lastUpdated: "Jul 18 2026 at 4:24 PM ET",
+    nextAction: "Route invoice through financial review after delivery and completion package validation clear.",
+  },
+  {
+    id: "OCL-2607-0004",
+    orderId: "ORD-2607-0001",
+    control: "Notary payable routing",
+    status: "Restricted",
+    evidence: "Notary payable eligibility, W-9 control, assignment receipt, and completion package",
+    owner: "Administrator",
+    authority: "Administrator or Super Admin",
+    lastUpdated: "Jul 18 2026 at 4:25 PM ET",
+    nextAction: "Keep payable release locked until completion, W-9, and elevated approval controls are satisfied.",
+  },
+  {
+    id: "OCL-2607-0005",
+    orderId: "ORD-2607-0001",
+    control: "Communication confirmation",
+    status: "Failed notice",
+    evidence: "Client delivery notice, notary status notice, and delivery log",
+    owner: "GenAdmin001",
+    authority: "Authorized staff with escalation path",
+    lastUpdated: "Jul 18 2026 at 4:22 PM ET",
+    nextAction: "Resolve failed client notice before final closeout or escalate repeated delivery failure.",
+  },
+  {
+    id: "OCL-2607-0006",
+    orderId: "ORD-2607-0001",
+    control: "Retention and audit closeout",
+    status: "Locked",
+    evidence: "Command receipts, delivery log, invoice release, payable routing, and retention policy",
+    owner: "Super Admin",
+    authority: "Super Admin",
+    lastUpdated: "Pending closeout",
+    nextAction: "Close only after delivery, financial, communication, and retention controls are complete.",
+  },
+] as const;
+
 export const orderLifecycleIntakeRecords = [
   {
     id: "OIN-2607-0001",
@@ -1029,6 +1098,12 @@ export function lifecycleForOrder(orderId: string) {
 
 export function completionControlsForOrder(orderId: string) {
   return orderCompletionRecords.filter(
+    (control) => control.orderId.toLowerCase() === orderId.toLowerCase(),
+  );
+}
+
+export function closeoutControlsForOrder(orderId: string) {
+  return orderCloseoutRecords.filter(
     (control) => control.orderId.toLowerCase() === orderId.toLowerCase(),
   );
 }
