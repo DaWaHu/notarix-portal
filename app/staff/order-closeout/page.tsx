@@ -9,8 +9,8 @@ import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 export default async function OrderCloseoutAndDeliveryConsolePage() {
   await requireChatGPTUser("/staff/order-closeout");
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
-  const orders = listOrderOperations();
-  const closeoutControls = listOrderCloseoutControls();
+  const orders = await listOrderOperations();
+  const closeoutControls = await listOrderCloseoutControls();
   const pendingControls = closeoutControls.filter(
     (record) => !["complete", "released", "closed"].includes(record.status.toLowerCase()),
   ).length;

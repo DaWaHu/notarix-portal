@@ -6,7 +6,7 @@ import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 export default async function OrderOperationsCommandCenterPage() {
   await requireChatGPTUser("/staff/orders");
   const latestCommandReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
-  const orders = listOrderOperations();
+  const orders = await listOrderOperations();
   const unassignedCount = orders.filter(
     (order) => order.notary === "Unassigned",
   ).length;

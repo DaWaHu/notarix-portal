@@ -5,9 +5,9 @@ import {
 import { CommandStatusPanel } from "../../staff/command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../../staff/command-center/store";
 
-export default function ClientOrderManagementConsolePage() {
+export default async function ClientOrderManagementConsolePage() {
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
-  const clientOrders = listOrderOperations().filter(
+  const clientOrders = (await listOrderOperations()).filter(
     (order) => order.client === "Coleman Title Group",
   );
   const documentCount = clientOrders.reduce(

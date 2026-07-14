@@ -95,7 +95,7 @@ export async function POST(request: Request) {
   }
 
   const role = normalizeRole(request.headers.get("x-notarix-staff-role") ?? payload.role);
-  const transition = applyCommandCenterAction(
+  const transition = await applyCommandCenterAction(
     action as CommandCenterAction,
     user.fullName ?? user.email,
     role,

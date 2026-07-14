@@ -15,10 +15,10 @@ export default async function ClientOrderCompletionReceiptPage({
   params,
 }: ClientOrderCompletionPageProps) {
   const { orderId } = await params;
-  const order = getOrderOperation(orderId);
+  const order = await getOrderOperation(orderId);
   if (!order) notFound();
 
-  const receipts = listOrderDeliveryReceipts(order.id);
+  const receipts = await listOrderDeliveryReceipts(order.id);
   const documents = listOrderDocuments(order.id).filter(
     (document) =>
       document.access.toLowerCase().includes("client") &&

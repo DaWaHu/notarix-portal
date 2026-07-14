@@ -14,11 +14,11 @@ type OrderDetailPageProps = {
 
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
   const { orderId } = await params;
-  const order = getOrderOperation(orderId);
+  const order = await getOrderOperation(orderId);
   if (!order) notFound();
 
   const documents = listOrderDocuments(order.id);
-  const lifecycle = listOrderLifecycle(order.id);
+  const lifecycle = await listOrderLifecycle(order.id);
   const closeoutControls = listOrderCompletionControls(order.id);
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
   const openLifecycleCount = lifecycle.filter(

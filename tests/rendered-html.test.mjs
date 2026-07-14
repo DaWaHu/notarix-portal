@@ -2207,8 +2207,13 @@ test("keeps product rules in the local governance file", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
   const schema = await readFile(new URL("../db/schema.ts", import.meta.url), "utf8");
+  const dbIndex = await readFile(new URL("../db/index.ts", import.meta.url), "utf8");
   const orderRepository = await readFile(
     new URL("../app/order-repository.ts", import.meta.url),
+    "utf8",
+  );
+  const commandStore = await readFile(
+    new URL("../app/staff/command-center/store.ts", import.meta.url),
     "utf8",
   );
   const commandMigration = await readFile(
@@ -2263,9 +2268,13 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(orderMigration, /CREATE TABLE `order_delivery_receipts`/);
   assert.match(orderMigration, /CREATE TABLE `notary_completion_receipts`/);
   assert.match(orderRepository, /orderRepositoryPersistenceContract/);
+  assert.match(orderRepository, /D1-first repository/);
   assert.match(orderRepository, /listOrderOperations/);
   assert.match(orderRepository, /listSignerReadiness/);
   assert.match(orderRepository, /listAppointmentConfirmations/);
+  assert.match(orderRepository, /persistOrderCommandTransition/);
+  assert.match(commandStore, /await persistOrderCommandTransition/);
+  assert.match(dbIndex, /await import\("cloudflare:workers"\)/);
   assert.match(css, /request-card:nth-child\(even\)/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 });

@@ -7,9 +7,9 @@ const bernadetteCredentials = credentialMonitorRecords.filter(
   (credential) => credential.owner === "Bernadette W Hudlin",
 );
 
-export default function NotaryAssignmentConsolePage() {
+export default async function NotaryAssignmentConsolePage() {
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
-  const assignments = listNotaryAssignments();
+  const assignments = await listNotaryAssignments();
   const restrictedCredentials = bernadetteCredentials.filter(
     (credential) =>
       credential.status.toLowerCase().includes("restricted") ||

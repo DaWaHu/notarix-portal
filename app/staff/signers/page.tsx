@@ -6,7 +6,7 @@ import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 export default async function SignerReadinessIdentityCheckPage() {
   await requireChatGPTUser("/staff/signers");
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
-  const signers = listSignerReadiness();
+  const signers = await listSignerReadiness();
   const pendingIdentity = signers.filter((record) =>
     record.identityStatus.toLowerCase().includes("pending"),
   ).length;

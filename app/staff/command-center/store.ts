@@ -9,6 +9,7 @@ import {
   retentionPolicyRecords,
   systemHealthRecords,
 } from "../../operations-data";
+import { persistOrderCommandTransition } from "../../order-repository";
 import { evidenceRecords } from "../../evidence-data";
 import type { WorkflowActorRole } from "../requests/workflow";
 
@@ -538,12 +539,12 @@ export function getCommandCenterReceipt(
   );
 }
 
-export function applyCommandCenterAction(
+export async function applyCommandCenterAction(
   action: CommandCenterAction,
   actor: string,
   role: CommandActorRole,
   targetId?: string,
-): {
+): Promise<{
   action: CommandCenterAction;
   allowed: boolean;
   auditEvent: string;
@@ -557,7 +558,7 @@ export function applyCommandCenterAction(
   event?: StoredCommandEvent;
   receipt: StoredCommandReceipt;
   receiptId: string;
-} {
+}> {
   const definition = commandDefinitions[action];
   const resolvedTargetId = (targetId || definition.defaultTargetId).toUpperCase();
   const authority = authorityLabel(definition.authority);
@@ -644,6 +645,14 @@ export function applyCommandCenterAction(
     targetType: target.type,
   });
   const event = appendCommandEvent(store, receipt);
+  const orderPersistence =
+    target.type === "Order"
+      ? await persistOrderCommandTransition({
+          auditEvent,
+          nextStatus: definition.nextStatus,
+          targetId: resolvedTargetId,
+        })
+      : { persisted: false };
 
   return {
     action,
@@ -653,7 +662,7 @@ export function applyCommandCenterAction(
     currentStatus: previousStatus,
     event: { ...event },
     nextStatus: definition.nextStatus,
-    persisted: true,
+    persisted: target.type === "Order" ? orderPersistence.persisted : true,
     receipt,
     receiptId: receipt.id,
     targetId: resolvedTargetId,

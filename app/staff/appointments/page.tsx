@@ -6,7 +6,7 @@ import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 export default async function AppointmentSchedulingConfirmationPage() {
   await requireChatGPTUser("/staff/appointments");
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
-  const appointments = listAppointmentConfirmations();
+  const appointments = await listAppointmentConfirmations();
   const confirmationReady = appointments.filter((record) =>
     record.status.toLowerCase().includes("ready"),
   ).length;

@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const transition = applyCommandCenterAction(
+  const transition = await applyCommandCenterAction(
     action,
     "Avery Coleman",
     "Client",

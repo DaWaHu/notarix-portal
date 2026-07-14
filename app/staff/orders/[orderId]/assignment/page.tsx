@@ -11,7 +11,7 @@ type StaffAssignmentPageProps = {
 
 export default async function StaffAssignmentPage({ params }: StaffAssignmentPageProps) {
   const { orderId } = await params;
-  const order = getOrderOperation(orderId);
+  const order = await getOrderOperation(orderId);
   if (!order) notFound();
   await requireChatGPTUser(`/staff/orders/${order.id}/assignment`);
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");

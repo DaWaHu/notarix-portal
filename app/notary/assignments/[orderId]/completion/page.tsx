@@ -15,10 +15,10 @@ export default async function NotaryCompletionPackagePage({
   params,
 }: NotaryCompletionPageProps) {
   const { orderId } = await params;
-  const order = getOrderOperation(orderId);
+  const order = await getOrderOperation(orderId);
   if (!order || order.notary === "Unassigned") notFound();
 
-  const receipts = listNotaryCompletionReceipts(order.id);
+  const receipts = await listNotaryCompletionReceipts(order.id);
   const documents = listOrderDocuments(order.id).filter((document) =>
     document.access.toLowerCase().includes("notary"),
   );
