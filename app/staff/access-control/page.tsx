@@ -33,6 +33,7 @@ export default async function AccessControlPage() {
           <a href="/">Home</a>
           <a href="/staff">Staff Home</a>
           <a href="/staff/system-health">System Health</a>
+          <a href="/staff/platform">Platform Configuration</a>
           <a href="/staff/audit-reports">Audit Reports</a>
           <a href="/staff/command-center/activity">Command Activity</a>
           <a className="nav-cta" href="/staff/access-control">Access Control</a>

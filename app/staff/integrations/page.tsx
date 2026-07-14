@@ -33,6 +33,7 @@ export default async function ProviderIntegrationsPage() {
           <a href="/staff">Staff Home</a>
           <a href="/staff/system-health">System Health</a>
           <a href="/staff/access-control">Access Control</a>
+          <a href="/staff/platform">Platform Configuration</a>
           <a href="/staff/document-validation">Document Validation</a>
           <a className="nav-cta" href="/staff/integrations">Integrations</a>
           <a href="/signout-with-chatgpt?return_to=/">Logout</a>

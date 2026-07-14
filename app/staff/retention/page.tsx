@@ -30,6 +30,7 @@ export default async function RetentionPolicyPage() {
           <a href="/staff">Staff Home</a>
           <a href="/staff/evidence-intake">Evidence Intake</a>
           <a href="/staff/document-validation">Document Validation</a>
+          <a href="/staff/platform">Platform Configuration</a>
           <a href="/staff/audit-reports">Audit Reports</a>
           <a className="nav-cta" href="/staff/retention">Retention</a>
           <a href="/signout-with-chatgpt?return_to=/">Logout</a>

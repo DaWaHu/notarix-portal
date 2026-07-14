@@ -34,6 +34,7 @@ export default async function SystemHealthPage() {
           <a href="/staff/retention">Retention</a>
           <a href="/staff/access-control">Access Control</a>
           <a href="/staff/integrations">Integrations</a>
+          <a href="/staff/platform">Platform Configuration</a>
           <a href="/staff/audit-reports">Audit Reports</a>
           <a className="nav-cta" href="/staff/system-health">System Health</a>
           <a href="/signout-with-chatgpt?return_to=/">Logout</a>

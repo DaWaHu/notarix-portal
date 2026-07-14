@@ -689,11 +689,13 @@ test("server-renders role-based portal landing pages", async () => {
   assert.match(adminHtml, /Evidence Intake/);
   assert.match(adminHtml, /Document Validation/);
   assert.match(adminHtml, /Retention/);
+  assert.match(adminHtml, /Platform Configuration/);
   assert.match(adminHtml, /System Health/);
   assert.match(adminHtml, /Access Control/);
   assert.match(adminHtml, /Integrations/);
   assert.match(adminHtml, /Super Admin audit retention holds and ledger correction overrides remain restricted/);
   assert.match(adminHtml, /href="\/staff\/financial-reports"/);
+  assert.match(adminHtml, /href="\/staff\/platform"/);
   assert.match(adminHtml, /href="\/staff\/command-center\/activity"/);
 
   const superAdminResponse = await render("/staff", {
@@ -713,11 +715,13 @@ test("server-renders role-based portal landing pages", async () => {
   assert.match(superAdminHtml, /Evidence Intake/);
   assert.match(superAdminHtml, /Document Validation/);
   assert.match(superAdminHtml, /Retention/);
+  assert.match(superAdminHtml, /Platform Configuration/);
   assert.match(superAdminHtml, /System Health/);
   assert.match(superAdminHtml, /Access Control/);
   assert.match(superAdminHtml, /Integrations/);
   assert.match(superAdminHtml, /Restricted Evidence/);
   assert.match(superAdminHtml, /href="\/staff\/audit-reports"/);
+  assert.match(superAdminHtml, /href="\/staff\/platform"/);
   assert.match(superAdminHtml, /href="\/staff\/command-center\/activity"/);
   assert.match(superAdminHtml, /All restricted controls are visible here/);
 
@@ -1164,6 +1168,7 @@ test("server-renders the protected system health and recovery center", async () 
   assert.match(html, /Production readiness requires real provider monitoring/);
   assert.match(html, /href="\/staff\/access-control"/);
   assert.match(html, /href="\/staff\/integrations"/);
+  assert.match(html, /href="\/staff\/platform"/);
   assert.match(html, /Logout/);
 });
 
@@ -1196,6 +1201,7 @@ test("server-renders the protected identity provider and access control center",
   assert.match(html, /Escalate Privilege Exception/);
   assert.match(html, /No command submitted/);
   assert.match(html, /Production access control must be enforced server-side/);
+  assert.match(html, /href="\/staff\/platform"/);
   assert.match(html, /Logout/);
 });
 
@@ -1227,6 +1233,40 @@ test("server-renders the protected provider integration status center", async ()
   assert.match(html, /Escalate Provider Risk/);
   assert.match(html, /No command submitted/);
   assert.match(html, /Production provider integrations require secrets management/);
+  assert.match(html, /href="\/staff\/platform"/);
+  assert.match(html, /Logout/);
+});
+
+test("server-renders the protected platform configuration center", async () => {
+  const lockedResponse = await render("/staff/platform");
+  assert.equal(lockedResponse.status, 307);
+  assert.match(lockedResponse.headers.get("location") ?? "", /signin-with-chatgpt/);
+
+  const response = await render("/staff/platform", {
+    "oai-authenticated-user-email": "superadmin@example.com",
+    "x-notarix-staff-role": "SuperAdmin",
+  });
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Admin Platform Configuration Center/);
+  assert.match(html, /Platform configuration control matrix/);
+  assert.match(html, /Service catalog/);
+  assert.match(html, /Jurisdiction rules/);
+  assert.match(html, /Credential expiration/);
+  assert.match(html, /Notification templates/);
+  assert.match(html, /Document retention/);
+  assert.match(html, /Financial rules/);
+  assert.match(html, /Security baseline/);
+  assert.match(html, /Verify Identity Provider/);
+  assert.match(html, /Verify Backup Readiness/);
+  assert.match(html, /Require MFA \/ Passkey Reset/);
+  assert.match(html, /Place Retention Hold/);
+  assert.match(html, /Open System Health/);
+  assert.match(html, /Open Integrations/);
+  assert.match(html, /Open Access Control/);
+  assert.match(html, /Open Retention/);
+  assert.match(html, /Production configuration changes should require authenticated/);
   assert.match(html, /Logout/);
 });
 
@@ -2108,6 +2148,16 @@ test("persists command center workflow actions", async () => {
   assert.match(integrationFeedbackHtml, /Latest command result/);
   assert.match(integrationFeedbackHtml, /Integration Verified/);
   assert.match(integrationFeedbackHtml, /verify-provider-integration[\s\S]*updated[\s\S]*INT-2607-0001/);
+
+  const platformFeedbackResponse = await render("/staff/platform", {
+    "oai-authenticated-user-email": "superadmin@example.com",
+    "x-notarix-staff-role": "SuperAdmin",
+  });
+  assert.equal(platformFeedbackResponse.status, 200);
+  const platformFeedbackHtml = await platformFeedbackResponse.text();
+  assert.match(platformFeedbackHtml, /Latest command result/);
+  assert.match(platformFeedbackHtml, /Integration Verified/);
+  assert.match(platformFeedbackHtml, /verify-provider-integration[\s\S]*updated[\s\S]*INT-2607-0001/);
 
   const orderFeedbackResponse = await render("/staff/orders", {
     "oai-authenticated-user-email": "admin@example.com",
