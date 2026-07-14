@@ -1,21 +1,22 @@
 import { requireChatGPTUser } from "../../chatgpt-auth";
-import { appointmentConfirmationRecords } from "../../operations-data";
+import { listAppointmentConfirmations } from "../../order-repository";
 import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function AppointmentSchedulingConfirmationPage() {
   await requireChatGPTUser("/staff/appointments");
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
-  const confirmationReady = appointmentConfirmationRecords.filter((record) =>
+  const appointments = listAppointmentConfirmations();
+  const confirmationReady = appointments.filter((record) =>
     record.status.toLowerCase().includes("ready"),
   ).length;
-  const pendingConfirmation = appointmentConfirmationRecords.filter((record) =>
+  const pendingConfirmation = appointments.filter((record) =>
     record.status.toLowerCase().includes("pending"),
   ).length;
-  const assignmentHolds = appointmentConfirmationRecords.filter((record) =>
+  const assignmentHolds = appointments.filter((record) =>
     record.status.toLowerCase().includes("hold"),
   ).length;
-  const noticeIssues = appointmentConfirmationRecords.filter((record) =>
+  const noticeIssues = appointments.filter((record) =>
     record.notificationStatus.toLowerCase().includes("failed") ||
     record.notificationStatus.toLowerCase().includes("correction"),
   ).length;
@@ -52,7 +53,7 @@ export default async function AppointmentSchedulingConfirmationPage() {
         </div>
         <aside>
           <p>Confirmation queue</p>
-          <strong>{appointmentConfirmationRecords.length} appointments</strong>
+          <strong>{appointments.length} appointments</strong>
           <span>{pendingConfirmation + assignmentHolds} appointment controls require review.</span>
         </aside>
       </section>
@@ -86,7 +87,7 @@ export default async function AppointmentSchedulingConfirmationPage() {
             </section>
             <p className="request-label">Appointment index</p>
             <nav>
-              {appointmentConfirmationRecords.map((record) => (
+              {appointments.map((record) => (
                 <a href={`#${record.id.toLowerCase()}`} key={record.id}>
                   <span>{record.orderId}</span>
                   <small>{record.status}</small>
@@ -101,7 +102,7 @@ export default async function AppointmentSchedulingConfirmationPage() {
                 <p className="request-label">Appointment register</p>
                 <h2>Appointment readiness and confirmation matrix</h2>
               </div>
-              <strong>{appointmentConfirmationRecords.length} appointment records</strong>
+              <strong>{appointments.length} appointment records</strong>
             </header>
             <div className="verification-table-wrap">
               <table className="verification-table">
@@ -118,7 +119,7 @@ export default async function AppointmentSchedulingConfirmationPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {appointmentConfirmationRecords.map((record) => (
+                  {appointments.map((record) => (
                     <tr id={record.id.toLowerCase()} key={record.id}>
                       <td>
                         <span>{record.id} · {record.orderId}</span>

@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import {
-  completionControlsForOrder,
-  documentsForOrder,
-  findOrderOperationRecord,
-  lifecycleForOrder,
-} from "../../operations-data";
+  getOrderOperation,
+  listOrderCompletionControls,
+  listOrderDocuments,
+  listOrderLifecycle,
+} from "../../order-repository";
 import { CommandStatusPanel } from "../../staff/command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../../staff/command-center/store";
 
@@ -14,12 +14,12 @@ type OrderDetailPageProps = {
 
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
   const { orderId } = await params;
-  const order = findOrderOperationRecord(orderId);
+  const order = getOrderOperation(orderId);
   if (!order) notFound();
 
-  const documents = documentsForOrder(order.id);
-  const lifecycle = lifecycleForOrder(order.id);
-  const closeoutControls = completionControlsForOrder(order.id);
+  const documents = listOrderDocuments(order.id);
+  const lifecycle = listOrderLifecycle(order.id);
+  const closeoutControls = listOrderCompletionControls(order.id);
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
   const openLifecycleCount = lifecycle.filter(
     (stage) =>

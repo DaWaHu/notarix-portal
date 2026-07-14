@@ -1,23 +1,28 @@
 import { requireChatGPTUser } from "../../chatgpt-auth";
-import { orderCloseoutRecords, orderOperationRecords } from "../../operations-data";
+import {
+  listOrderCloseoutControls,
+  listOrderOperations,
+} from "../../order-repository";
 import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function OrderCloseoutAndDeliveryConsolePage() {
   await requireChatGPTUser("/staff/order-closeout");
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
-  const pendingControls = orderCloseoutRecords.filter(
+  const orders = listOrderOperations();
+  const closeoutControls = listOrderCloseoutControls();
+  const pendingControls = closeoutControls.filter(
     (record) => !["complete", "released", "closed"].includes(record.status.toLowerCase()),
   ).length;
-  const deliveryHolds = orderCloseoutRecords.filter((record) =>
+  const deliveryHolds = closeoutControls.filter((record) =>
     record.status.toLowerCase().includes("failed") ||
     record.status.toLowerCase().includes("pending"),
   ).length;
-  const financialControls = orderCloseoutRecords.filter((record) =>
+  const financialControls = closeoutControls.filter((record) =>
     record.control.toLowerCase().includes("invoice") ||
     record.control.toLowerCase().includes("payable"),
   ).length;
-  const retentionLocks = orderCloseoutRecords.filter((record) =>
+  const retentionLocks = closeoutControls.filter((record) =>
     record.control.toLowerCase().includes("retention") ||
     record.status.toLowerCase().includes("locked"),
   ).length;
@@ -62,7 +67,7 @@ export default async function OrderCloseoutAndDeliveryConsolePage() {
 
       <section className="verification-summary" aria-label="Order closeout summary">
         {[
-          ["Orders in closeout", String(orderOperationRecords.length), "Order records with delivery, financial, retention, or final status controls."],
+          ["Orders in closeout", String(orders.length), "Order records with delivery, financial, retention, or final status controls."],
           ["Delivery holds", String(deliveryHolds), "Document release or communication delivery issues requiring staff attention."],
           ["Financial release controls", String(financialControls), "Invoice and notary payable steps requiring elevated authority."],
           ["Retention locks", String(retentionLocks), "Records that cannot close until audit and retention posture is complete."],
@@ -128,7 +133,7 @@ export default async function OrderCloseoutAndDeliveryConsolePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {orderCloseoutRecords.map((record) => (
+                  {closeoutControls.map((record) => (
                     <tr id={record.control.toLowerCase().replaceAll(" ", "-")} key={record.id}>
                       <td>
                         <span>{record.id} · {record.orderId}</span>

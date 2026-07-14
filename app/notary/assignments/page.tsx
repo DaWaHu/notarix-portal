@@ -1,4 +1,5 @@
-import { credentialMonitorRecords, notaryAssignmentRecords } from "../../operations-data";
+import { credentialMonitorRecords } from "../../operations-data";
+import { listNotaryAssignments } from "../../order-repository";
 import { CommandStatusPanel } from "../../staff/command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../../staff/command-center/store";
 
@@ -8,6 +9,7 @@ const bernadetteCredentials = credentialMonitorRecords.filter(
 
 export default function NotaryAssignmentConsolePage() {
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
+  const assignments = listNotaryAssignments();
   const restrictedCredentials = bernadetteCredentials.filter(
     (credential) =>
       credential.status.toLowerCase().includes("restricted") ||
@@ -52,7 +54,7 @@ export default function NotaryAssignmentConsolePage() {
 
       <section className="verification-summary" aria-label="Notary assignment summary">
         {[
-          ["Assigned orders", String(notaryAssignmentRecords.length), "Orders currently routed to the approved notary profile."],
+          ["Assigned orders", String(assignments.length), "Orders currently routed to the approved notary profile."],
           ["Credential controls", String(restrictedCredentials), "Renewal or restricted controls that can affect eligibility."],
           ["RON eligibility", "Restricted", "Remote online services remain locked until authorization and certificate evidence are verified."],
           ["Payable posture", "Restricted", "W-9 and payable activation require elevated approval before release."],
@@ -79,7 +81,7 @@ export default function NotaryAssignmentConsolePage() {
             </section>
             <p className="request-label">Assignment index</p>
             <nav>
-              {notaryAssignmentRecords.map((order) => (
+              {assignments.map((order) => (
                 <a href={`#${order.id.toLowerCase()}`} key={order.id}>
                   <span>{order.id}</span>
                   <small>{order.assignmentStatus}</small>
@@ -97,7 +99,7 @@ export default function NotaryAssignmentConsolePage() {
                 <p className="request-label">Assigned work register</p>
                 <h2>Assignment readiness matrix</h2>
               </div>
-              <strong>{notaryAssignmentRecords.length} assignments</strong>
+              <strong>{assignments.length} assignments</strong>
             </header>
             <div className="verification-table-wrap">
               <table className="verification-table">
@@ -114,7 +116,7 @@ export default function NotaryAssignmentConsolePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {notaryAssignmentRecords.map((order) => (
+                  {assignments.map((order) => (
                     <tr id={order.id.toLowerCase()} key={order.id}>
                       <td>
                         <span>{order.id}</span>

@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import {
-  documentsForOrder,
-  findOrderOperationRecord,
-  notaryCompletionReceiptsForOrder,
-} from "../../../../operations-data";
+  getOrderOperation,
+  listNotaryCompletionReceipts,
+  listOrderDocuments,
+} from "../../../../order-repository";
 import { CommandStatusPanel } from "../../../../staff/command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../../../../staff/command-center/store";
 
@@ -15,11 +15,11 @@ export default async function NotaryCompletionPackagePage({
   params,
 }: NotaryCompletionPageProps) {
   const { orderId } = await params;
-  const order = findOrderOperationRecord(orderId);
+  const order = getOrderOperation(orderId);
   if (!order || order.notary === "Unassigned") notFound();
 
-  const receipts = notaryCompletionReceiptsForOrder(order.id);
-  const documents = documentsForOrder(order.id).filter((document) =>
+  const receipts = listNotaryCompletionReceipts(order.id);
+  const documents = listOrderDocuments(order.id).filter((document) =>
     document.access.toLowerCase().includes("notary"),
   );
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");

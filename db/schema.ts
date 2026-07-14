@@ -200,3 +200,183 @@ export const commandCenterReceipts = sqliteTable(
     index("command_center_receipts_outcome_idx").on(table.outcome),
   ],
 );
+
+export const orderOperationalRecords = sqliteTable(
+  "order_operational_records",
+  {
+    id: text("id").primaryKey(),
+    client: text("client").notNull(),
+    clientProfile: text("client_profile").notNull(),
+    clientContact: text("client_contact").notNull(),
+    clientEmail: text("client_email").notNull(),
+    notary: text("notary").notNull(),
+    notaryProfile: text("notary_profile").notNull(),
+    service: text("service").notNull(),
+    jurisdiction: text("jurisdiction").notNull(),
+    appointment: text("appointment").notNull(),
+    location: text("location").notNull(),
+    orderStatus: text("order_status").notNull(),
+    assignmentStatus: text("assignment_status").notNull(),
+    documentStatus: text("document_status").notNull(),
+    documentCount: text("document_count").notNull(),
+    validationStatus: text("validation_status").notNull(),
+    ronStatus: text("ron_status").notNull(),
+    billingStatus: text("billing_status").notNull(),
+    payableStatus: text("payable_status").notNull(),
+    communicationStatus: text("communication_status").notNull(),
+    owner: text("owner").notNull(),
+    risk: text("risk").notNull(),
+    nextAction: text("next_action").notNull(),
+    createdAtUtc: integer("created_at_utc", { mode: "timestamp" }).notNull(),
+    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("order_operational_records_client_idx").on(table.client),
+    index("order_operational_records_notary_idx").on(table.notary),
+    index("order_operational_records_status_idx").on(table.orderStatus),
+    index("order_operational_records_owner_idx").on(table.owner),
+  ],
+);
+
+export const orderLifecycleStages = sqliteTable(
+  "order_lifecycle_stages",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => orderOperationalRecords.id),
+    stage: text("stage").notNull(),
+    status: text("status").notNull(),
+    owner: text("owner").notNull(),
+    authority: text("authority").notNull(),
+    timestamp: text("timestamp").notNull(),
+    evidence: text("evidence").notNull(),
+    nextAction: text("next_action").notNull(),
+    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("order_lifecycle_stages_order_stage_idx").on(table.orderId, table.stage),
+    index("order_lifecycle_stages_status_idx").on(table.status),
+  ],
+);
+
+export const orderSignerReadiness = sqliteTable(
+  "order_signer_readiness",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => orderOperationalRecords.id),
+    signerName: text("signer_name").notNull(),
+    signerRole: text("signer_role").notNull(),
+    identityMethod: text("identity_method").notNull(),
+    identityStatus: text("identity_status").notNull(),
+    locationReadiness: text("location_readiness").notNull(),
+    witnessRequirement: text("witness_requirement").notNull(),
+    specialInstructions: text("special_instructions").notNull(),
+    risk: text("risk").notNull(),
+    staffOwner: text("staff_owner").notNull(),
+    nextAction: text("next_action").notNull(),
+    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("order_signer_readiness_order_idx").on(table.orderId),
+    index("order_signer_readiness_identity_status_idx").on(table.identityStatus),
+    index("order_signer_readiness_owner_idx").on(table.staffOwner),
+  ],
+);
+
+export const orderAppointments = sqliteTable(
+  "order_appointments",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => orderOperationalRecords.id),
+    client: text("client").notNull(),
+    notary: text("notary").notNull(),
+    appointment: text("appointment").notNull(),
+    location: text("location").notNull(),
+    serviceType: text("service_type").notNull(),
+    status: text("status").notNull(),
+    signerReadiness: text("signer_readiness").notNull(),
+    documentReadiness: text("document_readiness").notNull(),
+    notificationStatus: text("notification_status").notNull(),
+    staffOwner: text("staff_owner").notNull(),
+    authority: text("authority").notNull(),
+    nextAction: text("next_action").notNull(),
+    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("order_appointments_order_idx").on(table.orderId),
+    index("order_appointments_status_idx").on(table.status),
+    index("order_appointments_owner_idx").on(table.staffOwner),
+  ],
+);
+
+export const orderCloseoutControls = sqliteTable(
+  "order_closeout_controls",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => orderOperationalRecords.id),
+    control: text("control").notNull(),
+    status: text("status").notNull(),
+    evidence: text("evidence").notNull(),
+    owner: text("owner").notNull(),
+    authority: text("authority").notNull(),
+    lastUpdated: text("last_updated").notNull(),
+    nextAction: text("next_action").notNull(),
+    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("order_closeout_controls_order_idx").on(table.orderId),
+    index("order_closeout_controls_status_idx").on(table.status),
+    index("order_closeout_controls_owner_idx").on(table.owner),
+  ],
+);
+
+export const orderDeliveryReceipts = sqliteTable(
+  "order_delivery_receipts",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => orderOperationalRecords.id),
+    receiptArea: text("receipt_area").notNull(),
+    clientStatus: text("client_status").notNull(),
+    clientVisibleEvidence: text("client_visible_evidence").notNull(),
+    deliveryChannel: text("delivery_channel").notNull(),
+    deliveredTo: text("delivered_to").notNull(),
+    deliveredAt: text("delivered_at").notNull(),
+    accessControl: text("access_control").notNull(),
+    clientNextAction: text("client_next_action").notNull(),
+    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("order_delivery_receipts_order_idx").on(table.orderId),
+    index("order_delivery_receipts_status_idx").on(table.clientStatus),
+  ],
+);
+
+export const notaryCompletionReceipts = sqliteTable(
+  "notary_completion_receipts",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => orderOperationalRecords.id),
+    receiptArea: text("receipt_area").notNull(),
+    status: text("status").notNull(),
+    evidence: text("evidence").notNull(),
+    notaryAction: text("notary_action").notNull(),
+    staffReview: text("staff_review").notNull(),
+    payableImpact: text("payable_impact").notNull(),
+    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("notary_completion_receipts_order_idx").on(table.orderId),
+    index("notary_completion_receipts_status_idx").on(table.status),
+  ],
+);

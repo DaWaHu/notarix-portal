@@ -1,20 +1,21 @@
 import { requireChatGPTUser } from "../../chatgpt-auth";
-import { orderOperationRecords } from "../../operations-data";
+import { listOrderOperations } from "../../order-repository";
 import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function OrderOperationsCommandCenterPage() {
   await requireChatGPTUser("/staff/orders");
   const latestCommandReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
-  const unassignedCount = orderOperationRecords.filter(
+  const orders = listOrderOperations();
+  const unassignedCount = orders.filter(
     (order) => order.notary === "Unassigned",
   ).length;
-  const documentControlCount = orderOperationRecords.filter(
+  const documentControlCount = orders.filter(
     (order) =>
       order.validationStatus.toLowerCase().includes("restricted") ||
       order.validationStatus.toLowerCase().includes("pending"),
   ).length;
-  const financialHoldCount = orderOperationRecords.filter(
+  const financialHoldCount = orders.filter(
     (order) =>
       order.billingStatus.toLowerCase().includes("locked") ||
       order.payableStatus.toLowerCase().includes("restricted"),
@@ -55,14 +56,14 @@ export default async function OrderOperationsCommandCenterPage() {
         </div>
         <aside>
           <p>Operational queue</p>
-          <strong>{orderOperationRecords.length} active orders</strong>
+          <strong>{orders.length} active orders</strong>
           <span>{unassignedCount} order requires assignment review.</span>
         </aside>
       </section>
 
       <section className="verification-summary" aria-label="Order operations summary">
         {[
-          ["Active orders", String(orderOperationRecords.length), "Orders requiring assignment, document, billing, or communication review."],
+          ["Active orders", String(orders.length), "Orders requiring assignment, document, billing, or communication review."],
           ["Unassigned", String(unassignedCount), "Orders that cannot proceed until notary eligibility and availability are confirmed."],
           ["Document controls", String(documentControlCount), "Orders with validation, release, or replacement document actions open."],
           ["Financial holds", String(financialHoldCount), "Orders with invoice, billing, payable, or ledger controls restricted."],
@@ -88,7 +89,7 @@ export default async function OrderOperationsCommandCenterPage() {
             </section>
             <p className="request-label">Order index</p>
             <nav>
-              {orderOperationRecords.map((order) => (
+              {orders.map((order) => (
                 <a href={`#${order.id.toLowerCase()}`} key={order.id}>
                   <span>{order.id}</span>
                   <small>{order.orderStatus}</small>
@@ -103,7 +104,7 @@ export default async function OrderOperationsCommandCenterPage() {
                 <p className="request-label">Order register</p>
                 <h2>Operational control matrix</h2>
               </div>
-              <strong>{orderOperationRecords.length} orders</strong>
+              <strong>{orders.length} orders</strong>
             </header>
             <div className="verification-table-wrap">
               <table className="verification-table">
@@ -120,7 +121,7 @@ export default async function OrderOperationsCommandCenterPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {orderOperationRecords.map((order) => (
+                  {orders.map((order) => (
                     <tr id={order.id.toLowerCase()} key={order.id}>
                       <td>
                         <span>{order.id} · {order.jurisdiction}</span>

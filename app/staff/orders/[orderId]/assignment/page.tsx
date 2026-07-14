@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireChatGPTUser } from "../../../../chatgpt-auth";
-import { credentialMonitorRecords, findOrderOperationRecord } from "../../../../operations-data";
+import { credentialMonitorRecords } from "../../../../operations-data";
+import { getOrderOperation } from "../../../../order-repository";
 import { CommandStatusPanel } from "../../../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../../../command-center/store";
 
@@ -10,7 +11,7 @@ type StaffAssignmentPageProps = {
 
 export default async function StaffAssignmentPage({ params }: StaffAssignmentPageProps) {
   const { orderId } = await params;
-  const order = findOrderOperationRecord(orderId);
+  const order = getOrderOperation(orderId);
   if (!order) notFound();
   await requireChatGPTUser(`/staff/orders/${order.id}/assignment`);
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");

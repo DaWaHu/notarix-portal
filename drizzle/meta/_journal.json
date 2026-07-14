@@ -15,6 +15,13 @@
       "when": 1784022128703,
       "tag": "0001_watery_doorman",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784032980119,
+      "tag": "0002_magical_thena",
+      "breakpoints": true
     }
   ]
 }

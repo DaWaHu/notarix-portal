@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import {
-  deliveryReceiptsForOrder,
-  documentsForOrder,
-  findOrderOperationRecord,
-} from "../../../../operations-data";
+  getOrderOperation,
+  listOrderDeliveryReceipts,
+  listOrderDocuments,
+} from "../../../../order-repository";
 import { CommandStatusPanel } from "../../../../staff/command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../../../../staff/command-center/store";
 
@@ -15,11 +15,11 @@ export default async function ClientOrderCompletionReceiptPage({
   params,
 }: ClientOrderCompletionPageProps) {
   const { orderId } = await params;
-  const order = findOrderOperationRecord(orderId);
+  const order = getOrderOperation(orderId);
   if (!order) notFound();
 
-  const receipts = deliveryReceiptsForOrder(order.id);
-  const documents = documentsForOrder(order.id).filter(
+  const receipts = listOrderDeliveryReceipts(order.id);
+  const documents = listOrderDocuments(order.id).filter(
     (document) =>
       document.access.toLowerCase().includes("client") &&
       !document.status.toLowerCase().includes("restricted"),

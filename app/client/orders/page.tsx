@@ -1,16 +1,19 @@
-import { documentRecords, orderOperationRecords } from "../../operations-data";
+import {
+  listOrderDocuments,
+  listOrderOperations,
+} from "../../order-repository";
 import { CommandStatusPanel } from "../../staff/command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../../staff/command-center/store";
 
-const clientOrders = orderOperationRecords.filter(
-  (order) => order.client === "Coleman Title Group",
-);
-
 export default function ClientOrderManagementConsolePage() {
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
-  const documentCount = documentRecords.filter((document) =>
-    clientOrders.some((order) => order.id === document.order),
-  ).length;
+  const clientOrders = listOrderOperations().filter(
+    (order) => order.client === "Coleman Title Group",
+  );
+  const documentCount = clientOrders.reduce(
+    (count, order) => count + listOrderDocuments(order.id).length,
+    0,
+  );
 
   return (
     <main className="staff-page order-workspace-page">

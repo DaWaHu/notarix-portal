@@ -1,22 +1,23 @@
 import { requireChatGPTUser } from "../../chatgpt-auth";
-import { signerReadinessRecords } from "../../operations-data";
+import { listSignerReadiness } from "../../order-repository";
 import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function SignerReadinessIdentityCheckPage() {
   await requireChatGPTUser("/staff/signers");
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
-  const pendingIdentity = signerReadinessRecords.filter((record) =>
+  const signers = listSignerReadiness();
+  const pendingIdentity = signers.filter((record) =>
     record.identityStatus.toLowerCase().includes("pending"),
   ).length;
-  const restrictedSigners = signerReadinessRecords.filter((record) =>
+  const restrictedSigners = signers.filter((record) =>
     record.identityStatus.toLowerCase().includes("restricted") ||
     record.risk.toLowerCase().includes("restricted"),
   ).length;
-  const readySigners = signerReadinessRecords.filter((record) =>
+  const readySigners = signers.filter((record) =>
     record.identityStatus.toLowerCase().includes("ready"),
   ).length;
-  const witnessReviews = signerReadinessRecords.filter((record) =>
+  const witnessReviews = signers.filter((record) =>
     record.witnessRequirement.toLowerCase().includes("review"),
   ).length;
 
@@ -51,7 +52,7 @@ export default async function SignerReadinessIdentityCheckPage() {
         </div>
         <aside>
           <p>Signer queue</p>
-          <strong>{signerReadinessRecords.length} signer records</strong>
+          <strong>{signers.length} signer records</strong>
           <span>{pendingIdentity + restrictedSigners} identity controls require attention.</span>
         </aside>
       </section>
@@ -85,7 +86,7 @@ export default async function SignerReadinessIdentityCheckPage() {
             </section>
             <p className="request-label">Signer index</p>
             <nav>
-              {signerReadinessRecords.map((record) => (
+              {signers.map((record) => (
                 <a href={`#${record.id.toLowerCase()}`} key={record.id}>
                   <span>{record.signerName}</span>
                   <small>{record.orderId}</small>
@@ -100,7 +101,7 @@ export default async function SignerReadinessIdentityCheckPage() {
                 <p className="request-label">Signer register</p>
                 <h2>Signer identity and readiness matrix</h2>
               </div>
-              <strong>{signerReadinessRecords.length} signers</strong>
+              <strong>{signers.length} signers</strong>
             </header>
             <div className="verification-table-wrap">
               <table className="verification-table">
@@ -117,7 +118,7 @@ export default async function SignerReadinessIdentityCheckPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {signerReadinessRecords.map((record) => (
+                  {signers.map((record) => (
                     <tr id={record.id.toLowerCase()} key={record.id}>
                       <td>
                         <span>{record.id} · {record.orderId}</span>

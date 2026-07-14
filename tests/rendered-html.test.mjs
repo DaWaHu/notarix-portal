@@ -2207,8 +2207,16 @@ test("keeps product rules in the local governance file", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
   const schema = await readFile(new URL("../db/schema.ts", import.meta.url), "utf8");
+  const orderRepository = await readFile(
+    new URL("../app/order-repository.ts", import.meta.url),
+    "utf8",
+  );
   const commandMigration = await readFile(
     new URL("../drizzle/0001_watery_doorman.sql", import.meta.url),
+    "utf8",
+  );
+  const orderMigration = await readFile(
+    new URL("../drizzle/0002_magical_thena.sql", import.meta.url),
     "utf8",
   );
   const packageJson = await readFile(
@@ -2237,9 +2245,27 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(schema, /commandCenterTargets/);
   assert.match(schema, /commandCenterEvents/);
   assert.match(schema, /commandCenterReceipts/);
+  assert.match(schema, /orderOperationalRecords/);
+  assert.match(schema, /orderLifecycleStages/);
+  assert.match(schema, /orderSignerReadiness/);
+  assert.match(schema, /orderAppointments/);
+  assert.match(schema, /orderCloseoutControls/);
+  assert.match(schema, /orderDeliveryReceipts/);
+  assert.match(schema, /notaryCompletionReceipts/);
   assert.match(commandMigration, /CREATE TABLE `command_center_targets`/);
   assert.match(commandMigration, /CREATE TABLE `command_center_events`/);
   assert.match(commandMigration, /CREATE TABLE `command_center_receipts`/);
+  assert.match(orderMigration, /CREATE TABLE `order_operational_records`/);
+  assert.match(orderMigration, /CREATE TABLE `order_lifecycle_stages`/);
+  assert.match(orderMigration, /CREATE TABLE `order_signer_readiness`/);
+  assert.match(orderMigration, /CREATE TABLE `order_appointments`/);
+  assert.match(orderMigration, /CREATE TABLE `order_closeout_controls`/);
+  assert.match(orderMigration, /CREATE TABLE `order_delivery_receipts`/);
+  assert.match(orderMigration, /CREATE TABLE `notary_completion_receipts`/);
+  assert.match(orderRepository, /orderRepositoryPersistenceContract/);
+  assert.match(orderRepository, /listOrderOperations/);
+  assert.match(orderRepository, /listSignerReadiness/);
+  assert.match(orderRepository, /listAppointmentConfirmations/);
   assert.match(css, /request-card:nth-child\(even\)/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 });
