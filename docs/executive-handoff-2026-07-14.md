@@ -3,8 +3,8 @@
 Date: Jul 14 2026
 Workspace: `/Users/hudlinbe/Desktop/100 Notarix Signing`
 Branch: `codex/notarix-portal-checkpoint`
-Latest checkpoint: Evidence signed access and malware callback controls pending current commit
-Verification status: `npm test` passed, 34 of 34 tests passing
+Latest checkpoint: Notification provider binding and delivery callback controls pending current commit
+Verification status: `npm test` passed, 35 of 35 tests passing
 
 ## Executive Summary
 
@@ -28,6 +28,7 @@ It increased again after centralizing staff route access, role normalization, an
 It increased again after binding protected staff routes and workflow endpoints to production identity-provider claim headers for role, MFA/passkey status, device trust, and session assurance.
 It increased again after adding D1 evidence storage controls for encrypted object keys, malware validation status, release eligibility, and custody metadata.
 It increased again after adding signed evidence access decisions, malware scan callback updates, and retained evidence access receipts.
+It increased again after adding notification provider dispatch, delivery callbacks, retained provider events, and consent records.
 
 ## Latest Commits
 
@@ -147,6 +148,24 @@ Completed:
 - Evidence viewer now requests signed access instead of showing a passive access note button.
 - Tests now verify blocked access, malware callback release, issued signed access, and receipt retrieval.
 
+### Notification Provider Binding and Delivery Callback Controls
+
+Completed:
+
+- Added D1 schema tables for notification delivery records, provider delivery events, and communication consent records.
+- Added migration `drizzle/0005_notification_delivery_provider_controls.sql`.
+- Added `app/notification-repository.ts` as the D1-first notification delivery boundary.
+- Added `/notifications/:notificationId/dispatch` for staff delivery dispatch and consent recording.
+- Added `/notifications/provider-callback` for provider delivery status callbacks.
+- Provider callback route requires `x-notarix-provider-signature` before delivery status updates are accepted.
+- Communications center now reads delivery records through the repository instead of directly from modeled page data.
+- Communications table now shows provider name, provider status, provider message ID, callback status, consent state, and dispatch action.
+- Phone/SMS dispatch is blocked until communication consent is retained.
+- Email delivery dispatch creates provider message receipts and awaits provider callback reconciliation.
+- Provider callbacks update delivery status, provider status, message ID, callback status, last callback time, and next action.
+- Baseline D1 seed/reconciliation now includes notification delivery records.
+- Tests now verify email dispatch, unsigned callback rejection, signed callback delivery update, phone consent blocking, consent recording, phone dispatch, and visible status feedback.
+
 ## Core Pages Completed
 
 ### Public and Access
@@ -219,6 +238,8 @@ Completed:
 - `/evidence/DOC-2607-0001`
 - `/evidence/:evidenceId/access`
 - `/notifications`
+- `/notifications/:notificationId/dispatch`
+- `/notifications/provider-callback`
 
 ## Current Architecture Notes
 
@@ -228,6 +249,7 @@ Completed:
 - D1-first modules now include:
   - `app/order-repository.ts`
   - `app/evidence-repository.ts`
+  - `app/notification-repository.ts`
   - `app/staff/command-center/store.ts`
   - `app/staff/requests/store.ts`
 - Seed/reconciliation tooling now lives in:
@@ -245,6 +267,9 @@ Completed:
 - Evidence access and malware scan callback behavior now lives in:
   - `app/evidence/[evidenceId]/access/route.ts`
   - `app/staff/evidence-malware-callback/route.ts`
+- Notification provider dispatch and callback behavior now lives in:
+  - `app/notifications/[notificationId]/dispatch/route.ts`
+  - `app/notifications/provider-callback/route.ts`
 
 ## Production Gaps Remaining
 
@@ -255,8 +280,8 @@ Completed:
 - Confirm production deployment strips or ignores preview-only staff-role headers before application routing.
 - Bind encrypted file storage credentials and object APIs, likely R2 or equivalent object storage, to the evidence repository.
 - Bind malware scanning provider callback authentication and provider webhook verification.
-- Add real email provider and phone/SMS provider.
-- Add notification consent and delivery callback handling.
+- Bind real email provider and phone/SMS provider credentials through environment configuration.
+- Replace local provider-signature presence check with provider-specific HMAC or webhook signature validation.
 - Add production audit immutability strategy.
 - Add backup and restore verification.
 - Add environment-specific secrets management.
@@ -266,6 +291,7 @@ Completed:
 
 - Replace local signed evidence URL preview tokens with provider-issued R2/S3 signed URLs.
 - Add webhook signature verification for malware scan callbacks.
+- Add provider-specific notification retry/backoff and suppression policy.
 - Persist financial ledger controls and payment release state.
 - Persist credential expiration records and renewal reminders.
 - Add admin seed/reconciliation tools for records that start in local modeled data.
@@ -273,17 +299,17 @@ Completed:
 
 ## Recommended Next Task
 
-Start with **notification provider binding and delivery callbacks**.
+Start with **real provider credential binding for email/SMS and webhook signature verification**.
 
-Reason: the evidence workflow now has D1-backed storage controls, signed access decisions, malware callback updates, and receipt retention. The next critical production blocker is replacing modeled notification behavior with provider-backed email/SMS delivery, consent enforcement, delivery callbacks, retry handling, and visible communication receipts.
+Reason: the notification workflow now has D1-backed delivery records, dispatch events, consent retention, and provider callback updates. The next critical production blocker is connecting the selected provider credentials and validating provider webhook signatures with environment secrets.
 
 Recommended scope:
 
-1. Add email/SMS provider abstraction.
-2. Persist outbound communication jobs and provider receipts.
-3. Add delivery callback endpoint for delivered, failed, bounced, and opted-out statuses.
-4. Enforce consent before profile approval, order notifications, and phone messages.
-5. Keep local preview fallback active when production providers are absent.
+1. Select provider-specific adapters for email and SMS/phone delivery.
+2. Bind credentials through environment variables or platform secrets.
+3. Validate callback signatures with provider-specific HMAC or webhook verification.
+4. Add retry/backoff and suppression policy for failed, bounced, or opted-out delivery.
+5. Add deployment documentation for provider setup and callback URLs.
 
 ## Verification Snapshot
 
@@ -296,7 +322,7 @@ npm test
 Result:
 
 ```text
-34 tests passing
+35 tests passing
 ```
 
 Last whitespace check:
@@ -316,7 +342,7 @@ Result: clean.
 3. Confirm latest commit:
    `git log --oneline -5`
 4. Start task:
-   Begin notification provider binding and delivery callbacks.
+   Begin real provider credential binding for email/SMS and webhook signature verification.
 5. Run:
    `npm test`
 6. Commit the checkpoint.

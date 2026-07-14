@@ -1,11 +1,12 @@
 import { requireChatGPTUser } from "../chatgpt-auth";
-import { notificationRecords } from "../operations-data";
+import { listNotificationDeliveryRecords } from "../notification-repository";
 import { CommandStatusPanel } from "../staff/command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../staff/command-center/store";
 
 export default async function NotificationsPage() {
   await requireChatGPTUser("/notifications");
   const latestCommandReceipt = getLatestCommandCenterReceiptForHref("/notifications");
+  const notificationRecords = await listNotificationDeliveryRecords();
 
   const failedCount = notificationRecords.filter(
     (notice) => notice.status === "Failed",
@@ -105,6 +106,7 @@ export default async function NotificationsPage() {
                     <th scope="col">Recipient</th>
                     <th scope="col">Status</th>
                     <th scope="col">Consent / trigger</th>
+                    <th scope="col">Provider receipt</th>
                     <th scope="col">Owner / next action</th>
                     <th scope="col">Timestamp</th>
                     <th scope="col">Action</th>
@@ -134,13 +136,26 @@ export default async function NotificationsPage() {
                         </span>
                       </td>
                       <td>
+                        {notice.providerStatus}
+                        <span className="evidence-packet-summary">
+                          {notice.providerMessageId} · {notice.callbackStatus}
+                        </span>
+                        <span className="evidence-packet-summary">
+                          {notice.provider}
+                        </span>
+                      </td>
+                      <td>
                         {notice.owner}
                         <span className="evidence-packet-summary">
                           {notice.nextAction}
                         </span>
                       </td>
                       <td>{notice.timestamp}</td>
-                      <td><button type="button">Review</button></td>
+                      <td>
+                        <form action={`/notifications/${notice.id}/dispatch`} method="post">
+                          <button type="submit">Dispatch</button>
+                        </form>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -191,6 +191,80 @@ export const workflowNotifications = sqliteTable(
   (table) => [index("workflow_notifications_request_idx").on(table.requestId)],
 );
 
+export const notificationDeliveryRecords = sqliteTable(
+  "notification_delivery_records",
+  {
+    id: text("id").primaryKey(),
+    relatedRecord: text("related_record").notNull(),
+    recipientName: text("recipient_name").notNull(),
+    recipient: text("recipient").notNull(),
+    channel: text("channel").notNull(),
+    purpose: text("purpose").notNull(),
+    status: text("status").notNull(),
+    consent: text("consent").notNull(),
+    trigger: text("trigger").notNull(),
+    owner: text("owner").notNull(),
+    timestamp: text("timestamp").notNull(),
+    nextAction: text("next_action").notNull(),
+    provider: text("provider").notNull(),
+    providerMessageId: text("provider_message_id").notNull(),
+    providerStatus: text("provider_status").notNull(),
+    deliveryAttemptCount: integer("delivery_attempt_count").notNull(),
+    callbackStatus: text("callback_status").notNull(),
+    lastCallbackAtUtc: integer("last_callback_at_utc", { mode: "timestamp" }),
+    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("notification_delivery_records_related_idx").on(table.relatedRecord),
+    index("notification_delivery_records_status_idx").on(table.status),
+    index("notification_delivery_records_provider_idx").on(table.providerMessageId),
+  ],
+);
+
+export const notificationDeliveryEvents = sqliteTable(
+  "notification_delivery_events",
+  {
+    id: text("id").primaryKey(),
+    notificationId: text("notification_id")
+      .notNull()
+      .references(() => notificationDeliveryRecords.id),
+    eventType: text("event_type").notNull(),
+    actor: text("actor").notNull(),
+    actorRole: text("actor_role").notNull(),
+    provider: text("provider").notNull(),
+    providerMessageId: text("provider_message_id").notNull(),
+    previousStatus: text("previous_status").notNull(),
+    nextStatus: text("next_status").notNull(),
+    outcome: text("outcome", { enum: ["Completed", "Blocked"] }).notNull(),
+    detail: text("detail").notNull(),
+    createdAtUtc: integer("created_at_utc", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("notification_delivery_events_notification_idx").on(table.notificationId),
+    index("notification_delivery_events_outcome_idx").on(table.outcome),
+  ],
+);
+
+export const communicationConsentRecords = sqliteTable(
+  "communication_consent_records",
+  {
+    id: text("id").primaryKey(),
+    notificationId: text("notification_id")
+      .notNull()
+      .references(() => notificationDeliveryRecords.id),
+    recipient: text("recipient").notNull(),
+    channel: text("channel").notNull(),
+    consentStatus: text("consent_status").notNull(),
+    purpose: text("purpose").notNull(),
+    recordedBy: text("recorded_by").notNull(),
+    recordedAtUtc: integer("recorded_at_utc", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("communication_consent_records_notification_idx").on(table.notificationId),
+    index("communication_consent_records_recipient_idx").on(table.recipient),
+  ],
+);
+
 export const commandCenterTargets = sqliteTable(
   "command_center_targets",
   {

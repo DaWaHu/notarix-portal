@@ -2,6 +2,7 @@ import { getOptionalDb } from "../db";
 import * as schema from "../db/schema";
 import { evidenceRecords } from "./evidence-data";
 import { buildEvidenceStorageControl } from "./evidence-repository";
+import { buildNotificationDeliveryRecord } from "./notification-repository";
 import {
   accessControlRecords,
   auditReportRecords,
@@ -66,6 +67,7 @@ export function buildBaselineSeedSummary() {
     commandCenterTargets: buildCommandCenterTargets().length,
     evidenceFiles: buildProfileEvidenceFiles().length,
     evidenceStorageControls: evidenceRecords.length,
+    notificationDeliveryRecords: notificationRecords.length,
     notaryCompletionReceipts: notaryCompletionReceiptRecords.length,
     orderAppointments: appointmentConfirmationRecords.length,
     orderCloseoutControls: orderCloseoutRecords.length,
@@ -93,6 +95,7 @@ async function seedBaselineRecords(db: NotarixDb) {
   let appointmentCount = 0;
   let closeoutControlCount = 0;
   let deliveryReceiptCount = 0;
+  let notificationDeliveryCount = 0;
   let notaryCompletionReceiptCount = 0;
 
   for (const request of accessRequests) {
@@ -434,11 +437,57 @@ async function seedBaselineRecords(db: NotarixDb) {
     commandTargetCount += 1;
   }
 
+  for (const notification of notificationRecords.map(buildNotificationDeliveryRecord)) {
+    await db
+      .insert(schema.notificationDeliveryRecords)
+      .values({
+        callbackStatus: notification.callbackStatus,
+        channel: notification.channel,
+        consent: notification.consent,
+        deliveryAttemptCount: notification.deliveryAttemptCount,
+        id: notification.id,
+        lastCallbackAtUtc: notification.lastCallbackAtUtc
+          ? new Date(notification.lastCallbackAtUtc)
+          : null,
+        nextAction: notification.nextAction,
+        owner: notification.owner,
+        provider: notification.provider,
+        providerMessageId: notification.providerMessageId,
+        providerStatus: notification.providerStatus,
+        purpose: notification.purpose,
+        recipient: notification.recipient,
+        recipientName: notification.recipientName,
+        relatedRecord: notification.relatedRecord,
+        status: notification.status,
+        timestamp: notification.timestamp,
+        trigger: notification.trigger,
+        updatedAtUtc: timestamp,
+      })
+      .onConflictDoUpdate({
+        set: {
+          callbackStatus: notification.callbackStatus,
+          consent: notification.consent,
+          lastCallbackAtUtc: notification.lastCallbackAtUtc
+            ? new Date(notification.lastCallbackAtUtc)
+            : null,
+          nextAction: notification.nextAction,
+          provider: notification.provider,
+          providerMessageId: notification.providerMessageId,
+          providerStatus: notification.providerStatus,
+          status: notification.status,
+          updatedAtUtc: timestamp,
+        },
+        target: schema.notificationDeliveryRecords.id,
+      });
+    notificationDeliveryCount += 1;
+  }
+
   return {
     accessRequests: accessRequestCount,
     commandCenterTargets: commandTargetCount,
     evidenceFiles: evidenceFileCount,
     evidenceStorageControls: evidenceStorageControlCount,
+    notificationDeliveryRecords: notificationDeliveryCount,
     notaryCompletionReceipts: notaryCompletionReceiptCount,
     orderAppointments: appointmentCount,
     orderCloseoutControls: closeoutControlCount,

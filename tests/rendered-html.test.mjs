@@ -1604,6 +1604,9 @@ test("server-renders the protected communications center", async () => {
   assert.match(html, /Delivery failures/);
   assert.match(html, /Consent holds/);
   assert.match(html, /Phone and SMS notices require recorded consent/);
+  assert.match(html, /Provider receipt/);
+  assert.match(html, /Production email provider/);
+  assert.match(html, /Pending provider dispatch/);
   assert.match(html, /NTF-2607-0005/);
   assert.match(html, /Failed/);
   assert.match(html, /Requires recorded consent/);
@@ -1619,6 +1622,103 @@ test("server-renders the protected communications center", async () => {
   assert.match(html, /Logout/);
   assert.match(html, /555-123-4567/);
   assert.doesNotMatch(html, /\b\d{10,11}\b/);
+});
+
+test("records notification provider dispatch, consent, and delivery callbacks", async () => {
+  const staffHeaders = {
+    "content-type": "application/json",
+    "oai-authenticated-user-email": "staff@example.com",
+  };
+
+  const emailDispatchResponse = await requestRoute(
+    "/notifications/NTF-2607-0001/dispatch",
+    {
+      body: JSON.stringify({}),
+      headers: staffHeaders,
+      method: "POST",
+    },
+  );
+  assert.equal(emailDispatchResponse.status, 200);
+  const emailDispatch = await emailDispatchResponse.json();
+  assert.equal(emailDispatch.outcome, "Completed");
+  assert.equal(emailDispatch.nextStatus, "Dispatched to provider");
+  assert.match(emailDispatch.providerMessageId, /EML-NTF-2607-0001/);
+
+  const unsignedCallbackResponse = await requestRoute(
+    "/notifications/provider-callback",
+    {
+      body: JSON.stringify({
+        deliveryStatus: "Delivered",
+        notificationId: "NTF-2607-0001",
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    },
+  );
+  assert.equal(unsignedCallbackResponse.status, 401);
+
+  const callbackResponse = await requestRoute("/notifications/provider-callback", {
+    body: JSON.stringify({
+      deliveryStatus: "Delivered",
+      notificationId: "NTF-2607-0001",
+      provider: "Production email provider",
+      providerMessageId: emailDispatch.providerMessageId,
+    }),
+    headers: {
+      "content-type": "application/json",
+      "x-notarix-provider-signature": "local-preview-provider-signature",
+    },
+    method: "POST",
+  });
+  assert.equal(callbackResponse.status, 200);
+  const callback = await callbackResponse.json();
+  assert.equal(callback.eventType, "Provider Callback");
+  assert.equal(callback.nextStatus, "Delivered");
+
+  const phoneDispatchBlockedResponse = await requestRoute(
+    "/notifications/NTF-2607-0002/dispatch",
+    {
+      body: JSON.stringify({}),
+      headers: staffHeaders,
+      method: "POST",
+    },
+  );
+  assert.equal(phoneDispatchBlockedResponse.status, 409);
+  const phoneDispatchBlocked = await phoneDispatchBlockedResponse.json();
+  assert.equal(phoneDispatchBlocked.outcome, "Blocked");
+  assert.equal(phoneDispatchBlocked.nextStatus, "Consent Required");
+
+  const consentResponse = await requestRoute("/notifications/NTF-2607-0002/dispatch", {
+    body: JSON.stringify({ action: "record-consent" }),
+    headers: staffHeaders,
+    method: "POST",
+  });
+  assert.equal(consentResponse.status, 200);
+  const consent = await consentResponse.json();
+  assert.equal(consent.available, true);
+  assert.equal(consent.consent.consentStatus, "Recorded consent");
+
+  const phoneDispatchResponse = await requestRoute(
+    "/notifications/NTF-2607-0002/dispatch",
+    {
+      body: JSON.stringify({}),
+      headers: staffHeaders,
+      method: "POST",
+    },
+  );
+  assert.equal(phoneDispatchResponse.status, 200);
+  const phoneDispatch = await phoneDispatchResponse.json();
+  assert.equal(phoneDispatch.outcome, "Completed");
+  assert.match(phoneDispatch.providerMessageId, /TEL-NTF-2607-0002/);
+
+  const updatedPageResponse = await render("/notifications", {
+    "oai-authenticated-user-email": "staff@example.com",
+  });
+  assert.equal(updatedPageResponse.status, 200);
+  const updatedHtml = await updatedPageResponse.text();
+  assert.match(updatedHtml, /Delivered/);
+  assert.match(updatedHtml, /TEL-NTF-2607-0002/);
+  assert.match(updatedHtml, /Recorded consent/);
 });
 
 test("protects staff-only assignment operations", async () => {
@@ -2405,6 +2505,10 @@ test("keeps product rules in the local governance file", async () => {
     new URL("../app/evidence-repository.ts", import.meta.url),
     "utf8",
   );
+  const notificationRepository = await readFile(
+    new URL("../app/notification-repository.ts", import.meta.url),
+    "utf8",
+  );
   const commandStore = await readFile(
     new URL("../app/staff/command-center/store.ts", import.meta.url),
     "utf8",
@@ -2446,12 +2550,27 @@ test("keeps product rules in the local governance file", async () => {
     new URL("../drizzle/0004_evidence_access_and_scan_events.sql", import.meta.url),
     "utf8",
   );
+  const notificationDeliveryMigration = await readFile(
+    new URL(
+      "../drizzle/0005_notification_delivery_provider_controls.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
   const evidenceAccessRoute = await readFile(
     new URL("../app/evidence/[evidenceId]/access/route.ts", import.meta.url),
     "utf8",
   );
   const evidenceMalwareCallbackRoute = await readFile(
     new URL("../app/staff/evidence-malware-callback/route.ts", import.meta.url),
+    "utf8",
+  );
+  const notificationDispatchRoute = await readFile(
+    new URL("../app/notifications/[notificationId]/dispatch/route.ts", import.meta.url),
+    "utf8",
+  );
+  const notificationCallbackRoute = await readFile(
+    new URL("../app/notifications/provider-callback/route.ts", import.meta.url),
     "utf8",
   );
   const packageJson = await readFile(
@@ -2490,6 +2609,9 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(schema, /evidenceStorageControls/);
   assert.match(schema, /evidenceAccessReceipts/);
   assert.match(schema, /evidenceMalwareScanEvents/);
+  assert.match(schema, /notificationDeliveryRecords/);
+  assert.match(schema, /notificationDeliveryEvents/);
+  assert.match(schema, /communicationConsentRecords/);
   assert.match(commandMigration, /CREATE TABLE `command_center_targets`/);
   assert.match(commandMigration, /CREATE TABLE `command_center_events`/);
   assert.match(commandMigration, /CREATE TABLE `command_center_receipts`/);
@@ -2508,6 +2630,18 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(evidenceAccessMigration, /CREATE TABLE `evidence_malware_scan_events`/);
   assert.match(evidenceAccessMigration, /signed_url/);
   assert.match(evidenceAccessMigration, /provider_receipt/);
+  assert.match(
+    notificationDeliveryMigration,
+    /CREATE TABLE `notification_delivery_records`/,
+  );
+  assert.match(
+    notificationDeliveryMigration,
+    /CREATE TABLE `notification_delivery_events`/,
+  );
+  assert.match(
+    notificationDeliveryMigration,
+    /CREATE TABLE `communication_consent_records`/,
+  );
   assert.match(evidenceRepository, /evidenceStorageContract/);
   assert.match(evidenceRepository, /listEvidenceStorageControls/);
   assert.match(evidenceRepository, /getEvidenceStorageControl/);
@@ -2525,6 +2659,19 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(evidenceMalwareCallbackRoute, /recordEvidenceMalwareScanUpdate/);
   assert.match(evidenceMalwareCallbackRoute, /Admin/);
   assert.match(evidenceMalwareCallbackRoute, /SuperAdmin/);
+  assert.match(notificationRepository, /notificationProviderContract/);
+  assert.match(notificationRepository, /listNotificationDeliveryRecords/);
+  assert.match(notificationRepository, /dispatchNotificationDelivery/);
+  assert.match(notificationRepository, /recordNotificationProviderCallback/);
+  assert.match(notificationRepository, /recordNotificationConsent/);
+  assert.match(notificationRepository, /schema\.notificationDeliveryRecords/);
+  assert.match(notificationRepository, /schema\.notificationDeliveryEvents/);
+  assert.match(notificationRepository, /schema\.communicationConsentRecords/);
+  assert.match(notificationDispatchRoute, /dispatchNotificationDelivery/);
+  assert.match(notificationDispatchRoute, /recordNotificationConsent/);
+  assert.match(notificationDispatchRoute, /requireStaffRouteAccess/);
+  assert.match(notificationCallbackRoute, /x-notarix-provider-signature/);
+  assert.match(notificationCallbackRoute, /recordNotificationProviderCallback/);
   assert.match(orderRepository, /orderRepositoryPersistenceContract/);
   assert.match(orderRepository, /D1-first repository/);
   assert.match(orderRepository, /listOrderOperations/);
@@ -2575,7 +2722,9 @@ test("keeps product rules in the local governance file", async () => {
   assert.match(d1Seed, /schema\.orderOperationalRecords/);
   assert.match(d1Seed, /schema\.commandCenterTargets/);
   assert.match(d1Seed, /schema\.evidenceStorageControls/);
+  assert.match(d1Seed, /schema\.notificationDeliveryRecords/);
   assert.match(d1Seed, /buildEvidenceStorageControls/);
+  assert.match(d1Seed, /buildNotificationDeliveryRecord/);
   assert.match(d1Seed, /onConflictDoUpdate/);
   assert.match(d1SeedRoute, /SuperAdmin/);
   assert.match(d1SeedRoute, /reconcileBaselineD1Seed/);
