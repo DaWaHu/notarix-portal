@@ -1,10 +1,10 @@
 import { verifyEvidenceProviderWebhook } from "../../evidence-callback-config";
-import { recordEvidenceMalwareScanUpdate } from "../../evidence-repository";
+import { recordEvidenceUploadCompletion } from "../../evidence-repository";
 
 export async function POST(request: Request) {
   const rawBody = await request.text();
   const verification = await verifyEvidenceProviderWebhook({
-    provider: "malware",
+    provider: "storage",
     rawBody,
     request,
   });
@@ -13,33 +13,22 @@ export async function POST(request: Request) {
   }
 
   const payload = parsePayload(rawBody, request);
-  const evidenceId = String(payload.evidenceId ?? "");
-  const malwareStatus = String(
-    payload.malwareStatus ?? "Malware validation complete",
-  );
-  const provider = String(
-    payload.provider ?? "Production malware scanning provider",
-  );
-  const providerReceipt = String(
-    payload.providerReceipt ?? `SCAN-${evidenceId}`,
-  );
-  const validationStatus = String(
-    payload.validationStatus ?? "File type and SHA-256 validated",
-  );
+  const evidenceId = stringValue(payload.evidenceId);
 
   if (!evidenceId) {
     return Response.json(
-      { error: "Evidence ID is required for malware scan callback update." },
+      { error: "Evidence ID is required for upload completion callback update." },
       { status: 400 },
     );
   }
 
-  const result = await recordEvidenceMalwareScanUpdate({
+  const result = await recordEvidenceUploadCompletion({
     evidenceId,
-    malwareStatus,
-    provider,
-    providerReceipt,
-    validationStatus,
+    fileSize: stringValue(payload.fileSize),
+    objectKey: stringValue(payload.objectKey),
+    provider: stringValue(payload.provider),
+    providerReceipt: stringValue(payload.providerReceipt),
+    sha256: stringValue(payload.sha256),
   });
 
   return Response.json(result, {
@@ -61,4 +50,8 @@ function parsePayload(
   } catch {
     return {};
   }
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }

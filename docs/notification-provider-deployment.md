@@ -4,23 +4,26 @@ This document records the production environment contract for Notarix Signings
 email, SMS, phone-message, and provider delivery callback handling.
 
 Do not store provider credentials, API keys, webhook secrets, signing keys, or
-tokens in source files. Configure all production values as Sites runtime
-environment secrets for project `appgprj_6a516eb2e3908191b8b57cedf686b8e4`.
+tokens in source files. Configure all production values as Vercel Environment
+Variables for the Notarix Signings project.
 
 ## Runtime Secrets
 
 Email delivery:
 
-- `NOTARIX_EMAIL_API_KEY` or `SENDGRID_API_KEY`
-- `NOTARIX_EMAIL_WEBHOOK_SECRET`, `SENDGRID_WEBHOOK_SECRET`, or
-  `NOTARIX_NOTIFICATION_WEBHOOK_SECRET`
+- `AWS_SES_REGION`
+- `AWS_SES_FROM_EMAIL`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `NOTARIX_EMAIL_WEBHOOK_SECRET` or `NOTARIX_NOTIFICATION_WEBHOOK_SECRET`
 
 SMS and phone delivery:
 
-- `NOTARIX_SMS_API_KEY` or `TWILIO_AUTH_TOKEN`
-- `TWILIO_ACCOUNT_SID`
-- `NOTARIX_SMS_WEBHOOK_SECRET`, `TWILIO_AUTH_TOKEN`, or
-  `NOTARIX_NOTIFICATION_WEBHOOK_SECRET`
+- `AWS_SMS_REGION` or `AWS_REGION`
+- `AWS_PINPOINT_APPLICATION_ID` or `AWS_SNS_ORIGINATION_NUMBER`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `NOTARIX_SMS_WEBHOOK_SECRET` or `NOTARIX_NOTIFICATION_WEBHOOK_SECRET`
 
 Shared callback headers expected by the current application contract:
 
@@ -47,45 +50,47 @@ Use this application endpoint for delivery callbacks:
 
 ## Supported Callback Payload Shapes
 
-Internal provider-normalized JSON:
+AWS provider-normalized JSON:
 
 ```json
 {
   "notificationId": "NTF-2607-0001",
   "deliveryStatus": "Delivered",
-  "provider": "Production email provider",
+  "provider": "AWS SES email provider",
   "providerMessageId": "EML-NTF-2607-0001"
 }
 ```
 
-SendGrid-style event payload:
+AWS SES-style normalized event payload:
 
 ```json
-[
-  {
-    "event": "delivered",
-    "sg_message_id": "sendgrid-message-id",
-    "custom_args": {
-      "notificationId": "NTF-2607-0001"
-    }
-  }
-]
+{
+  "notificationId": "NTF-2607-0001",
+  "deliveryStatus": "Delivered",
+  "provider": "AWS SES email provider",
+  "providerMessageId": "ses-message-id"
+}
 ```
 
-Twilio-style form callback:
+AWS SMS-style normalized callback:
 
-```text
-notificationId=NTF-2607-0002&MessageSid=SM26070002&MessageStatus=delivered
+```json
+{
+  "notificationId": "NTF-2607-0002",
+  "deliveryStatus": "Delivered",
+  "provider": "AWS SNS or Pinpoint SMS provider",
+  "providerMessageId": "aws-sms-message-id"
+}
 ```
 
-The callback route normalizes these fields into the retained notification
-delivery event before updating delivery status.
+The callback route normalizes provider callback fields into the retained
+notification delivery event before updating delivery status.
 
 ## Deployment Validation
 
 Before launch:
 
-1. Configure the production email and SMS secrets in Sites runtime environment.
+1. Configure the production email and SMS secrets in Vercel Environment Variables.
 2. Confirm `/staff/provider-environment` shows email and SMS provider credentials
    and webhook secrets as configured.
 3. Send one signed email callback replay to `/notifications/provider-callback`.
@@ -94,6 +99,9 @@ Before launch:
    updated delivery status.
 6. Confirm phone/SMS delivery still blocks when consent is missing.
 
-Current production status at the time of this document: no Sites notification
-runtime secrets were configured, so production delivery credentials still need
-to be added before launch.
+Use `npm run callbacks:replay -- --base-url=https://YOUR-PRODUCTION-URL --send`
+to run signed callback validation for notification, evidence upload, and malware
+callback endpoints after runtime secrets are configured.
+
+Current production status at the time of this document: notification runtime
+secrets must be configured in Vercel before production delivery can launch.

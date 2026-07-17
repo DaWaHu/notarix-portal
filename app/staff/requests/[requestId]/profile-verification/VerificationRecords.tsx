@@ -58,7 +58,7 @@ type SectionMenuItem = {
   status: string;
 };
 
-const notarySectionMenu = [
+const notarySectionMenu: SectionMenuItem[] = [
   { label: "Overview", status: "Console summary", state: "none" },
   { label: "Contact & Addresses", status: "Needs review", state: "open" },
   { label: "Identity", status: "Needs review", state: "open" },
@@ -69,9 +69,9 @@ const notarySectionMenu = [
   { label: "RON Authorization", status: "Restricted", state: "restricted" },
   { label: "W-9 / Payables", status: "Needs review", state: "open" },
   { label: "Staff Decision", status: "Elevated approval", state: "none" },
-] as const satisfies readonly SectionMenuItem[];
+];
 
-const clientSectionMenu = [
+const clientSectionMenu: SectionMenuItem[] = [
   { label: "Overview", status: "Console summary", state: "none" },
   { label: "Client Profile", status: "Needs review", state: "open" },
   { label: "Organization", status: "Needs review", state: "open" },
@@ -83,7 +83,7 @@ const clientSectionMenu = [
   { label: "Orders", status: "Needs review", state: "open" },
   { label: "Compliance", status: "Needs review", state: "open" },
   { label: "Staff Decision", status: "Elevated approval", state: "none" },
-] as const satisfies readonly SectionMenuItem[];
+];
 
 const commonSecuritySignals = [
   "MFA/passkey required",

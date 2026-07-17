@@ -1,6 +1,14 @@
 import { requireChatGPTUser } from "../../chatgpt-auth";
 import { listEvidenceStorageControls } from "../../evidence-repository";
 
+type EvidenceIntakePageProps = {
+  searchParams: Promise<{
+    evidenceId?: string;
+    fileName?: string;
+    upload?: string;
+  }>;
+};
+
 function evidenceAnchor(label: string) {
   return label
     .toLowerCase()
@@ -9,9 +17,14 @@ function evidenceAnchor(label: string) {
     .replace(/^-|-$/g, "");
 }
 
-export default async function EvidenceIntakePage() {
+export default async function EvidenceIntakePage({
+  searchParams,
+}: EvidenceIntakePageProps) {
   await requireChatGPTUser("/staff/evidence-intake");
   const evidenceRecords = await listEvidenceStorageControls();
+  const uploadFeedback = await searchParams;
+  const uploadIssued = uploadFeedback.upload === "issued";
+  const uploadCompleted = uploadFeedback.upload === "completed";
 
   const profileEvidence = evidenceRecords.filter(
     (record) => record.source === "Profile Verification",
@@ -119,6 +132,32 @@ export default async function EvidenceIntakePage() {
               </div>
               <strong>{evidenceRecords.length} records</strong>
             </header>
+            {uploadIssued || uploadCompleted ? (
+              <section className="review-panel command-feedback-panel" aria-label="Latest evidence upload result">
+                <p className="request-label">Latest upload result</p>
+                {uploadIssued ? (
+                  <>
+                    <h3>Upload URL Issued · {uploadFeedback.evidenceId}</h3>
+                    <p>
+                      {uploadFeedback.fileName ?? "Submitted evidence"} received
+                      a signed upload URL. The evidence remains blocked until
+                      upload completion, malware validation, storage binding,
+                      custody attribution, and release controls are recorded.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h3>Upload Completed · {uploadFeedback.evidenceId}</h3>
+                    <p>
+                      Encrypted object storage has acknowledged the upload. The
+                      evidence is now marked Upload received; malware validation
+                      pending. It remains blocked until malware validation and
+                      staff release controls clear.
+                    </p>
+                  </>
+                )}
+              </section>
+            ) : null}
             <div className="verification-table-wrap">
               <table className="verification-table">
                 <caption>Evidence upload and intake review records</caption>
@@ -204,6 +243,33 @@ export default async function EvidenceIntakePage() {
               <div><dt>Release</dt><dd>Files remain blocked until storage and malware controls clear</dd></div>
               <div><dt>Audit</dt><dd>Every restricted view remains attributable</dd></div>
             </dl>
+            <form className="stacked-form" action="/staff/evidence-intake/upload" method="post">
+              <label>
+                File name
+                <input name="fileName" placeholder="seller-closing-package.pdf" required />
+              </label>
+              <label>
+                Owner record
+                <input name="orderId" placeholder="ORD-NC-2607-0001 or NSR-1001" />
+              </label>
+              <label>
+                Source workflow
+                <select name="source" defaultValue="Order Document">
+                  <option>Order Document</option>
+                  <option>Profile Verification</option>
+                  <option>Provider Result</option>
+                </select>
+              </label>
+              <label>
+                Access classification
+                <select name="accessLevel" defaultValue="Restricted staff review">
+                  <option>Client, assigned notary, staff</option>
+                  <option>Restricted staff review</option>
+                  <option>Administrator or Super Admin review</option>
+                </select>
+              </label>
+              <button type="submit">Request Signed Upload URL</button>
+            </form>
             <div className="decision-actions">
               <a href="/staff/document-validation">Open Validation Queue</a>
               <a href="/evidence/EV-W9-FORM">Review W-9 Evidence</a>

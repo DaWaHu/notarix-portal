@@ -775,7 +775,7 @@ async function persistCommandCenterReceipt(
   if (!db) {
     return {
       persisted: false,
-      reason: "D1 binding unavailable; command receipt remains in local preview store.",
+      reason: "Postgres DATABASE_URL unavailable; command receipt remains in local preview store.",
     };
   }
 

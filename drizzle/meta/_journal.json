@@ -1,47 +1,12 @@
 {
   "version": "7",
-  "dialect": "sqlite",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "6",
-      "when": 1783991396182,
-      "tag": "0000_aspiring_centennial",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1784022128703,
-      "tag": "0001_watery_doorman",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1784032980119,
-      "tag": "0002_magical_thena",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1784037600000,
-      "tag": "0003_evidence_storage_controls",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1784041200000,
-      "tag": "0004_evidence_access_and_scan_events",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1784044800000,
-      "tag": "0005_notification_delivery_provider_controls",
+      "version": "7",
+      "when": 1784308569545,
+      "tag": "0000_postgres_production_baseline",
       "breakpoints": true
     }
   ]

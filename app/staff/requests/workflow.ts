@@ -4,6 +4,7 @@ import {
   activationAuditRequirements,
   finalActivationControls,
   getProfileVerificationItems,
+  type ProfileVerificationItem,
   profileNumberFormatExample,
   profileNumberPrefix,
   type VerificationDecision,

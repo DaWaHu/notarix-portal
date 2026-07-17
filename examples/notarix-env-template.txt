@@ -1,0 +1,54 @@
+# Notarix Signings environment template
+# Copy the names you need into .env.local, then enter real values locally.
+# This template mirrors the supported Notarix Signings environment schema.
+# .env.local may contain a working subset, but should not contain duplicate or
+# unsupported keys.
+# Do not commit .env.local.
+
+# Core application
+APP_URL=
+SITE_LOCKED=false
+AUTH_SECRET=
+AUTH_TRUST_HOST=true
+DISABLE_AUTH=false
+
+# Seed owner bootstrap
+SEED_OWNER_EMAIL=
+SEED_OWNER_PASSWORD=
+SEED_OWNER_FIRST_NAME=
+SEED_OWNER_LAST_NAME=
+
+# Database
+DATABASE_URL=
+# Production uses Postgres through DATABASE_URL in Vercel.
+
+# Storage / evidence / order documents
+AWS_REGION=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+S3_BUCKET_NAME=
+NOTARIX_STORAGE_REGION=
+NOTARIX_STORAGE_BUCKET=
+NOTARIX_STORAGE_ENDPOINT=
+NOTARIX_STORAGE_WEBHOOK_SECRET=
+
+# Evidence malware scanning callbacks
+NOTARIX_MALWARE_WEBHOOK_SECRET=
+
+# Shared evidence callback verification secret, if used for storage and malware
+NOTARIX_EVIDENCE_WEBHOOK_SECRET=
+
+# Email notifications
+NOTARIX_EMAIL_WEBHOOK_SECRET=
+AWS_SES_REGION=
+AWS_SES_FROM_EMAIL=
+AWS_SES_TO_EMAIL=
+
+# SMS / phone notifications
+AWS_SMS_REGION=
+AWS_PINPOINT_APPLICATION_ID=
+AWS_SNS_ORIGINATION_NUMBER=
+NOTARIX_SMS_WEBHOOK_SECRET=
+
+# Shared callback verification secret, if used for both email and SMS
+NOTARIX_NOTIFICATION_WEBHOOK_SECRET=

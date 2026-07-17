@@ -15,7 +15,9 @@ Notarix Signings is a security-first notarial transaction platform for tradition
 - Store timestamps in UTC when backend persistence is added.
 - Use `NSR` for intake requests before approval, such as `NSR-1001`.
 - Assign `NSN` only to approved notary profiles, using the format `NSN-NC-2607-0001`.
-- Assign `NSC` only to approved client profiles, using the format `NSC-NC-2607-0001`.
+- Assign `NSC` only to approved client profiles, using the format `NSC-TX-2607-1234`.
+- Assign `ORD` to created Order Case Files, using the format `ORD-NC-2607-0001`.
+- Permanent operating identifiers use `PREFIX-STATE-YYMM-SEQUENCE`; the compact account code omits the prefix and separators, such as `TX26071234`.
 - Approved profile numbers are permanent, database-generated, never reused, and should not be assigned, reserved, or promised before activation. If `NSR-1002` is approved before `NSR-1001`, `NSR-1002` receives the next available approved profile number.
 - Protected staff pages must include clear Home and Logout navigation.
 - Profile workflow statuses should follow: `Contact Received`, `NSR Created`, `Profile Invitation Sent`, `Profile Submitted`, `GenAdmin Verification`, `Corrections Requested`, `Ready for Elevated Approval`, `Admin/Super Admin Review`, `Approved`, `Active`.

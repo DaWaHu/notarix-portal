@@ -33,22 +33,22 @@ const seedTimestamp = () => new Date("2026-07-18T21:00:00.000Z");
 const normalizeIdPart = (value: string) =>
   value.toUpperCase().replaceAll("&", "AND").replaceAll("/", "-").replaceAll(" ", "-");
 
-export const d1SeedReconciliationContract = {
+export const postgresSeedReconciliationContract = {
   authority: "SuperAdmin",
   idempotency: "Every baseline seed operation uses deterministic IDs and upsert logic.",
   scope:
     "Profiles, profile verification items, profile evidence metadata, order operations, order lifecycle support records, and command-center targets.",
   sourceOfTruth:
-    "Production D1 is the runtime source after seeding; local modeled records remain the preview fallback.",
+    "Production Postgres is the runtime source after seeding; local modeled records remain the preview fallback.",
 } as const;
 
-export async function reconcileBaselineD1Seed() {
+export async function reconcileBaselinePostgresSeed() {
   const db = await getOptionalDb();
   if (!db) {
     return {
       available: false,
-      contract: d1SeedReconciliationContract,
-      reason: "Cloudflare D1 binding `DB` is unavailable in this runtime.",
+      contract: postgresSeedReconciliationContract,
+      reason: "Postgres DATABASE_URL is unavailable in this runtime.",
       summary: buildBaselineSeedSummary(),
     };
   }
@@ -56,7 +56,7 @@ export async function reconcileBaselineD1Seed() {
   const summary = await seedBaselineRecords(db);
   return {
     available: true,
-    contract: d1SeedReconciliationContract,
+    contract: postgresSeedReconciliationContract,
     summary,
   };
 }

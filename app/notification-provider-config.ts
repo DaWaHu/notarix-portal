@@ -2,25 +2,29 @@ export const notificationProviderEnvironmentContract = {
   credentials:
     "Email and SMS provider credentials must be injected through environment secrets, never source files.",
   email:
-    "Email delivery can bind NOTARIX_EMAIL_API_KEY, SENDGRID_API_KEY, or an equivalent provider key. SendGrid-style event callbacks should carry a notificationId in custom_args or unique_args.",
+    "AWS SES is the primary email provider. SES delivery should bind AWS_SES_REGION, AWS_SES_FROM_EMAIL, AWS_ACCESS_KEY_ID, and AWS_SECRET_ACCESS_KEY.",
   sms:
-    "SMS and phone delivery can bind NOTARIX_SMS_API_KEY, TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, or equivalent provider credentials. Twilio-style status callbacks should include MessageSid, MessageStatus or SmsStatus, and notificationId.",
+    "AWS SNS or Pinpoint is the primary SMS and phone-message provider path. SMS delivery should bind AWS_SMS_REGION or AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and the selected origination/application identifier.",
   webhooks:
     "Provider callbacks must be verified with HMAC-SHA256 over timestamp and raw request body before delivery state changes are accepted.",
 } as const;
 
 export const notificationProviderSecretNames = {
-  emailApiKey: ["NOTARIX_EMAIL_API_KEY", "SENDGRID_API_KEY"],
+  emailAwsAccessKey: ["AWS_ACCESS_KEY_ID"],
+  emailAwsFromAddress: ["AWS_SES_FROM_EMAIL"],
+  emailAwsRegion: ["AWS_SES_REGION", "AWS_REGION"],
+  emailAwsSecretKey: ["AWS_SECRET_ACCESS_KEY"],
   emailWebhookSecret: [
     "NOTARIX_EMAIL_WEBHOOK_SECRET",
-    "SENDGRID_WEBHOOK_SECRET",
     "NOTARIX_NOTIFICATION_WEBHOOK_SECRET",
   ],
-  smsApiKey: ["NOTARIX_SMS_API_KEY", "TWILIO_AUTH_TOKEN"],
-  smsAccountId: ["TWILIO_ACCOUNT_SID"],
+  smsAwsAccessKey: ["AWS_ACCESS_KEY_ID"],
+  smsAwsApplicationId: ["AWS_PINPOINT_APPLICATION_ID"],
+  smsAwsOriginationNumber: ["AWS_SNS_ORIGINATION_NUMBER"],
+  smsAwsRegion: ["AWS_SMS_REGION", "AWS_REGION"],
+  smsAwsSecretKey: ["AWS_SECRET_ACCESS_KEY"],
   smsWebhookSecret: [
     "NOTARIX_SMS_WEBHOOK_SECRET",
-    "TWILIO_AUTH_TOKEN",
     "NOTARIX_NOTIFICATION_WEBHOOK_SECRET",
   ],
 } as const;
@@ -36,40 +40,54 @@ export async function getNotificationProviderBinding(channel: string) {
   const env = await getRuntimeEnv();
   const normalizedChannel = normalizeProviderChannel(channel);
   if (normalizedChannel === "SMS") {
+    const awsSmsConfigured = isAwsSmsConfigured(env);
     return {
-      accountId: firstEnvValue(env, notificationProviderSecretNames.smsAccountId),
-      apiKey: firstEnvValue(env, notificationProviderSecretNames.smsApiKey),
-      configured: Boolean(
-        firstEnvValue(env, notificationProviderSecretNames.smsApiKey),
-      ),
-      provider: "Production SMS and voice provider",
+      accountId:
+        firstEnvValue(env, notificationProviderSecretNames.smsAwsApplicationId) ??
+        firstEnvValue(env, notificationProviderSecretNames.smsAwsOriginationNumber),
+      apiKey: undefined,
+      configured: awsSmsConfigured,
+      provider: "AWS SNS or Pinpoint SMS provider",
       requiredSecrets: [
-        ...notificationProviderSecretNames.smsApiKey,
-        ...notificationProviderSecretNames.smsAccountId,
+        ...notificationProviderSecretNames.smsAwsRegion,
+        ...notificationProviderSecretNames.smsAwsApplicationId,
+        ...notificationProviderSecretNames.smsAwsOriginationNumber,
+        ...notificationProviderSecretNames.smsAwsAccessKey,
+        ...notificationProviderSecretNames.smsAwsSecretKey,
       ],
     };
   }
 
+  const awsSesConfigured = isAwsSesEmailConfigured(env);
   return {
     accountId: undefined,
-    apiKey: firstEnvValue(env, notificationProviderSecretNames.emailApiKey),
-    configured: Boolean(
-      firstEnvValue(env, notificationProviderSecretNames.emailApiKey),
-    ),
-    provider: "Production email provider",
-    requiredSecrets: [...notificationProviderSecretNames.emailApiKey],
+    apiKey: undefined,
+    configured: awsSesConfigured,
+    provider: "AWS SES email provider",
+    requiredSecrets: [
+      ...notificationProviderSecretNames.emailAwsRegion,
+      ...notificationProviderSecretNames.emailAwsFromAddress,
+      ...notificationProviderSecretNames.emailAwsAccessKey,
+      ...notificationProviderSecretNames.emailAwsSecretKey,
+    ],
   };
 }
 
 export async function getNotificationProviderEnvironmentStatus() {
   const env = await getRuntimeEnv();
+  const awsSesConfigured = isAwsSesEmailConfigured(env);
+  const awsSmsConfigured = isAwsSmsConfigured(env);
   return {
     email: {
-      configured: Boolean(
-        firstEnvValue(env, notificationProviderSecretNames.emailApiKey),
-      ),
-      provider: "Production email provider",
-      requiredKeys: notificationProviderSecretNames.emailApiKey,
+      awsSesConfigured,
+      configured: awsSesConfigured,
+      provider: "AWS SES email provider",
+      requiredKeys: [
+        ...notificationProviderSecretNames.emailAwsRegion,
+        ...notificationProviderSecretNames.emailAwsFromAddress,
+        ...notificationProviderSecretNames.emailAwsAccessKey,
+        ...notificationProviderSecretNames.emailAwsSecretKey,
+      ],
       webhookConfigured: Boolean(
         firstEnvValue(env, notificationProviderSecretNames.emailWebhookSecret),
       ),
@@ -77,13 +95,18 @@ export async function getNotificationProviderEnvironmentStatus() {
     },
     sms: {
       accountConfigured: Boolean(
-        firstEnvValue(env, notificationProviderSecretNames.smsAccountId),
+        firstEnvValue(env, notificationProviderSecretNames.smsAwsApplicationId) ??
+          firstEnvValue(env, notificationProviderSecretNames.smsAwsOriginationNumber),
       ),
-      configured: Boolean(firstEnvValue(env, notificationProviderSecretNames.smsApiKey)),
-      provider: "Production SMS and voice provider",
+      awsSmsConfigured,
+      configured: awsSmsConfigured,
+      provider: "AWS SNS or Pinpoint SMS provider",
       requiredKeys: [
-        ...notificationProviderSecretNames.smsApiKey,
-        ...notificationProviderSecretNames.smsAccountId,
+        ...notificationProviderSecretNames.smsAwsRegion,
+        ...notificationProviderSecretNames.smsAwsApplicationId,
+        ...notificationProviderSecretNames.smsAwsOriginationNumber,
+        ...notificationProviderSecretNames.smsAwsAccessKey,
+        ...notificationProviderSecretNames.smsAwsSecretKey,
       ],
       webhookConfigured: Boolean(
         firstEnvValue(env, notificationProviderSecretNames.smsWebhookSecret),
@@ -150,12 +173,7 @@ async function getWebhookSecret(input: { host: string | null; provider: string }
 }
 
 async function getRuntimeEnv(): Promise<RuntimeEnv> {
-  try {
-    const { env } = await import("cloudflare:workers");
-    return env as RuntimeEnv;
-  } catch {
-    return {};
-  }
+  return process.env as RuntimeEnv;
 }
 
 function firstEnvValue(
@@ -176,6 +194,27 @@ function normalizeProviderChannel(value: string): ProviderChannel {
     return "SMS";
   }
   return "Email";
+}
+
+function isAwsSesEmailConfigured(env: RuntimeEnv): boolean {
+  return Boolean(
+    firstEnvValue(env, notificationProviderSecretNames.emailAwsRegion) &&
+      firstEnvValue(env, notificationProviderSecretNames.emailAwsFromAddress) &&
+      firstEnvValue(env, notificationProviderSecretNames.emailAwsAccessKey) &&
+      firstEnvValue(env, notificationProviderSecretNames.emailAwsSecretKey),
+  );
+}
+
+function isAwsSmsConfigured(env: RuntimeEnv): boolean {
+  const hasOrigination =
+    firstEnvValue(env, notificationProviderSecretNames.smsAwsApplicationId) ||
+    firstEnvValue(env, notificationProviderSecretNames.smsAwsOriginationNumber);
+  return Boolean(
+    firstEnvValue(env, notificationProviderSecretNames.smsAwsRegion) &&
+      hasOrigination &&
+      firstEnvValue(env, notificationProviderSecretNames.smsAwsAccessKey) &&
+      firstEnvValue(env, notificationProviderSecretNames.smsAwsSecretKey),
+  );
 }
 
 function isLocalPreviewHost(host: string | null) {

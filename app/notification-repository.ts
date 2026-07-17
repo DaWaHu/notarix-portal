@@ -1,12 +1,17 @@
 import { eq } from "drizzle-orm";
 import { getOptionalDb } from "../db";
 import * as schema from "../db/schema";
+import { sendNotificationToProvider } from "./notification-provider-dispatch";
 import { getNotificationProviderBinding } from "./notification-provider-config";
 import { notificationRecords } from "./operations-data";
 
 type ModeledNotificationRecord = (typeof notificationRecords)[number];
+type WidenStringLiterals<T> = {
+  [Key in keyof T]: T[Key] extends string ? string : T[Key];
+};
+type NotificationChannel = WidenStringLiterals<ModeledNotificationRecord>["channel"];
 
-export type NotificationDeliveryRecord = ModeledNotificationRecord & {
+export type NotificationDeliveryRecord = WidenStringLiterals<ModeledNotificationRecord> & {
   callbackStatus: string;
   deliveryAttemptCount: number;
   lastCallbackAtUtc: string | null;
@@ -72,23 +77,23 @@ export async function listNotificationDeliveryRecords(): Promise<
     }
     return rows.map((row) => applyNotificationOverride({
       callbackStatus: row.callbackStatus,
-      channel: row.channel,
-      consent: row.consent,
+      channel: normalizeNotificationChannel(row.channel),
+      consent: row.consent as NotificationDeliveryRecord["consent"],
       deliveryAttemptCount: row.deliveryAttemptCount,
       id: row.id,
       lastCallbackAtUtc: row.lastCallbackAtUtc?.toISOString() ?? null,
-      nextAction: row.nextAction,
-      owner: row.owner,
+      nextAction: row.nextAction as NotificationDeliveryRecord["nextAction"],
+      owner: row.owner as NotificationDeliveryRecord["owner"],
       provider: row.provider,
       providerMessageId: row.providerMessageId,
       providerStatus: row.providerStatus,
-      purpose: row.purpose,
+      purpose: row.purpose as NotificationDeliveryRecord["purpose"],
       recipient: row.recipient,
       recipientName: row.recipientName,
       relatedRecord: row.relatedRecord,
-      status: row.status,
+      status: row.status as NotificationDeliveryRecord["status"],
       timestamp: row.timestamp,
-      trigger: row.trigger,
+      trigger: row.trigger as NotificationDeliveryRecord["trigger"],
       updatedAtUtc: row.updatedAtUtc.toISOString(),
     }));
   } catch {
@@ -110,31 +115,46 @@ export async function dispatchNotificationDelivery(input: {
     !record.consent.toLowerCase().includes("recorded");
   const providerBinding = await getNotificationProviderBinding(record.channel);
   const provider = providerBinding.provider;
-  const providerMessageId =
-    record.providerMessageId !== "Pending"
-      ? record.providerMessageId
-      : `${providerMessagePrefix(record.channel)}-${record.id}`;
-  const previousStatus = record.status;
   const blocked = requiresConsent;
+  const providerDispatch = blocked || !providerBinding.configured
+    ? {
+        detail: providerBinding.configured
+          ? "Phone or SMS delivery blocked until communication consent is retained."
+          : "Notification dispatch recorded; provider credentials must be bound through environment secrets before production delivery.",
+        ok: !blocked && providerBinding.configured,
+        providerMessageId:
+          record.providerMessageId !== "Pending"
+            ? record.providerMessageId
+            : `${providerMessagePrefix(record.channel)}-${record.id}`,
+        providerStatus: providerBinding.configured
+          ? "Blocked before provider handoff"
+          : "Provider credentials not configured",
+      }
+    : await sendNotificationToProvider(record);
+  const providerMessageId = providerDispatch.providerMessageId;
+  const previousStatus = record.status;
+  const providerRejected = !providerDispatch.ok && !blocked;
   const nextStatus = blocked
     ? "Consent Required"
-    : "Dispatched to provider";
+    : providerRejected
+      ? "Provider Dispatch Failed"
+      : "Dispatched to provider";
   const timestamp = notificationWorkflowTimestampUtc();
   const event: NotificationDeliveryEvent & { available: boolean } = {
     actor: input.actor,
     actorRole: input.actorRole,
     available: true,
     createdAtUtc: timestamp,
-    detail: blocked
-      ? "Phone or SMS delivery blocked until communication consent is retained."
-      : providerBinding.configured
-        ? "Notification dispatched with configured provider credentials and retained for delivery callback reconciliation."
-        : "Notification dispatch recorded; provider credentials must be bound through environment secrets before production delivery.",
-    eventType: blocked ? "Consent Hold" : "Provider Dispatch",
+    detail: providerDispatch.detail,
+    eventType: blocked
+      ? "Consent Hold"
+      : providerRejected
+        ? "Provider Dispatch Failed"
+        : "Provider Dispatch",
     id: nextNotificationEventId(),
     nextStatus,
     notificationId: record.id,
-    outcome: blocked ? "Blocked" : "Completed",
+    outcome: blocked || providerRejected ? "Blocked" : "Completed",
     previousStatus,
     provider,
     providerMessageId,
@@ -144,20 +164,22 @@ export async function dispatchNotificationDelivery(input: {
     event,
     record: {
       ...record,
-      callbackStatus: blocked ? "Awaiting consent" : "Awaiting provider callback",
+      callbackStatus: blocked
+        ? "Awaiting consent"
+        : providerRejected
+          ? "Dispatch failed"
+          : "Awaiting provider callback",
       deliveryAttemptCount: blocked
         ? record.deliveryAttemptCount
         : record.deliveryAttemptCount + 1,
       nextAction: blocked
         ? "Record consent before delivery."
-        : "Await provider delivery callback.",
+        : providerRejected
+          ? "Correct provider configuration or retry delivery with staff audit note."
+          : "Await provider delivery callback.",
       provider,
       providerMessageId,
-      providerStatus: blocked
-        ? "Blocked before provider handoff"
-        : providerBinding.configured
-          ? "Accepted"
-          : "Provider credentials not configured",
+      providerStatus: providerDispatch.providerStatus,
       status: nextStatus,
       updatedAtUtc: timestamp,
     },
@@ -413,6 +435,10 @@ function providerMessagePrefix(channel: string) {
 function phoneOrSmsChannel(channel: string) {
   const normalized = channel.toLowerCase();
   return normalized.includes("phone") || normalized.includes("sms");
+}
+
+function normalizeNotificationChannel(channel: string): NotificationChannel {
+  return phoneOrSmsChannel(channel) ? "Phone message" : "Email";
 }
 
 function callbackStatusFor(status: string) {

@@ -6,6 +6,10 @@ import {
   evidenceRecords,
   type EvidenceRecord,
 } from "./evidence-data";
+import {
+  createSignedObjectAccessUrl,
+  createSignedObjectUploadUrl,
+} from "./object-storage-config";
 
 export type EvidenceReleaseEligibility =
   | "Release Eligible"
@@ -52,6 +56,48 @@ export type EvidenceMalwareScanUpdate = {
   validationStatus: string;
 };
 
+export type EvidenceUploadCompletionUpdate = {
+  evidenceId: string;
+  fileSize?: string;
+  objectKey?: string;
+  provider?: string;
+  providerReceipt?: string;
+  sha256?: string;
+};
+
+export type EvidenceUploadIntakeInput = {
+  accessLevel?: string;
+  actor: string;
+  actorRole: string;
+  category?: string;
+  custody?: string;
+  fileName: string;
+  fileType?: EvidenceRecord["fileType"];
+  orderId?: string;
+  requestId?: string;
+  section?: string;
+  sha256?: string;
+  size?: string;
+  source?: EvidenceRecord["source"];
+  title?: string;
+};
+
+export type EvidenceUploadIntakeReceipt = {
+  accessLevel: string;
+  actor: string;
+  actorRole: string;
+  bucketName: string;
+  custody: string;
+  evidenceId: string;
+  expiresAtUtc: string;
+  feedbackUrl: string;
+  objectKey: string;
+  provider: string;
+  releaseEligibility: EvidenceReleaseEligibility;
+  signedUploadUrl: string;
+  status: string;
+};
+
 export const evidenceStorageContract = {
   access:
     "Evidence files must be opened through signed access after authorization, malware validation, custody classification, and audit attribution.",
@@ -69,12 +115,16 @@ type EvidenceStorageOverride = Partial<
   Pick<
     EvidenceStorageControlRecord,
     | "accessUrlStatus"
+    | "contentHashStatus"
     | "encryptionStatus"
     | "malwareProvider"
     | "malwareStatus"
+    | "objectKey"
     | "providerReceipt"
     | "releaseBlockedReason"
     | "releaseEligibility"
+    | "sha256"
+    | "size"
     | "storageStatus"
     | "updatedAtUtc"
     | "validationStatus"
@@ -83,6 +133,7 @@ type EvidenceStorageOverride = Partial<
 
 const globalEvidenceStore = globalThis as typeof globalThis & {
   __notarixEvidenceAccessReceipts?: EvidenceAccessReceipt[];
+  __notarixEvidenceUploadRecords?: EvidenceRecord[];
   __notarixEvidenceStorageOverrides?: Record<string, EvidenceStorageOverride>;
   __notarixEvidenceMalwareEvents?: EvidenceMalwareScanUpdate[];
 };
@@ -91,14 +142,15 @@ export async function listEvidenceStorageControls(): Promise<
   EvidenceStorageControlRecord[]
 > {
   const db = await getOptionalDb();
-  if (!db) return evidenceRecords.map(buildEvidenceStorageControl);
+  const modeledRecords = [...evidenceRecords, ...getLocalEvidenceUploadRecords()];
+  if (!db) return modeledRecords.map(buildEvidenceStorageControl);
 
   try {
     const rows = await db.select().from(schema.evidenceStorageControls);
-    if (rows.length === 0) return evidenceRecords.map(buildEvidenceStorageControl);
+    if (rows.length === 0) return modeledRecords.map(buildEvidenceStorageControl);
 
-    return rows.map((row) => {
-      const modeled = evidenceRecords.find(
+    const databaseRecords = rows.map((row) => {
+      const modeled = modeledRecords.find(
         (record) => record.id === row.evidenceId,
       );
       return applyEvidenceOverride({
@@ -135,8 +187,13 @@ export async function listEvidenceStorageControls(): Promise<
         validationStatus: row.validationStatus,
       });
     });
+    const databaseIds = new Set(rows.map((row) => row.evidenceId));
+    const localOnlyRecords = getLocalEvidenceUploadRecords()
+      .filter((record) => !databaseIds.has(record.id))
+      .map(buildEvidenceStorageControl);
+    return [...databaseRecords, ...localOnlyRecords];
   } catch {
-    return evidenceRecords.map(buildEvidenceStorageControl);
+    return modeledRecords.map(buildEvidenceStorageControl);
   }
 }
 
@@ -162,13 +219,110 @@ export async function getEvidenceStorageControl(
     }
   }
 
-  const modeled = evidenceRecords.find(
+  const modeled = [...evidenceRecords, ...getLocalEvidenceUploadRecords()].find(
     (record) =>
       record.id.toLowerCase() === normalizedEvidenceId ||
       evidenceIdFromFileName(record.fileName).toLowerCase() ===
         normalizedEvidenceId,
   );
   return modeled ? buildEvidenceStorageControl(modeled) : undefined;
+}
+
+export async function createEvidenceUploadIntake(
+  input: EvidenceUploadIntakeInput,
+): Promise<EvidenceUploadIntakeReceipt> {
+  const evidenceId = nextEvidenceUploadId();
+  const source = input.source ?? (input.orderId ? "Order Document" : "Profile Verification");
+  const fileType = input.fileType ?? fileTypeFromName(input.fileName);
+  const requestOrOrderId = input.orderId ?? input.requestId ?? "unassigned";
+  const objectKey = `${source === "Order Document" ? "orders" : "profiles"}/${
+    requestOrOrderId
+  }/${evidenceId}/${sanitizeObjectFileName(input.fileName)}`;
+  const record: EvidenceRecord = {
+    accessLevel: input.accessLevel ?? "Restricted staff review",
+    auditEvents: [
+      `${staffDisplayTimestamp()} - Upload intake created by ${input.actor}.`,
+      `${staffDisplayTimestamp()} - Signed upload URL issued for encrypted object storage.`,
+    ],
+    category: input.category ?? "Upload intake",
+    custody: input.custody ?? "Upload pending",
+    fileName: input.fileName,
+    fileType,
+    id: evidenceId,
+    lastAccessed: "Not accessed",
+    orderId: input.orderId,
+    previewFields: [
+      ["Upload status", "Signed upload URL issued"],
+      ["Object key", objectKey],
+      ["Release posture", "Blocked until upload validation and malware scan complete"],
+    ],
+    received: staffDisplayTimestamp(),
+    requestId: input.requestId,
+    retentionRule: "Retain according to source workflow after upload validation",
+    scanStatus: "Malware validation required before release",
+    section: input.section ?? "Upload Intake",
+    sha256: input.sha256 ?? "SHA-256 pending upload validation",
+    size: input.size ?? "Pending upload",
+    source,
+    storageStatus: "Encrypted object upload URL issued",
+    title: input.title ?? titleFromFileName(input.fileName),
+  };
+  getLocalEvidenceUploadRecords().push(record);
+
+  const storageControl = buildEvidenceStorageControl(record);
+  const signedUpload = await createSignedObjectUploadUrl({
+    bucketName: storageControl.bucketName,
+    objectKey,
+  });
+
+  const db = await getOptionalDb();
+  if (db) {
+    await db.insert(schema.evidenceStorageControls).values({
+      accessLevel: storageControl.accessLevel,
+      bucketName: storageControl.bucketName,
+      category: storageControl.category,
+      custody: storageControl.custody,
+      encryptionStatus: storageControl.encryptionStatus,
+      evidenceId,
+      fileName: storageControl.fileName,
+      fileSize: storageControl.size,
+      fileType: storageControl.fileType,
+      lastAccessed: storageControl.lastAccessed,
+      malwareProvider: storageControl.malwareProvider,
+      malwareStatus: storageControl.malwareStatus,
+      objectKey,
+      orderId: storageControl.orderId,
+      providerReceipt: storageControl.providerReceipt,
+      releaseBlockedReason: storageControl.releaseBlockedReason,
+      releaseEligibility: storageControl.releaseEligibility,
+      requestId: storageControl.requestId,
+      retentionRule: storageControl.retentionRule,
+      section: storageControl.section,
+      sha256: storageControl.sha256,
+      source: storageControl.source,
+      storageProvider: storageControl.storageProvider,
+      updatedAtUtc: new Date(storageControl.updatedAtUtc),
+      validationStatus: storageControl.validationStatus,
+    });
+  }
+
+  return {
+    accessLevel: storageControl.accessLevel,
+    actor: input.actor,
+    actorRole: input.actorRole,
+    bucketName: storageControl.bucketName,
+    custody: storageControl.custody,
+    evidenceId,
+    expiresAtUtc: signedUpload.expiresAtUtc,
+    feedbackUrl: `/staff/evidence-intake?upload=issued&evidenceId=${encodeURIComponent(
+      evidenceId,
+    )}&fileName=${encodeURIComponent(record.fileName)}`,
+    objectKey,
+    provider: signedUpload.provider,
+    releaseEligibility: storageControl.releaseEligibility,
+    signedUploadUrl: signedUpload.signedUrl,
+    status: "Upload URL Issued",
+  };
 }
 
 export function buildEvidenceStorageControl(
@@ -193,7 +347,7 @@ export function buildEvidenceStorageControl(
     providerReceipt: providerReceiptFor(record),
     releaseBlockedReason: releaseBlockedReasonFor(record, releaseEligibility),
     releaseEligibility,
-    storageProvider: "Cloudflare R2 compatible encrypted object storage",
+    storageProvider: "AWS S3-compatible encrypted object storage",
     updatedAtUtc: "2026-07-18T21:00:00.000Z",
     validationStatus: validationStatusFor(record),
   });
@@ -227,8 +381,13 @@ export async function requestEvidenceSignedAccess(input: {
     return receipt;
   }
 
+  const signedAccess = await createSignedObjectAccessUrl({
+    bucketName: evidence.bucketName,
+    objectKey: evidence.objectKey,
+  });
+
   const receipt: EvidenceAccessReceipt = {
-    accessUrlExpiresAtUtc: "2026-07-18T21:15:00.000Z",
+    accessUrlExpiresAtUtc: signedAccess.expiresAtUtc,
     actor: input.actor,
     actorRole: input.actorRole,
     createdAtUtc: createdAt,
@@ -236,7 +395,7 @@ export async function requestEvidenceSignedAccess(input: {
     id,
     outcome: "Issued",
     reason: input.reason,
-    signedUrl: buildSignedEvidenceUrl(evidence),
+    signedUrl: signedAccess.signedUrl,
   };
   await persistEvidenceAccessReceipt(receipt);
   return receipt;
@@ -341,13 +500,79 @@ export async function recordEvidenceMalwareScanUpdate(
   };
 }
 
+export async function recordEvidenceUploadCompletion(
+  input: EvidenceUploadCompletionUpdate,
+) {
+  const evidence = await getEvidenceStorageControl(input.evidenceId);
+  if (!evidence) {
+    return {
+      available: false,
+      error: "Evidence record not found",
+      evidenceId: input.evidenceId,
+    };
+  }
+
+  const updatedAt = evidenceWorkflowTimestampUtc();
+  const sha256 = input.sha256 ?? evidence.sha256;
+  const releaseEligibility: EvidenceReleaseEligibility = "Malware Validation Required";
+  const override: EvidenceStorageOverride = {
+    accessUrlStatus: accessUrlStatusFor(releaseEligibility),
+    contentHashStatus: hashStatusFor(sha256),
+    encryptionStatus: "Encrypted object stored",
+    malwareProvider:
+      input.provider ?? "Production malware scanning provider pending callback",
+    malwareStatus: "Malware validation required before release",
+    objectKey: input.objectKey ?? evidence.objectKey,
+    providerReceipt: input.providerReceipt ?? `UPLOAD-${input.evidenceId}`,
+    releaseBlockedReason: releaseBlockedReasonFor(evidence, releaseEligibility),
+    releaseEligibility,
+    sha256,
+    size: input.fileSize ?? evidence.size,
+    storageStatus: "Encrypted object stored",
+    updatedAtUtc: updatedAt,
+    validationStatus: "Upload received; malware validation pending",
+  };
+  getEvidenceOverrides()[input.evidenceId] = override;
+
+  const db = await getOptionalDb();
+  if (db) {
+    await db
+      .update(schema.evidenceStorageControls)
+      .set({
+        encryptionStatus: override.encryptionStatus,
+        malwareProvider: override.malwareProvider,
+        malwareStatus: override.malwareStatus,
+        objectKey: override.objectKey,
+        providerReceipt: override.providerReceipt,
+        releaseBlockedReason: override.releaseBlockedReason,
+        releaseEligibility: override.releaseEligibility,
+        sha256: override.sha256,
+        fileSize: override.size,
+        updatedAtUtc: new Date(updatedAt),
+        validationStatus: override.validationStatus,
+      })
+      .where(eq(schema.evidenceStorageControls.evidenceId, input.evidenceId));
+  }
+
+  return {
+    available: true,
+    evidenceId: input.evidenceId,
+    feedbackUrl: `/staff/evidence-intake?upload=completed&evidenceId=${encodeURIComponent(
+      input.evidenceId,
+    )}`,
+    releaseBlockedReason: override.releaseBlockedReason,
+    releaseEligibility,
+    updatedAtUtc: updatedAt,
+  };
+}
+
 function fallbackEvidenceRecord(
   row: typeof schema.evidenceStorageControls.$inferSelect,
 ): EvidenceRecord {
   return {
     accessLevel: row.accessLevel,
     auditEvents: [
-      "Jul 18 2026 at 5:00 PM ET - Evidence storage control loaded from D1.",
+      "Jul 18 2026 at 5:00 PM ET - Evidence storage control loaded from Postgres.",
     ],
     category: row.category,
     custody: row.custody,
@@ -391,6 +616,9 @@ function releaseEligibilityFor(
   record: EvidenceRecord,
   malwareStatus: string,
 ): EvidenceReleaseEligibility {
+  if (record.storageStatus.toLowerCase().includes("upload url issued")) {
+    return "Storage Binding Required";
+  }
   if (malwareStatus.toLowerCase().includes("required")) return "Quarantine";
   if (record.storageStatus.toLowerCase().includes("pending")) {
     return "Storage Binding Required";
@@ -470,10 +698,6 @@ async function persistEvidenceAccessReceipt(receipt: EvidenceAccessReceipt) {
   });
 }
 
-function buildSignedEvidenceUrl(evidence: EvidenceStorageControlRecord): string {
-  return `/evidence/${evidence.id}/signed?receipt=${nextEvidenceReceiptPreviewToken(evidence.id)}`;
-}
-
 function releaseEligibilityAfterProviderUpdate(
   evidence: EvidenceStorageControlRecord,
   malwareStatus: string,
@@ -514,6 +738,11 @@ function getLocalEvidenceAccessReceipts() {
   return globalEvidenceStore.__notarixEvidenceAccessReceipts;
 }
 
+function getLocalEvidenceUploadRecords() {
+  globalEvidenceStore.__notarixEvidenceUploadRecords ??= [];
+  return globalEvidenceStore.__notarixEvidenceUploadRecords;
+}
+
 function getLocalMalwareEvents() {
   globalEvidenceStore.__notarixEvidenceMalwareEvents ??= [];
   return globalEvidenceStore.__notarixEvidenceMalwareEvents;
@@ -523,10 +752,34 @@ function nextEvidenceReceiptId(): string {
   return `EVR-2607-${String(getLocalEvidenceAccessReceipts().length + 1).padStart(4, "0")}`;
 }
 
-function nextEvidenceReceiptPreviewToken(evidenceId: string): string {
-  return `${evidenceId.toLowerCase()}-${getLocalEvidenceAccessReceipts().length + 1}`;
+function nextEvidenceUploadId(): string {
+  return `EVU-2607-${String(getLocalEvidenceUploadRecords().length + 1).padStart(4, "0")}`;
 }
 
 function evidenceWorkflowTimestampUtc(): string {
   return "2026-07-18T21:00:00.000Z";
+}
+
+function staffDisplayTimestamp(): string {
+  return "Jul 18 2026 at 5:00 PM ET";
+}
+
+function fileTypeFromName(fileName: string): EvidenceRecord["fileType"] {
+  const extension = fileName.split(".").pop()?.toLowerCase();
+  if (extension === "json") return "JSON";
+  if (extension === "html" || extension === "htm") return "HTML";
+  if (extension === "csv") return "CSV";
+  if (extension === "url") return "URL";
+  return "PDF";
+}
+
+function sanitizeObjectFileName(fileName: string): string {
+  return fileName.trim().replace(/[^a-zA-Z0-9._-]+/g, "-");
+}
+
+function titleFromFileName(fileName: string): string {
+  return sanitizeObjectFileName(fileName)
+    .replace(/\.[^.]+$/, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }

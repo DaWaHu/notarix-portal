@@ -83,7 +83,7 @@ export async function GET() {
       "command_center_receipts",
     ],
     persistenceContract:
-      "Each command action creates a command-center receipt payload for D1 target, event, and receipt tables; blocked attempts are retained for audit review.",
+      "Each command action creates a command-center receipt payload for Postgres target, event, and receipt tables; blocked attempts are retained for audit review.",
     workflowContract:
       "Command center endpoints persist operational actions as attributable audit events and update stored command target status.",
   });

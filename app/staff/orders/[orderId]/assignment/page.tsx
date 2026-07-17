@@ -99,6 +99,41 @@ export default async function StaffAssignmentPage({ params }: StaffAssignmentPag
                 </tbody>
               </table>
             </div>
+            <section className="record-grid" aria-label="Assignment offer governance">
+              <article>
+                <p className="request-label">Offer packet before acceptance</p>
+                <h3>Notary-visible offer fields</h3>
+                <dl>
+                  <div><dt>Client company</dt><dd>{order.client}</dd></div>
+                  <div><dt>Appointment</dt><dd>{order.appointment}</dd></div>
+                  <div><dt>Area</dt><dd>City and ZIP only until confirmed</dd></div>
+                  <div><dt>Signing type</dt><dd>{order.service}</dd></div>
+                  <div><dt>Package size</dt><dd>Approximate page count and document readiness</dd></div>
+                  <div><dt>Scanbacks</dt><dd>Required status and return deadline</dd></div>
+                  <div><dt>Fee</dt><dd>Shown with payable method and staff-approved terms</dd></div>
+                </dl>
+              </article>
+              <article>
+                <p className="request-label">Response handling</p>
+                <h3>Interest, unavailable, or adjustment</h3>
+                <ul className="security-list">
+                  <li>I'm Interested routes the notary response for staff confirmation.</li>
+                  <li>Not Available requires structured reason capture.</li>
+                  <li>Fee is too low may collect Fee I can accept without using counter-offer language.</li>
+                  <li>Location, time, client conflict, mobile signing preference, and other reasons remain retained with the order.</li>
+                </ul>
+              </article>
+              <article>
+                <p className="request-label">Confirmed assignment access</p>
+                <h3>Document release boundary</h3>
+                <p>
+                  Full signing address, borrower or signer details, secure
+                  document download, order instructions, scanback upload, and
+                  completion controls are released only after assignment
+                  confirmation and document validation controls allow access.
+                </p>
+              </article>
+            </section>
           </article>
 
           <aside className="activation-control-center">

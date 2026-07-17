@@ -71,7 +71,7 @@ export default async function CommandCenterActivityPage() {
           ["Completed commands", String(completedCount), "Accepted command-center actions with retained receipts."],
           ["Blocked attempts", String(blockedCount), "Denied actions retained with blocked reason and authority."],
           ["Super Admin controls", String(superAdminCount), "Commands requiring restricted executive authority."],
-          ["Persistence posture", "D1 ready", "Targets, events, and receipts map to permanent schema tables."],
+          ["Persistence posture", "Postgres ready", "Targets, events, and receipts map to permanent schema tables."],
         ].map(([label, value, description]) => (
           <article key={label}>
             <p>{label}</p>

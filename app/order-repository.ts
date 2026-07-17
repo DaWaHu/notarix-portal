@@ -25,9 +25,9 @@ const nowUtc = () => new Date();
 
 export const orderRepositoryPersistenceContract = {
   sourceOfTruth: "Order remains the central system record for Notarix Signings.",
-  currentMode: "D1-first repository with seed-backed local preview fallback.",
+  currentMode: "Postgres-first repository with seed-backed local preview fallback.",
   productionBinding:
-    "Order workflow actions update D1 operational records when the production DB binding is present.",
+    "Order workflow actions update Postgres operational records when DATABASE_URL is present.",
   requiredControls:
     "RBAC, MFA/passkeys, audit attribution, document custody, delivery receipts, and financial release authority.",
 } as const;
@@ -213,7 +213,7 @@ export async function persistOrderCommandTransition(input: {
   if (!db) {
     return {
       persisted: false,
-      reason: "D1 binding unavailable; command receipt remains in local preview store.",
+      reason: "Postgres DATABASE_URL unavailable; command receipt remains in local preview store.",
     };
   }
 

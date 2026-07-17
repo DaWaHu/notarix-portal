@@ -43,6 +43,7 @@ export default async function PlatformConfigurationCenterPage() {
           <a href="/staff/system-health">System Health</a>
           <a href="/staff/access-control">Access Control</a>
           <a href="/staff/integrations">Integrations</a>
+          <a href="/staff/deployment-readiness">Deployment Readiness</a>
           <a href="/staff/retention">Retention</a>
           <a className="nav-cta" href="/staff/platform">Platform Configuration</a>
           <a href="/signout-with-chatgpt?return_to=/">Logout</a>
@@ -193,6 +194,7 @@ export default async function PlatformConfigurationCenterPage() {
               </form>
               <a href="/staff/system-health">Open System Health</a>
               <a href="/staff/integrations">Open Integrations</a>
+              <a href="/staff/deployment-readiness">Open Deployment Readiness</a>
               <a href="/staff/access-control">Open Access Control</a>
               <a href="/staff/retention">Open Retention</a>
             </div>

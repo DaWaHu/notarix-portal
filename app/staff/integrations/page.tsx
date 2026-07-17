@@ -35,6 +35,7 @@ export default async function ProviderIntegrationsPage() {
           <a href="/staff/access-control">Access Control</a>
           <a href="/staff/platform">Platform Configuration</a>
           <a href="/staff/document-validation">Document Validation</a>
+          <a href="/staff/deployment-readiness">Deployment Readiness</a>
           <a className="nav-cta" href="/staff/integrations">Integrations</a>
           <a href="/signout-with-chatgpt?return_to=/">Logout</a>
         </nav>
@@ -191,6 +192,7 @@ export default async function ProviderIntegrationsPage() {
                 <input name="targetId" type="hidden" value="INT-2607-0004" />
                 <button type="submit">Escalate Provider Risk</button>
               </form>
+              <a href="/staff/deployment-readiness">Open Deployment Readiness</a>
             </div>
             <p className="decision-lock-note">
               Production provider integrations require secrets management,

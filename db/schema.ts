@@ -1,6 +1,14 @@
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import {
+  boolean,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
-export const accessRequests = sqliteTable(
+export const accessRequests = pgTable(
   "access_requests",
   {
     id: text("id").primaryKey(),
@@ -15,8 +23,8 @@ export const accessRequests = sqliteTable(
     status: text("status").notNull(),
     risk: text("risk", { enum: ["Standard", "Elevated"] }).notNull(),
     reviewer: text("reviewer").notNull(),
-    receivedAtUtc: integer("received_at_utc", { mode: "timestamp" }).notNull(),
-    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+    receivedAtUtc: timestamp("received_at_utc", { withTimezone: true }).notNull(),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     uniqueIndex("access_requests_profile_number_idx").on(table.approvedProfileNumber),
@@ -25,7 +33,7 @@ export const accessRequests = sqliteTable(
   ],
 );
 
-export const profileVerificationItems = sqliteTable(
+export const profileVerificationItems = pgTable(
   "profile_verification_items",
   {
     id: text("id").primaryKey(),
@@ -39,7 +47,7 @@ export const profileVerificationItems = sqliteTable(
       enum: ["Verified", "Pending", "Deficient", "Restricted"],
     }).notNull(),
     reviewerNote: text("reviewer_note").notNull(),
-    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     uniqueIndex("profile_verification_items_request_section_idx").on(
@@ -50,7 +58,7 @@ export const profileVerificationItems = sqliteTable(
   ],
 );
 
-export const evidenceFiles = sqliteTable(
+export const evidenceFiles = pgTable(
   "evidence_files",
   {
     id: text("id").primaryKey(),
@@ -62,7 +70,7 @@ export const evidenceFiles = sqliteTable(
     custody: text("custody").notNull(),
     scanStatus: text("scan_status").notNull(),
     storageKey: text("storage_key").notNull(),
-    uploadedAtUtc: integer("uploaded_at_utc", { mode: "timestamp" }).notNull(),
+    uploadedAtUtc: timestamp("uploaded_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("evidence_files_request_idx").on(table.requestId),
@@ -70,7 +78,7 @@ export const evidenceFiles = sqliteTable(
   ],
 );
 
-export const evidenceStorageControls = sqliteTable(
+export const evidenceStorageControls = pgTable(
   "evidence_storage_controls",
   {
     evidenceId: text("evidence_id").primaryKey(),
@@ -97,7 +105,7 @@ export const evidenceStorageControls = sqliteTable(
     releaseBlockedReason: text("release_blocked_reason").notNull(),
     retentionRule: text("retention_rule").notNull(),
     lastAccessed: text("last_accessed").notNull(),
-    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("evidence_storage_controls_request_idx").on(table.requestId),
@@ -107,7 +115,7 @@ export const evidenceStorageControls = sqliteTable(
   ],
 );
 
-export const evidenceAccessReceipts = sqliteTable(
+export const evidenceAccessReceipts = pgTable(
   "evidence_access_receipts",
   {
     id: text("id").primaryKey(),
@@ -120,10 +128,10 @@ export const evidenceAccessReceipts = sqliteTable(
     outcome: text("outcome", { enum: ["Issued", "Blocked"] }).notNull(),
     signedUrl: text("signed_url"),
     blockedReason: text("blocked_reason"),
-    accessUrlExpiresAtUtc: integer("access_url_expires_at_utc", {
-      mode: "timestamp",
+    accessUrlExpiresAtUtc: timestamp("access_url_expires_at_utc", {
+      withTimezone: true,
     }),
-    createdAtUtc: integer("created_at_utc", { mode: "timestamp" }).notNull(),
+    createdAtUtc: timestamp("created_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("evidence_access_receipts_evidence_idx").on(table.evidenceId),
@@ -132,7 +140,7 @@ export const evidenceAccessReceipts = sqliteTable(
   ],
 );
 
-export const evidenceMalwareScanEvents = sqliteTable(
+export const evidenceMalwareScanEvents = pgTable(
   "evidence_malware_scan_events",
   {
     id: text("id").primaryKey(),
@@ -144,8 +152,8 @@ export const evidenceMalwareScanEvents = sqliteTable(
     malwareStatus: text("malware_status").notNull(),
     validationStatus: text("validation_status").notNull(),
     releaseEligibility: text("release_eligibility").notNull(),
-    callbackReceivedAtUtc: integer("callback_received_at_utc", {
-      mode: "timestamp",
+    callbackReceivedAtUtc: timestamp("callback_received_at_utc", {
+      withTimezone: true,
     }).notNull(),
   },
   (table) => [
@@ -154,7 +162,7 @@ export const evidenceMalwareScanEvents = sqliteTable(
   ],
 );
 
-export const workflowAuditEvents = sqliteTable(
+export const workflowAuditEvents = pgTable(
   "workflow_audit_events",
   {
     id: text("id").primaryKey(),
@@ -167,7 +175,7 @@ export const workflowAuditEvents = sqliteTable(
     previousStatus: text("previous_status").notNull(),
     nextStatus: text("next_status").notNull(),
     event: text("event").notNull(),
-    createdAtUtc: integer("created_at_utc", { mode: "timestamp" }).notNull(),
+    createdAtUtc: timestamp("created_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("workflow_audit_events_request_idx").on(table.requestId),
@@ -175,7 +183,7 @@ export const workflowAuditEvents = sqliteTable(
   ],
 );
 
-export const workflowNotifications = sqliteTable(
+export const workflowNotifications = pgTable(
   "workflow_notifications",
   {
     id: text("id").primaryKey(),
@@ -186,12 +194,12 @@ export const workflowNotifications = sqliteTable(
     recipient: text("recipient").notNull(),
     purpose: text("purpose").notNull(),
     status: text("status").notNull(),
-    createdAtUtc: integer("created_at_utc", { mode: "timestamp" }).notNull(),
+    createdAtUtc: timestamp("created_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [index("workflow_notifications_request_idx").on(table.requestId)],
 );
 
-export const notificationDeliveryRecords = sqliteTable(
+export const notificationDeliveryRecords = pgTable(
   "notification_delivery_records",
   {
     id: text("id").primaryKey(),
@@ -211,8 +219,8 @@ export const notificationDeliveryRecords = sqliteTable(
     providerStatus: text("provider_status").notNull(),
     deliveryAttemptCount: integer("delivery_attempt_count").notNull(),
     callbackStatus: text("callback_status").notNull(),
-    lastCallbackAtUtc: integer("last_callback_at_utc", { mode: "timestamp" }),
-    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+    lastCallbackAtUtc: timestamp("last_callback_at_utc", { withTimezone: true }),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("notification_delivery_records_related_idx").on(table.relatedRecord),
@@ -221,7 +229,7 @@ export const notificationDeliveryRecords = sqliteTable(
   ],
 );
 
-export const notificationDeliveryEvents = sqliteTable(
+export const notificationDeliveryEvents = pgTable(
   "notification_delivery_events",
   {
     id: text("id").primaryKey(),
@@ -237,7 +245,7 @@ export const notificationDeliveryEvents = sqliteTable(
     nextStatus: text("next_status").notNull(),
     outcome: text("outcome", { enum: ["Completed", "Blocked"] }).notNull(),
     detail: text("detail").notNull(),
-    createdAtUtc: integer("created_at_utc", { mode: "timestamp" }).notNull(),
+    createdAtUtc: timestamp("created_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("notification_delivery_events_notification_idx").on(table.notificationId),
@@ -245,7 +253,7 @@ export const notificationDeliveryEvents = sqliteTable(
   ],
 );
 
-export const communicationConsentRecords = sqliteTable(
+export const communicationConsentRecords = pgTable(
   "communication_consent_records",
   {
     id: text("id").primaryKey(),
@@ -257,7 +265,7 @@ export const communicationConsentRecords = sqliteTable(
     consentStatus: text("consent_status").notNull(),
     purpose: text("purpose").notNull(),
     recordedBy: text("recorded_by").notNull(),
-    recordedAtUtc: integer("recorded_at_utc", { mode: "timestamp" }).notNull(),
+    recordedAtUtc: timestamp("recorded_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("communication_consent_records_notification_idx").on(table.notificationId),
@@ -265,7 +273,7 @@ export const communicationConsentRecords = sqliteTable(
   ],
 );
 
-export const commandCenterTargets = sqliteTable(
+export const commandCenterTargets = pgTable(
   "command_center_targets",
   {
     id: text("id").primaryKey(),
@@ -285,7 +293,7 @@ export const commandCenterTargets = sqliteTable(
     }).notNull(),
     status: text("status").notNull(),
     sourceHref: text("source_href").notNull(),
-    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("command_center_targets_type_idx").on(table.targetType),
@@ -293,7 +301,7 @@ export const commandCenterTargets = sqliteTable(
   ],
 );
 
-export const commandCenterEvents = sqliteTable(
+export const commandCenterEvents = pgTable(
   "command_center_events",
   {
     id: text("id").primaryKey(),
@@ -319,13 +327,13 @@ export const commandCenterEvents = sqliteTable(
     actor: text("actor").notNull(),
     actorRole: text("actor_role").notNull(),
     authority: text("authority").notNull(),
-    allowed: integer("allowed", { mode: "boolean" }).notNull(),
+    allowed: boolean("allowed").notNull(),
     outcome: text("outcome", { enum: ["Completed", "Blocked"] }).notNull(),
     previousStatus: text("previous_status").notNull(),
     nextStatus: text("next_status").notNull(),
     blockedReason: text("blocked_reason"),
     auditEvent: text("audit_event").notNull(),
-    createdAtUtc: integer("created_at_utc", { mode: "timestamp" }).notNull(),
+    createdAtUtc: timestamp("created_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     uniqueIndex("command_center_events_receipt_idx").on(table.receiptId),
@@ -335,7 +343,7 @@ export const commandCenterEvents = sqliteTable(
   ],
 );
 
-export const commandCenterReceipts = sqliteTable(
+export const commandCenterReceipts = pgTable(
   "command_center_receipts",
   {
     id: text("id").primaryKey(),
@@ -350,8 +358,8 @@ export const commandCenterReceipts = sqliteTable(
     authority: text("authority").notNull(),
     consoleHref: text("console_href").notNull(),
     nextRequiredAction: text("next_required_action").notNull(),
-    retainedForAudit: integer("retained_for_audit", { mode: "boolean" }).notNull(),
-    createdAtUtc: integer("created_at_utc", { mode: "timestamp" }).notNull(),
+    retainedForAudit: boolean("retained_for_audit").notNull(),
+    createdAtUtc: timestamp("created_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("command_center_receipts_target_idx").on(table.targetId),
@@ -359,7 +367,7 @@ export const commandCenterReceipts = sqliteTable(
   ],
 );
 
-export const orderOperationalRecords = sqliteTable(
+export const orderOperationalRecords = pgTable(
   "order_operational_records",
   {
     id: text("id").primaryKey(),
@@ -385,8 +393,8 @@ export const orderOperationalRecords = sqliteTable(
     owner: text("owner").notNull(),
     risk: text("risk").notNull(),
     nextAction: text("next_action").notNull(),
-    createdAtUtc: integer("created_at_utc", { mode: "timestamp" }).notNull(),
-    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+    createdAtUtc: timestamp("created_at_utc", { withTimezone: true }).notNull(),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("order_operational_records_client_idx").on(table.client),
@@ -396,7 +404,7 @@ export const orderOperationalRecords = sqliteTable(
   ],
 );
 
-export const orderLifecycleStages = sqliteTable(
+export const orderLifecycleStages = pgTable(
   "order_lifecycle_stages",
   {
     id: text("id").primaryKey(),
@@ -410,7 +418,7 @@ export const orderLifecycleStages = sqliteTable(
     timestamp: text("timestamp").notNull(),
     evidence: text("evidence").notNull(),
     nextAction: text("next_action").notNull(),
-    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     uniqueIndex("order_lifecycle_stages_order_stage_idx").on(table.orderId, table.stage),
@@ -418,7 +426,7 @@ export const orderLifecycleStages = sqliteTable(
   ],
 );
 
-export const orderSignerReadiness = sqliteTable(
+export const orderSignerReadiness = pgTable(
   "order_signer_readiness",
   {
     id: text("id").primaryKey(),
@@ -435,7 +443,7 @@ export const orderSignerReadiness = sqliteTable(
     risk: text("risk").notNull(),
     staffOwner: text("staff_owner").notNull(),
     nextAction: text("next_action").notNull(),
-    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("order_signer_readiness_order_idx").on(table.orderId),
@@ -444,7 +452,7 @@ export const orderSignerReadiness = sqliteTable(
   ],
 );
 
-export const orderAppointments = sqliteTable(
+export const orderAppointments = pgTable(
   "order_appointments",
   {
     id: text("id").primaryKey(),
@@ -463,7 +471,7 @@ export const orderAppointments = sqliteTable(
     staffOwner: text("staff_owner").notNull(),
     authority: text("authority").notNull(),
     nextAction: text("next_action").notNull(),
-    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("order_appointments_order_idx").on(table.orderId),
@@ -472,7 +480,7 @@ export const orderAppointments = sqliteTable(
   ],
 );
 
-export const orderCloseoutControls = sqliteTable(
+export const orderCloseoutControls = pgTable(
   "order_closeout_controls",
   {
     id: text("id").primaryKey(),
@@ -486,7 +494,7 @@ export const orderCloseoutControls = sqliteTable(
     authority: text("authority").notNull(),
     lastUpdated: text("last_updated").notNull(),
     nextAction: text("next_action").notNull(),
-    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("order_closeout_controls_order_idx").on(table.orderId),
@@ -495,7 +503,7 @@ export const orderCloseoutControls = sqliteTable(
   ],
 );
 
-export const orderDeliveryReceipts = sqliteTable(
+export const orderDeliveryReceipts = pgTable(
   "order_delivery_receipts",
   {
     id: text("id").primaryKey(),
@@ -510,7 +518,7 @@ export const orderDeliveryReceipts = sqliteTable(
     deliveredAt: text("delivered_at").notNull(),
     accessControl: text("access_control").notNull(),
     clientNextAction: text("client_next_action").notNull(),
-    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("order_delivery_receipts_order_idx").on(table.orderId),
@@ -518,7 +526,7 @@ export const orderDeliveryReceipts = sqliteTable(
   ],
 );
 
-export const notaryCompletionReceipts = sqliteTable(
+export const notaryCompletionReceipts = pgTable(
   "notary_completion_receipts",
   {
     id: text("id").primaryKey(),
@@ -531,7 +539,7 @@ export const notaryCompletionReceipts = sqliteTable(
     notaryAction: text("notary_action").notNull(),
     staffReview: text("staff_review").notNull(),
     payableImpact: text("payable_impact").notNull(),
-    updatedAtUtc: integer("updated_at_utc", { mode: "timestamp" }).notNull(),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("notary_completion_receipts_order_idx").on(table.orderId),

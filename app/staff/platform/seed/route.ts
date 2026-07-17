@@ -1,15 +1,15 @@
 import { requireStaffRouteAccess } from "../../../access-policy";
 import {
   buildBaselineSeedSummary,
-  d1SeedReconciliationContract,
-  reconcileBaselineD1Seed,
-} from "../../../d1-seed";
+  postgresSeedReconciliationContract,
+  reconcileBaselinePostgresSeed,
+} from "../../../postgres-seed";
 
 export async function GET() {
   await requireSeedAuthority();
 
   return Response.json({
-    contract: d1SeedReconciliationContract,
+    contract: postgresSeedReconciliationContract,
     mode: "Dry run",
     summary: buildBaselineSeedSummary(),
   });
@@ -18,7 +18,7 @@ export async function GET() {
 export async function POST() {
   await requireSeedAuthority();
 
-  const result = await reconcileBaselineD1Seed();
+  const result = await reconcileBaselinePostgresSeed();
   return Response.json(result, {
     status: result.available ? 200 : 503,
   });

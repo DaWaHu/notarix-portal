@@ -1,3 +1,8 @@
+import {
+  formatPermanentRecordIdentifier,
+  identifierPolicyExamples,
+} from "../../identifier-policy";
+
 export type AccessRequestStatus =
   | "Contact Received"
   | "NSR Created"
@@ -494,11 +499,18 @@ export function profileNumberLabel(type: AccessRequest["type"]): string {
 
 export function profileNumberAssignmentRule(type: AccessRequest["type"]): string {
   const prefix = profileNumberPrefix(type);
-  return `${prefix} is generated transactionally at approval so numbering follows actual activation order.`;
+  return `${prefix} is generated transactionally at approval using state, activation year/month, and the next permanent sequence number.`;
 }
 
 export function profileNumberFormatExample(type: AccessRequest["type"]): string {
-  return type === "Notary" ? "NSN-NC-2607-0001" : "NSC-NC-2607-0001";
+  return type === "Notary"
+    ? identifierPolicyExamples.notaryProfile
+    : formatPermanentRecordIdentifier({
+        kind: "ClientProfile",
+        jurisdiction: "NC",
+        effectiveDateUtc: new Date("2026-07-18T21:00:00.000Z"),
+        sequence: 1,
+      });
 }
 
 export function canActivateProfile(request: AccessRequest): boolean {

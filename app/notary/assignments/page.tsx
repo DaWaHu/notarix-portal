@@ -167,6 +167,67 @@ export default async function NotaryAssignmentConsolePage() {
                 </tbody>
               </table>
             </div>
+            <section className="record-grid" aria-label="Mobile offer response process">
+              <article>
+                <p className="request-label">Before acceptance</p>
+                <h3>Mobile assignment offer</h3>
+                <dl>
+                  <div><dt>Client company</dt><dd>Coleman Title Group</dd></div>
+                  <div><dt>Date and time</dt><dd>Jul 17 2026 at 4:00 PM ET</dd></div>
+                  <div><dt>Area</dt><dd>Elizabethtown, NC 28337</dd></div>
+                  <div><dt>Signing type</dt><dd>Debt settlement with scanbacks</dd></div>
+                  <div><dt>Page count</dt><dd>Approximately 200 pages</dd></div>
+                  <div><dt>Scanbacks</dt><dd>Required; return ASAP by 10:00 PM ET</dd></div>
+                  <div><dt>Fee</dt><dd>$100</dd></div>
+                  <div><dt>Required credentials</dt><dd>Active commission, E&amp;O, background, W-9, and client-specific instructions acknowledged</dd></div>
+                </dl>
+                <div className="decision-actions">
+                  <form action="/notary/assignment-actions" method="post">
+                    <input name="action" type="hidden" value="notary-accept-assignment" />
+                    <input name="targetId" type="hidden" value="ORD-2607-0001" />
+                    <button type="submit">I'm Interested</button>
+                  </form>
+                  <form action="/notary/assignment-actions" method="post">
+                    <input name="action" type="hidden" value="notary-decline-assignment" />
+                    <input name="targetId" type="hidden" value="ORD-2607-0001" />
+                    <button type="submit">Not Available</button>
+                  </form>
+                </div>
+              </article>
+              <article>
+                <p className="request-label">Not available reasons</p>
+                <h3>Structured response options</h3>
+                <ul className="security-list">
+                  <li>I am not available at that time.</li>
+                  <li>Location is too far away.</li>
+                  <li>Fee is too low.</li>
+                  <li>I no longer do mobile signings.</li>
+                  <li>I do not want to work with this client.</li>
+                  <li>Other.</li>
+                </ul>
+                <dl>
+                  <div><dt>Fee adjustment</dt><dd>Fee I can accept: $____</dd></div>
+                  <div><dt>Staff treatment</dt><dd>Creates an assignment exception for review, not a confirmed assignment.</dd></div>
+                </dl>
+              </article>
+              <article>
+                <p className="request-label">After assignment confirmation</p>
+                <h3>Expanded order access</h3>
+                <ul className="security-list">
+                  <li>Full signing address.</li>
+                  <li>Borrower or signer details as permitted.</li>
+                  <li>Secure document download link.</li>
+                  <li>Order instructions.</li>
+                  <li>Upload scanbacks.</li>
+                  <li>Mark appointment complete.</li>
+                </ul>
+                <p>
+                  Full document access remains controlled by order status,
+                  document validation, credential eligibility, assignment
+                  status, and audit logging.
+                </p>
+              </article>
+            </section>
           </article>
 
           <aside className="activation-control-center">
@@ -193,12 +254,12 @@ export default async function NotaryAssignmentConsolePage() {
               <form action="/notary/assignment-actions" method="post">
                 <input name="action" type="hidden" value="notary-accept-assignment" />
                 <input name="targetId" type="hidden" value="ORD-2607-0001" />
-                <button type="submit">Accept Assignment</button>
+                <button type="submit">I'm Interested</button>
               </form>
               <form action="/notary/assignment-actions" method="post">
                 <input name="action" type="hidden" value="notary-decline-assignment" />
                 <input name="targetId" type="hidden" value="ORD-2607-0001" />
-                <button type="submit">Decline Assignment</button>
+                <button type="submit">Not Available</button>
               </form>
               <form action="/notary/assignment-actions" method="post">
                 <input name="action" type="hidden" value="notary-confirm-arrival" />

@@ -79,6 +79,7 @@ const roleConfig: Record<
       ["Access Control", "/staff/access-control", "Review MFA, passkeys, device posture, and staff session controls."],
       ["System Health", "/staff/system-health", "Review backup, recovery, and provider readiness posture."],
       ["Integrations", "/staff/integrations", "Review provider readiness, callbacks, and data access controls."],
+      ["Deployment Readiness", "/staff/deployment-readiness", "Review production bindings, runtime secrets, and callback replay readiness."],
       ["Communications", "/notifications", "Resolve delivery failures and consent holds."],
       ["Credential Renewal", "/credentials/expiration", "Review renewal restrictions before service access changes."],
     ],
@@ -113,6 +114,7 @@ const roleConfig: Record<
       ["Access Control", "/staff/access-control", "Control identity-provider, RBAC, device, and session posture."],
       ["System Health", "/staff/system-health", "Review recovery, provider health, identity, and storage readiness."],
       ["Integrations", "/staff/integrations", "Control provider integrations, callbacks, data scopes, and degradation."],
+      ["Deployment Readiness", "/staff/deployment-readiness", "Control production bindings, runtime secrets, and callback replay readiness."],
       ["Elevated Approval", "/staff/elevated-approval", "Grant final approval after verification and audit review."],
       ["Restricted Evidence", "/evidence/EV-W9-FORM", "Open restricted evidence with access attribution."],
     ],
@@ -236,6 +238,9 @@ export default async function StaffRoleHomePage() {
               <a href={config.primaryHref}>Open Primary Workspace</a>
               <a href="/notifications">Open Communications</a>
               <a href="/credentials/expiration">Open Credential Monitor</a>
+              {(role === "Admin" || role === "SuperAdmin") && (
+                <a href="/staff/deployment-readiness">Open Deployment Readiness</a>
+              )}
             </div>
             <p className="decision-lock-note">
               Production role routing should be enforced by the identity

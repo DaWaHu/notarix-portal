@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { getOptionalDb } from "../../../db";
 import * as schema from "../../../db/schema";
+import { formatPermanentRecordIdentifier } from "../../identifier-policy";
 import {
   type AccessRequest,
   type AccessRequestStatus,
@@ -99,7 +100,7 @@ export async function persistStoredAccessRequest(
   if (!db) {
     return {
       persisted: false,
-      reason: "D1 binding unavailable; profile workflow remains in local preview store.",
+      reason: "Postgres DATABASE_URL unavailable; profile workflow remains in local preview store.",
     };
   }
 
@@ -345,8 +346,8 @@ function getWorkflowStore(): NotarixWorkflowStore {
 
 function createInitialStore(): NotarixWorkflowStore {
   return {
-    nextClientProfileSequence: 1,
-    nextNotaryProfileSequence: 1,
+    nextClientProfileSequence: 0,
+    nextNotaryProfileSequence: 0,
     requests: Object.fromEntries(
       accessRequests.map((request) => [
         request.id,
@@ -402,7 +403,7 @@ function storedRequestFromRows(input: {
     invitationTarget: input.requestRow.email,
     invitationUrl: `/profile/complete/${input.requestRow.id}`,
     nextAction: "Review stored workflow record.",
-    notes: "Stored workflow record reconstructed from D1.",
+    notes: "Stored workflow record reconstructed from Postgres.",
     received: "Jul 18 2026 at 5:00 PM ET",
   };
 
@@ -460,11 +461,21 @@ function nextProfileNumber(
 ): string {
   if (request.type === "Client") {
     store.nextClientProfileSequence += 1;
-    return profileNumberFormatExample(request.type);
+    return formatPermanentRecordIdentifier({
+      kind: "ClientProfile",
+      jurisdiction: request.jurisdiction,
+      effectiveDateUtc: persistedWorkflowDate(),
+      sequence: store.nextClientProfileSequence,
+    });
   }
 
   store.nextNotaryProfileSequence += 1;
-  return profileNumberFormatExample(request.type);
+  return formatPermanentRecordIdentifier({
+    kind: "NotaryProfile",
+    jurisdiction: request.jurisdiction,
+    effectiveDateUtc: persistedWorkflowDate(),
+    sequence: store.nextNotaryProfileSequence,
+  });
 }
 
 function workflowTimestamp(): string {
