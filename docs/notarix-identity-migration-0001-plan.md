@@ -37,7 +37,8 @@ could interrupt authentication.
 - Repository journal: two migrations; head is `0001_nebulous_slipstream`.
 - Drizzle schema: 25 tables; SQL and snapshot are internally present.
 - Production read-only check on Aug 5 2026: none of the four identity tables are present.
-- Vercel Preview and Production have overlapping environment scopes. An isolated preview database is not proven.
+- Value-blind comparison proved Vercel Preview and Production use the same
+  `DATABASE_URL`. No isolated preview database exists on the configured server.
 - Cognito remains disabled in legacy rollback mode.
 
 ## Prerequisites

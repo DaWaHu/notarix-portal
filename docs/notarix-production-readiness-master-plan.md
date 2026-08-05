@@ -25,7 +25,7 @@ Readiness is reported by phase and control area, not as a single percentage:
 | --- | --- | --- |
 | Phase 0: current-state verification | Complete for Phase 1 | Repository, Vercel deployment, environment names, Postgres connectivity, migrations, auth mode, lint, TypeScript, and contract tests inspected Aug 5 2026 |
 | Phase 1: release baseline and quality | Complete | Commits pushed; GitHub Actions passed; protected preview maps to exact SHA; zero lint errors/vulnerabilities; TypeScript, 7 tests, and build pass |
-| Phase 2: identity and authorization | Ready to begin in protected preview; infrastructure blocked | Cognito code exists but runtime is `legacy_rollback_mode`; Cognito variables and an isolated preview database are absent |
+| Phase 2: identity and authorization | In progress; blocked at database isolation gate | Preview/Production variables are identical; no isolated DB is available; Cognito public endpoints exist but preview configuration is absent |
 | Phase 3: evidence and documents | Partial/unverified | S3 signing code and callback models exist; production scanner, quarantine, IAM, versioning, and recovery not certified |
 | Phase 4: external providers | Partial/unverified | SES dispatch code and shared callbacks exist; SMS, identity proofing, and financial providers are not certified |
 | Phase 5: security and resilience | Not ready | Immutable audit, restore drill, monitoring, alerting, incident response, IAM review, RTO/RPO, and penetration testing lack closure evidence |
@@ -280,6 +280,8 @@ escalation, required records, test cadence, and owner approval.
 | Aug 5 2026 | Corrected quality gate | Zero lint errors; TypeScript passed; 7/7 tests passed; two consecutive builds passed |
 | Aug 5 2026 | Patched dependency audit | Next.js 16.3.0 and patched transitive dependencies; zero known vulnerabilities |
 | Aug 5 2026 | Production preview-route denial | `notarix.live` and redirected `www.notarix.live` returned 404; unrelated alias had TLS hostname mismatch |
+| Aug 5 2026 | Phase 2 environment isolation comparison | Preview and Production share database, AWS, storage, callback, URL, and lock values; isolation failed; temporary secret files removed |
+| Aug 5 2026 | Phase 2 database inventory | No preview database exists on the configured server; production-instance logical DB option rejected |
 
 ## Phase 1 session result — Aug 5 2026
 
