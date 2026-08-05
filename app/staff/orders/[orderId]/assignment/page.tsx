@@ -117,7 +117,7 @@ export default async function StaffAssignmentPage({ params }: StaffAssignmentPag
                 <p className="request-label">Response handling</p>
                 <h3>Interest, unavailable, or adjustment</h3>
                 <ul className="security-list">
-                  <li>I'm Interested routes the notary response for staff confirmation.</li>
+                  <li>I&apos;m Interested routes the notary response for staff confirmation.</li>
                   <li>Not Available requires structured reason capture.</li>
                   <li>Fee is too low may collect Fee I can accept without using counter-offer language.</li>
                   <li>Location, time, client conflict, mobile signing preference, and other reasons remain retained with the order.</li>

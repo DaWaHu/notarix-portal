@@ -1,10 +1,13 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import { providerIntegrationRecords } from "../../operations-data";
 import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function ProviderIntegrationsPage() {
-  await requireChatGPTUser("/staff/integrations");
+  await requireStaffRouteAccess("/staff/integrations", [
+    "Admin",
+    "SuperAdmin",
+  ]);
   const latestCommandReceipt = getLatestCommandCenterReceiptForHref(
     "/staff/integrations",
   );

@@ -1,10 +1,13 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import { paymentLedgerRecords } from "../../operations-data";
 import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function FinancialReportingPage() {
-  await requireChatGPTUser("/staff/financial-reports");
+  await requireStaffRouteAccess("/staff/financial-reports", [
+    "Admin",
+    "SuperAdmin",
+  ]);
   const latestCommandReceipt = getLatestCommandCenterReceiptForHref(
     "/staff/financial-reports",
   );

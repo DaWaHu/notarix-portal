@@ -1,8 +1,11 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import { financialControlRecords } from "../../operations-data";
 
 export default async function FinancialControlsPage() {
-  await requireChatGPTUser("/staff/financial-controls");
+  await requireStaffRouteAccess("/staff/financial-controls", [
+    "Admin",
+    "SuperAdmin",
+  ]);
 
   const restrictedCount = financialControlRecords.filter(
     (record) => record.status === "Restricted" || record.status === "Locked",

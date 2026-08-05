@@ -1,4 +1,4 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import {
   listEvidenceStorageControls,
   type EvidenceStorageControlRecord,
@@ -30,7 +30,11 @@ function validationStatusFor(record: EvidenceStorageControlRecord): ValidationRe
 }
 
 export default async function DocumentValidationPage() {
-  await requireChatGPTUser("/staff/document-validation");
+  await requireStaffRouteAccess("/staff/document-validation", [
+    "GenAdmin",
+    "Admin",
+    "SuperAdmin",
+  ]);
   const latestCommandReceipt = getLatestCommandCenterReceiptForHref(
     "/staff/document-validation",
   );

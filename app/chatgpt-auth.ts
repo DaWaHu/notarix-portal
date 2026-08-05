@@ -1,5 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { cognitoAuthEnabled } from "./auth-config";
+import { getCognitoPortalSession } from "./cognito-session";
 
 export type ChatGPTUser = {
   displayName: string;
@@ -19,6 +21,17 @@ const LOCAL_STAFF_PREVIEW_PATH = "/local-staff-preview";
 const LOCAL_STAFF_COOKIE = "notarix_local_staff_preview";
 
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
+  if (cognitoAuthEnabled()) {
+    const session = await getCognitoPortalSession();
+    if (session) {
+      return {
+        displayName: session.displayName,
+        email: session.email,
+        fullName: session.displayName,
+      };
+    }
+  }
+
   const requestHeaders = await headers();
   const email = requestHeaders.get(USER_EMAIL_HEADER);
   if (!email) {
@@ -62,6 +75,10 @@ export async function requireChatGPTUser(
     redirect(localStaffPreviewPath(returnTo));
   }
 
+  if (cognitoAuthEnabled()) {
+    redirect(cognitoSignInPath(returnTo));
+  }
+
   redirect(chatGPTSignInPath(returnTo));
 }
 
@@ -73,6 +90,16 @@ export function chatGPTSignInPath(returnTo: string): string {
 export function chatGPTSignOutPath(returnTo = "/"): string {
   const safeReturnTo = safeRelativeReturnPath(returnTo);
   return `${SIGN_OUT_PATH}?return_to=${encodeURIComponent(safeReturnTo)}`;
+}
+
+export function cognitoSignInPath(returnTo: string): string {
+  const safeReturnTo = safeRelativeReturnPath(returnTo);
+  return `/auth/login?return_to=${encodeURIComponent(safeReturnTo)}`;
+}
+
+export function cognitoSignOutPath(returnTo = "/"): string {
+  const safeReturnTo = safeRelativeReturnPath(returnTo);
+  return `/auth/logout?return_to=${encodeURIComponent(safeReturnTo)}`;
 }
 
 export function localStaffPreviewPath(returnTo: string): string {

@@ -7,7 +7,6 @@ import {
   type AccessRequestStatus,
   accessRequests,
   getProfileVerificationItems,
-  profileNumberFormatExample,
   type ProfileVerificationItem,
   type VerificationDecision,
 } from "./data";

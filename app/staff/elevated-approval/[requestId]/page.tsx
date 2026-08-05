@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireChatGPTUser } from "../../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../../access-policy";
 import {
   activationAuditRequirements,
   finalActivationControls,
@@ -19,7 +19,10 @@ export default async function ElevatedApprovalReviewPage({
   params,
 }: ElevatedApprovalReviewPageProps) {
   const { requestId } = await params;
-  await requireChatGPTUser(`/staff/elevated-approval/${requestId}`);
+  await requireStaffRouteAccess(`/staff/elevated-approval/${requestId}`, [
+    "Admin",
+    "SuperAdmin",
+  ]);
 
   const request = findAccessRequest(requestId);
   if (!request) notFound();

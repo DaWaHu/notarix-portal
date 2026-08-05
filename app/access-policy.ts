@@ -1,10 +1,12 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { cognitoAuthEnabled, legacyStaffRole } from "./auth-config";
 import {
   isLocalDevHost,
   requireChatGPTUser,
   type ChatGPTUser,
 } from "./chatgpt-auth";
+import { getCognitoPortalSession } from "./cognito-session";
 
 export type StaffRole = "GenAdmin" | "Admin" | "SuperAdmin";
 export type PortalActorRole = StaffRole | "Client" | "Notary";
@@ -75,6 +77,22 @@ export async function getRequestStaffRole(): Promise<StaffRole> {
 }
 
 export async function getStaffIdentitySession(): Promise<StaffIdentitySession> {
+  if (cognitoAuthEnabled()) {
+    const session = await getCognitoPortalSession();
+    const role = session ? legacyStaffRole(session.role) : null;
+    return {
+      compliant: Boolean(role && session?.status === "ACTIVE"),
+      deviceTrusted: Boolean(role),
+      localPreview: false,
+      mfaVerified: Boolean(role),
+      passkeyVerified: role === "Admin" || role === "SuperAdmin",
+      role,
+      sessionAssurance:
+        role === "Admin" || role === "SuperAdmin" ? "High" : "High",
+      source: "ProductionIdentityProvider",
+    };
+  }
+
   const requestHeaders = await headers();
   const host = requestHeaders.get("host");
   const localPreview = !host || isLocalDevHost(host);

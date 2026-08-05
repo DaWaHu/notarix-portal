@@ -199,6 +199,114 @@ export const workflowNotifications = pgTable(
   (table) => [index("workflow_notifications_request_idx").on(table.requestId)],
 );
 
+export const portalUsers = pgTable(
+  "portal_users",
+  {
+    id: text("id").primaryKey(),
+    email: text("email").notNull(),
+    displayName: text("display_name").notNull(),
+    role: text("role", {
+      enum: [
+        "SUPER_ADMIN",
+        "ADMIN",
+        "GEN_ADMIN",
+        "NOTARY",
+        "CLIENT",
+        "OBSERVER",
+      ],
+    }).notNull(),
+    status: text("status", {
+      enum: ["ACTIVE", "INVITED", "SUSPENDED", "DISABLED"],
+    }).notNull(),
+    ownerLocked: boolean("owner_locked").notNull(),
+    createdAtUtc: timestamp("created_at_utc", { withTimezone: true }).notNull(),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("portal_users_email_idx").on(table.email),
+    index("portal_users_role_idx").on(table.role),
+    index("portal_users_status_idx").on(table.status),
+  ],
+);
+
+export const portalUserIdentities = pgTable(
+  "portal_user_identities",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => portalUsers.id),
+    provider: text("provider").notNull(),
+    providerSubject: text("provider_subject").notNull(),
+    issuer: text("issuer").notNull(),
+    email: text("email").notNull(),
+    lastAuthenticatedAtUtc: timestamp("last_authenticated_at_utc", {
+      withTimezone: true,
+    }).notNull(),
+    createdAtUtc: timestamp("created_at_utc", { withTimezone: true }).notNull(),
+    updatedAtUtc: timestamp("updated_at_utc", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("portal_user_identities_provider_subject_idx").on(
+      table.provider,
+      table.providerSubject,
+    ),
+    index("portal_user_identities_user_idx").on(table.userId),
+    index("portal_user_identities_email_idx").on(table.email),
+  ],
+);
+
+export const portalRoleAssignments = pgTable(
+  "portal_role_assignments",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => portalUsers.id),
+    role: text("role", {
+      enum: [
+        "SUPER_ADMIN",
+        "ADMIN",
+        "GEN_ADMIN",
+        "NOTARY",
+        "CLIENT",
+        "OBSERVER",
+      ],
+    }).notNull(),
+    assignedBy: text("assigned_by").notNull(),
+    assignedAtUtc: timestamp("assigned_at_utc", { withTimezone: true }).notNull(),
+    revokedAtUtc: timestamp("revoked_at_utc", { withTimezone: true }),
+  },
+  (table) => [
+    index("portal_role_assignments_user_idx").on(table.userId),
+    index("portal_role_assignments_role_idx").on(table.role),
+  ],
+);
+
+export const portalAuthSessions = pgTable(
+  "portal_auth_sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => portalUsers.id),
+    sessionTokenHash: text("session_token_hash").notNull(),
+    userAgent: text("user_agent").notNull(),
+    ipAddress: text("ip_address").notNull(),
+    createdAtUtc: timestamp("created_at_utc", { withTimezone: true }).notNull(),
+    rotatedAtUtc: timestamp("rotated_at_utc", { withTimezone: true }).notNull(),
+    expiresAtUtc: timestamp("expires_at_utc", { withTimezone: true }).notNull(),
+    revokedAtUtc: timestamp("revoked_at_utc", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("portal_auth_sessions_token_hash_idx").on(
+      table.sessionTokenHash,
+    ),
+    index("portal_auth_sessions_user_idx").on(table.userId),
+    index("portal_auth_sessions_expires_idx").on(table.expiresAtUtc),
+  ],
+);
+
 export const notificationDeliveryRecords = pgTable(
   "notification_delivery_records",
   {

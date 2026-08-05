@@ -1,10 +1,13 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import { retentionPolicyRecords } from "../../operations-data";
 import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function RetentionPolicyPage() {
-  await requireChatGPTUser("/staff/retention");
+  await requireStaffRouteAccess("/staff/retention", [
+    "Admin",
+    "SuperAdmin",
+  ]);
   const latestCommandReceipt = getLatestCommandCenterReceiptForHref("/staff/retention");
 
   const holdCount = retentionPolicyRecords.filter((record) =>

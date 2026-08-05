@@ -185,7 +185,7 @@ export default async function NotaryAssignmentConsolePage() {
                   <form action="/notary/assignment-actions" method="post">
                     <input name="action" type="hidden" value="notary-accept-assignment" />
                     <input name="targetId" type="hidden" value="ORD-2607-0001" />
-                    <button type="submit">I'm Interested</button>
+                    <button type="submit">I&apos;m Interested</button>
                   </form>
                   <form action="/notary/assignment-actions" method="post">
                     <input name="action" type="hidden" value="notary-decline-assignment" />
@@ -254,7 +254,7 @@ export default async function NotaryAssignmentConsolePage() {
               <form action="/notary/assignment-actions" method="post">
                 <input name="action" type="hidden" value="notary-accept-assignment" />
                 <input name="targetId" type="hidden" value="ORD-2607-0001" />
-                <button type="submit">I'm Interested</button>
+                <button type="submit">I&apos;m Interested</button>
               </form>
               <form action="/notary/assignment-actions" method="post">
                 <input name="action" type="hidden" value="notary-decline-assignment" />

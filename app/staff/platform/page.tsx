@@ -1,4 +1,4 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import {
   platformConfigurationRecords,
   providerIntegrationRecords,
@@ -8,7 +8,7 @@ import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function PlatformConfigurationCenterPage() {
-  await requireChatGPTUser("/staff/platform");
+  await requireStaffRouteAccess("/staff/platform", ["SuperAdmin"]);
   const latestIntegrationReceipt = getLatestCommandCenterReceiptForHref("/staff/integrations");
   const superAdminControls = platformConfigurationRecords.filter(
     (record) => record.authority === "Super Admin",

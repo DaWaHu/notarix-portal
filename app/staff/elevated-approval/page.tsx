@@ -1,4 +1,4 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import { accessRequests, finalActivationControls } from "../requests/data";
 
 const elevatedRequests = accessRequests.filter(
@@ -6,7 +6,10 @@ const elevatedRequests = accessRequests.filter(
 );
 
 export default async function ElevatedApprovalQueuePage() {
-  await requireChatGPTUser("/staff/elevated-approval");
+  await requireStaffRouteAccess("/staff/elevated-approval", [
+    "Admin",
+    "SuperAdmin",
+  ]);
 
   return (
     <main className="staff-page">
