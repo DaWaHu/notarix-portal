@@ -1,14 +1,18 @@
 import { redirect } from "next/navigation";
-import { readCognitoRuntimeConfig } from "../../auth-config";
+import { cognitoAuthEnabled, readCognitoRuntimeConfig } from "../../auth-config";
 import { createAuthFlowCookies, pkceChallenge } from "../../cognito-session";
 import { safeAuthReturnPath } from "../../chatgpt-auth";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const config = readCognitoRuntimeConfig();
   const url = new URL(request.url);
   const returnTo = safeAuthReturnPath(url.searchParams.get("return_to") ?? "/portal");
+  if (!cognitoAuthEnabled()) {
+    redirect(`/signin-with-chatgpt?return_to=${encodeURIComponent(returnTo)}`);
+  }
+
+  const config = readCognitoRuntimeConfig();
   const portal = url.searchParams.get("portal") ?? "staff";
   const flow = await createAuthFlowCookies();
   const authorizeUrl = new URL(config.authorizationEndpoint);

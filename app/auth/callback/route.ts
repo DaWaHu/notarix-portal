@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { readCognitoRuntimeConfig } from "../../auth-config";
+import { cognitoAuthEnabled, readCognitoRuntimeConfig } from "../../auth-config";
 import { safeAuthReturnPath } from "../../chatgpt-auth";
 import { verifyCognitoJwt } from "../../cognito-jwt";
 import {
@@ -21,6 +21,10 @@ type TokenResponse = {
 };
 
 export async function GET(request: Request) {
+  if (!cognitoAuthEnabled()) {
+    redirect("/signin-with-chatgpt?error=cognito_disabled");
+  }
+
   const config = readCognitoRuntimeConfig();
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");

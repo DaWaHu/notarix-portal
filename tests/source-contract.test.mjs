@@ -124,11 +124,14 @@ test("Cognito foundation preserves legacy rollback and avoids source secrets", a
   assert.match(loginRoute, /code_challenge_method/);
   assert.match(loginRoute, /S256/);
   assert.match(loginRoute, /identity_provider/);
+  assert.match(loginRoute, /if \(!cognitoAuthEnabled\(\)\)/);
   assert.match(callbackRoute, /authorization_code/);
+  assert.match(callbackRoute, /if \(!cognitoAuthEnabled\(\)\)/);
   assert.match(callbackRoute, /verifyCognitoJwt\(tokenResponse\.id_token,\s*"id"/);
   assert.match(callbackRoute, /verifyCognitoJwt\(\s*tokenResponse\.access_token,\s*"access"/);
   assert.match(callbackRoute, /nonce/);
   assert.match(logoutRoute, /clearPortalSessionCookie/);
+  assert.match(logoutRoute, /if \(!cognitoAuthEnabled\(\)\)/);
 
   assert.match(jwtVerifier, /crypto\.subtle\.verify/);
   assert.match(jwtVerifier, /RS256/);
