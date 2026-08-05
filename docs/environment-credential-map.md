@@ -26,7 +26,6 @@ provider's vocabulary.
 | Maintenance lock | `SITE_LOCKED` | none | Optional. Set `true` only during controlled maintenance windows. |
 | Auth/session signing secret | `AUTH_SECRET` | none | Must be a high-entropy secret. |
 | Auth trusted host flag | `AUTH_TRUST_HOST` | none | Required only when the auth provider needs trusted host handling. |
-| Local auth bypass | `DISABLE_AUTH` | none | Local preview only. Never enable in production. |
 | Seed owner email | `SEED_OWNER_EMAIL` | none | Initial owner account for seed/reconciliation workflows. |
 | Seed owner password | `SEED_OWNER_PASSWORD` | none | Local/bootstrap only; rotate before production. |
 | Seed owner first name | `SEED_OWNER_FIRST_NAME` | none | Seed profile metadata. |
@@ -49,6 +48,14 @@ provider's vocabulary.
 | Shared evidence webhook secret | `NOTARIX_EVIDENCE_WEBHOOK_SECRET` | none | May be used for both upload-completion and malware-scan callbacks. |
 | Storage webhook secret | `NOTARIX_STORAGE_WEBHOOK_SECRET` | none | Optional dedicated callback secret for storage upload completion events. |
 | Malware webhook secret | `NOTARIX_MALWARE_WEBHOOK_SECRET` | none | Optional dedicated callback secret for malware scan provider events. |
+| Identity provider mode | `NOTARIX_AUTH_PROVIDER`, `NOTARIX_AUTH_MODE` | none | Future Cognito cutover controls. Existing auth remains the rollback path until cutover is approved. |
+| Owner Super Admin email | `NOTARIX_OWNER_SUPER_ADMIN_EMAIL` | none | Must be `owner@dawahucollective.com` for the initial exclusive owner account. |
+| Cognito user pool identifiers | `NOTARIX_COGNITO_REGION`, `NOTARIX_COGNITO_USER_POOL_ID`, `NOTARIX_COGNITO_USER_POOL_DOMAIN` | none | Non-secret Cognito resource identifiers after manual AWS setup. |
+| Cognito app client | `NOTARIX_COGNITO_CLIENT_ID`, `NOTARIX_COGNITO_CLIENT_SECRET` | none | Client ID is non-secret; client secret is secret and belongs only in local `.env.local` or Vercel encrypted environment variables. |
+| Cognito verification metadata | `NOTARIX_COGNITO_ISSUER`, `NOTARIX_COGNITO_JWKS_URL` | none | Used by the application to verify Cognito-issued JWTs. |
+| Cognito redirect/logout URLs | `NOTARIX_COGNITO_REDIRECT_URI`, `NOTARIX_COGNITO_LOGOUT_URI` | none | Must match the Cognito app client callback and logout URL configuration. |
+| Staff SAML provider | `NOTARIX_COGNITO_STAFF_IDP_NAME`, `NOTARIX_COGNITO_ALLOWED_STAFF_DOMAIN` | none | Google Workspace SAML provider name and allowed staff domain, `notarix.live`. |
+| Portal session cookie | `NOTARIX_SESSION_COOKIE_SECRET`, `NOTARIX_SESSION_COOKIE_NAME` | none | Server-side session cookie support for Cognito auth. The cookie secret must never be committed or pasted into chat. |
 
 ## Important Non-Equivalencies
 
@@ -62,6 +69,10 @@ required for the AWS-primary setup.
 
 `DATABASE_URL` is the production Postgres connection string for the Vercel
 runtime. It is not an AWS key, notification secret, or storage bucket name.
+
+`NOTARIX_COGNITO_CLIENT_SECRET` is not an AWS access key, Google password, or
+Vercel password. It is a Cognito app-client secret and must be stored only in
+local `.env.local` or Vercel encrypted environment variables.
 
 ## Recommended First Conversion
 

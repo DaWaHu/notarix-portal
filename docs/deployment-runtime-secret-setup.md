@@ -49,7 +49,6 @@ Core application:
 - `APP_URL`
 - `AUTH_SECRET`
 - `AUTH_TRUST_HOST`
-- `DISABLE_AUTH` set to `false`
 
 Database:
 
@@ -82,6 +81,27 @@ Optional specialized secrets may be added when Notarix separates providers:
 - `AWS_SMS_REGION`
 - `AWS_PINPOINT_APPLICATION_ID`
 - `AWS_SNS_ORIGINATION_NUMBER`
+
+Cognito identity-provider variables are optional while
+`NOTARIX_AUTH_MODE=legacy` remains the rollback path. Add them to Vercel Preview
+first when Cognito testing begins:
+
+- `NOTARIX_AUTH_PROVIDER`
+- `NOTARIX_AUTH_MODE`
+- `NOTARIX_OWNER_SUPER_ADMIN_EMAIL`
+- `NOTARIX_COGNITO_REGION`
+- `NOTARIX_COGNITO_USER_POOL_ID`
+- `NOTARIX_COGNITO_USER_POOL_DOMAIN`
+- `NOTARIX_COGNITO_CLIENT_ID`
+- `NOTARIX_COGNITO_CLIENT_SECRET`
+- `NOTARIX_COGNITO_ISSUER`
+- `NOTARIX_COGNITO_JWKS_URL`
+- `NOTARIX_COGNITO_REDIRECT_URI`
+- `NOTARIX_COGNITO_LOGOUT_URI`
+- `NOTARIX_COGNITO_STAFF_IDP_NAME`
+- `NOTARIX_COGNITO_ALLOWED_STAFF_DOMAIN`
+- `NOTARIX_SESSION_COOKIE_SECRET`
+- `NOTARIX_SESSION_COOKIE_NAME`
 
 ## Deploy-Readiness Sequence
 

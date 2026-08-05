@@ -10,7 +10,26 @@ APP_URL=
 SITE_LOCKED=false
 AUTH_SECRET=
 AUTH_TRUST_HOST=true
-DISABLE_AUTH=false
+
+# Cognito identity provider / future cutover
+# Add values only after the Cognito and Google Workspace configuration exists.
+# Keep existing authentication as rollback until production cutover is approved.
+NOTARIX_AUTH_PROVIDER=legacy
+NOTARIX_AUTH_MODE=legacy
+NOTARIX_OWNER_SUPER_ADMIN_EMAIL=owner@dawahucollective.com
+NOTARIX_COGNITO_REGION=us-east-1
+NOTARIX_COGNITO_USER_POOL_ID=us-east-1_HL3XdEIQ9
+NOTARIX_COGNITO_USER_POOL_DOMAIN=
+NOTARIX_COGNITO_CLIENT_ID=4hbsqt0rqt7onqp1nk8qcu7k3l
+NOTARIX_COGNITO_CLIENT_SECRET=
+NOTARIX_COGNITO_ISSUER=https://cognito-idp.us-east-1.amazonaws.com/us-east-1_HL3XdEIQ9
+NOTARIX_COGNITO_JWKS_URL=https://cognito-idp.us-east-1.amazonaws.com/us-east-1_HL3XdEIQ9/.well-known/jwks.json
+NOTARIX_COGNITO_REDIRECT_URI=http://localhost:3000/auth/callback
+NOTARIX_COGNITO_LOGOUT_URI=http://localhost:3000/
+NOTARIX_COGNITO_STAFF_IDP_NAME=GoogleWorkspace
+NOTARIX_COGNITO_ALLOWED_STAFF_DOMAIN=dawahucollective.com
+NOTARIX_SESSION_COOKIE_SECRET=
+NOTARIX_SESSION_COOKIE_NAME=
 
 # Seed owner bootstrap
 SEED_OWNER_EMAIL=

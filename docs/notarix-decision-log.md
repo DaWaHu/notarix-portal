@@ -1,0 +1,24 @@
+# Notarix Signings Decision Log
+
+This is the authoritative record for material architecture, security,
+operations, provider, and launch decisions. Proposed decisions do not authorize
+implementation until the person with final approval approves them.
+
+| ID | Date | Decision | State | Reason | Alternatives considered | Security or operational effect | Final approval |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DEC-001 | Jul 18 2026 | Use Vercel for application hosting, AWS for services, and Postgres/RDS for persistence | Implemented | Align the deployed runtime with available managed infrastructure | Cloudflare Sites/D1; other hosts | Establishes Vercel/AWS/Postgres as the production control boundary | Project Owner |
+| DEC-002 | Jul 18 2026 | Use Amazon Cognito as central portal identity, Google Workspace federation for staff, and Postgres as role authority | Approved direction; not cut over | Separate identity proof from application authority and support all portal populations | Workspace headers; Vercel Authentication; separate identity pools | Enables MFA/federation while retaining server-side least privilege | Project Owner |
+| DEC-003 | Aug 5 2026 | Classify the current portal as No-Go for real customer data | Effective | Critical identity, document, release, and resilience controls lack closure evidence | Conditional Go; unrestricted Go | Prevents premature ingestion of sensitive or regulated data | Executive Director under owner-retained launch authority |
+| DEC-004 | Aug 5 2026 | Use phase/control evidence rather than an unsupported aggregate readiness percentage | Effective | A single percentage hid critical blockers and unverified controls | Continue historical percentage estimate | Makes readiness auditable and blocks false confidence | Executive Director |
+| DEC-005 | Aug 5 2026 | Preserve uncertain working-tree material until disposition review | Effective | The tree contains unrelated and generated artifacts whose ownership is uncertain | Delete immediately; commit everything | Avoids data loss and repository contamination | Executive Director; owner approves uncertain deletion |
+| DEC-006 | Aug 5 2026 | Select the Cognito custom/prefix domain and approve preview configuration | Proposed | Identity preview cannot proceed without a usable domain and administrative setup | Cognito prefix domain; `auth.notarix.live` custom domain | Determines DNS/certificate work and login origin | Project Owner |
+| DEC-007 | Aug 5 2026 | Select monitoring, identity-proofing, SMS, malware-scanning, and payable providers | Proposed | Provider certification cannot complete without selections/accounts | AWS-native mix; approved third-party services | Introduces operational dependencies and possible financial commitments | Project Owner |
+| DEC-008 | Aug 5 2026 | Approve target RTO/RPO and immutable audit architecture | Proposed | Resilience and audit acceptance criteria require business targets | Provider defaults; custom targets; external WORM archive | Determines cost, recovery design, and evidence durability | Project Owner |
+| DEC-009 | Aug 5 2026 | Prevent optional production database initialization during the Next.js build phase | Implemented locally | Build workers stalled when production runtime credentials were present; builds passed when credentials were blank | Build without env; allow build-time DB access; use a build-only mode | Makes builds deterministic and prevents build systems from reading production data | Technical Program Lead; owner reviews before preview |
+
+## Decision procedure
+
+For every new material decision record the decision, date, reason, alternatives,
+security/operational effect, approver, approval state, and linked implementation
+evidence. Never record secrets, private identifiers, recovery codes, or customer
+data here.
