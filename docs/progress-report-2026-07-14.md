@@ -1,5 +1,9 @@
 # Notarix Signings Progress Report And Executive Summary
 
+> **Superseded legacy architecture:** Sites deployment instructions in this
+> historical report are retained as evidence and must not be used for current
+> Notarix Signings hosting, identity, or secret configuration.
+
 Date: Jul 14 2026  
 Workspace: `/Users/hudlinbe/Desktop/100 Notarix Signing`  
 Branch: `codex/notarix-portal-checkpoint`  

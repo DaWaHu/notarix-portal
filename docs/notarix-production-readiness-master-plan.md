@@ -97,7 +97,7 @@ certified.
 | System | Verified current architecture | Current state |
 | --- | --- | --- |
 | Application | Next.js 16.3.0 locally, React 19.2.6, TypeScript 5.9.3, Node >=22.13 | Vercel production remains on an untraceable earlier artifact; repository build uses Turbopack |
-| Authentication | Legacy ChatGPT/workspace headers; Cognito code behind `NOTARIX_AUTH_MODE`/`NOTARIX_AUTH_PROVIDER` | Cognito disabled; production variables absent |
+| Authentication | Application-owned portal session and RBAC; Cognito code behind `NOTARIX_AUTH_MODE`/`NOTARIX_AUTH_PROVIDER`; legacy provider-header trust removed on remediation branch | Cognito disabled; production variables absent; Production still runs the pre-remediation artifact |
 | Authorization | Server-side `requireStaffRouteAccess`; roles `SUPER_ADMIN`, `ADMIN`, `GEN_ADMIN`, `NOTARY`, `CLIENT`, `OBSERVER`; Postgres is intended role authority | Staff RBAC implemented; production assurance unverified |
 | Database | AWS RDS Postgres, Drizzle ORM 0.45.2 | Reachable; 21 baseline tables verified; identity migration unverified |
 | Documents | AWS S3-compatible presigned GET/PUT implementation; Postgres evidence metadata | Provider variables present; security configuration and end-to-end controls unverified |
@@ -293,6 +293,7 @@ escalation, required records, test cadence, and owner approval.
 | Aug 6 2026 | Incident activity/log review | Expected Vercel and MFA-authenticated AWS actions only; failed external PostgreSQL probes observed; no identified misuse, but current logs cannot prove absence of successful unauthorized use; public RDS ingress and audit coverage remain open risks |
 | Aug 6 2026 | Incident documentation quality gate | ESLint zero errors/199 warnings; TypeScript passed; source contracts 7/7; database contracts 6/6; webpack production build passed; sensitive-pattern scan passed; npm audit found one high-severity `js-yaml` advisory requiring separate remediation |
 | Aug 6 2026 | Order API/Lambda Phase A | Provider-neutral GET/place-hold contracts, pure authorization/transition/idempotency/audit rules, repository-only tests, Production seed-fallback guard, proposed normalized migration, and non-deployable AWS manifest completed; no AWS, database, environment, billing, deployment, Preview, or Production change |
+| Aug 5 2026 | Legacy authentication containment | Source checkpoint removes unverified identity-header trust and provider-specific routes, fails closed without a Notarix/Cognito session, and moves 16 staff pages to explicit RBAC; Production remains unremediated because no Production deployment is authorized |
 
 ## Phase 2 database contract checkpoint — Aug 6 2026
 

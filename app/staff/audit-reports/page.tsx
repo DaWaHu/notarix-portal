@@ -32,7 +32,7 @@ export default async function SuperAdminAuditReportingPage() {
           <a href="/staff/elevated-approval">Elevated Approval</a>
           <a href="/staff/financial-controls">Financial Controls</a>
           <a className="nav-cta" href="/staff/audit-reports">Audit Reports</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

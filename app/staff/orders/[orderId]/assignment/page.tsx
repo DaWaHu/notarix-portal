@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireChatGPTUser } from "../../../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../../../access-policy";
 import { credentialMonitorRecords } from "../../../../operations-data";
 import { getOrderOperation } from "../../../../order-repository";
 import { CommandStatusPanel } from "../../../command-center/CommandStatusPanel";
@@ -13,7 +13,7 @@ export default async function StaffAssignmentPage({ params }: StaffAssignmentPag
   const { orderId } = await params;
   const order = await getOrderOperation(orderId);
   if (!order) notFound();
-  await requireChatGPTUser(`/staff/orders/${order.id}/assignment`);
+  await requireStaffRouteAccess(`/staff/orders/${order.id}/assignment`, ["Admin", "SuperAdmin"]);
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
 
   return (
@@ -27,7 +27,7 @@ export default async function StaffAssignmentPage({ params }: StaffAssignmentPag
           <a href="/">Home</a>
           <a href="/staff/requests">Staff Queue</a>
           <a className="nav-cta" href={`/staff/orders/${order.id}/assignment`}>Assignment</a>
-          <a href="/signout-with-chatgpt">Logout</a>
+          <a href="/auth/logout">Logout</a>
         </nav>
       </header>
 

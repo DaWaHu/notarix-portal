@@ -37,7 +37,7 @@ export default async function DeploymentReadinessCenterPage() {
           <a className="nav-cta" href="/staff/deployment-readiness">
             Deployment Readiness
           </a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import {
   getEvidenceStorageControl,
   listEvidenceStorageControls,
@@ -15,7 +15,7 @@ export default async function EvidenceViewerPage({
   params,
 }: EvidenceViewerPageProps) {
   const { evidenceId } = await params;
-  await requireChatGPTUser(`/evidence/${evidenceId}`);
+  await requireStaffRouteAccess(`/evidence/${evidenceId}`, ["GenAdmin", "Admin", "SuperAdmin"]);
 
   const evidence = await getEvidenceStorageControl(evidenceId);
   if (!evidence) notFound();
@@ -46,7 +46,7 @@ export default async function EvidenceViewerPage({
           ) : null}
           {evidence.orderId ? <a href={`/orders/${evidence.orderId}`}>Order File</a> : null}
           <a className="nav-cta" href={`/evidence/${evidence.id}`}>Evidence</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

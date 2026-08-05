@@ -141,7 +141,7 @@ export default async function StaffRoleHomePage() {
           <a href="/staff/requests">Staff Queue</a>
           <a href="/staff/elevated-approval">Elevated Approval</a>
           <a href="/staff/financial-controls">Financial Controls</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

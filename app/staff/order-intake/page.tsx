@@ -1,10 +1,10 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import { orderLifecycleIntakeRecords } from "../../operations-data";
 import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function OrderLifecycleIntakePage() {
-  await requireChatGPTUser("/staff/order-intake");
+  await requireStaffRouteAccess("/staff/order-intake", ["GenAdmin", "Admin", "SuperAdmin"]);
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
   const validationRequired = orderLifecycleIntakeRecords.filter((record) =>
     record.status.toLowerCase().includes("validation"),
@@ -33,7 +33,7 @@ export default async function OrderLifecycleIntakePage() {
           <a href="/staff/document-validation">Document Validation</a>
           <a href="/staff/financial-reports">Financial Reports</a>
           <a className="nav-cta" href="/staff/order-intake">Order Intake</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

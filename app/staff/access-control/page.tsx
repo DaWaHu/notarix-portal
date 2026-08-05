@@ -40,7 +40,7 @@ export default async function AccessControlPage() {
           <a href="/staff/audit-reports">Audit Reports</a>
           <a href="/staff/command-center/activity">Command Activity</a>
           <a className="nav-cta" href="/staff/access-control">Access Control</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

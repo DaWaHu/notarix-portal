@@ -1,8 +1,8 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import { accessRequests, statusCounts } from "./data";
 
 export default async function StaffRequestsPage() {
-  await requireChatGPTUser("/staff/requests");
+  await requireStaffRouteAccess("/staff/requests", ["GenAdmin", "Admin", "SuperAdmin"]);
 
   return (
     <main className="staff-page">
@@ -18,7 +18,7 @@ export default async function StaffRequestsPage() {
           <a className="nav-cta" href="/staff/requests">
             Staff Queue
           </a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 
@@ -118,7 +118,7 @@ export default async function StaffRequestsPage() {
           <a href="/portal">Access Form</a>
           <a href="/staff/elevated-approval">Elevated Approval</a>
           <a href="/staff/financial-controls">Financial Controls</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
           <a href="mailto:support@notarix.live">support@notarix.live</a>
         </nav>
         <p>Authorized staff use only. Review activity should remain auditable.</p>

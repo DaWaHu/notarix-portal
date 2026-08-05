@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { cognitoAuthEnabled, readCognitoRuntimeConfig } from "../../auth-config";
-import { safeAuthReturnPath } from "../../chatgpt-auth";
+import { authUnavailablePath, safeAuthReturnPath } from "../../portal-auth";
 import { verifyCognitoJwt } from "../../cognito-jwt";
 import {
   clearAuthFlowCookies,
@@ -22,7 +22,7 @@ type TokenResponse = {
 
 export async function GET(request: Request) {
   if (!cognitoAuthEnabled()) {
-    redirect("/signin-with-chatgpt?error=cognito_disabled");
+    redirect(authUnavailablePath());
   }
 
   const config = readCognitoRuntimeConfig();
@@ -34,12 +34,12 @@ export async function GET(request: Request) {
 
   if (error) {
     await clearAuthFlowCookies();
-    redirect(`/signin-with-chatgpt?error=cognito_${encodeURIComponent(error)}`);
+    redirect(authUnavailablePath());
   }
 
   if (!code || !stateParam || !flow) {
     await clearAuthFlowCookies();
-    redirect("/signin-with-chatgpt?error=cognito_callback_missing");
+    redirect(authUnavailablePath());
   }
 
   const separator = stateParam.indexOf(".");
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
     separator === -1 ? "%2Fportal" : stateParam.slice(separator + 1);
   if (state !== flow.state) {
     await clearAuthFlowCookies();
-    redirect("/signin-with-chatgpt?error=cognito_state_mismatch");
+    redirect(authUnavailablePath());
   }
 
   const tokenResponse = await exchangeCodeForTokens(
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
   );
   if (!tokenResponse.id_token || !tokenResponse.access_token) {
     await clearAuthFlowCookies();
-    redirect("/signin-with-chatgpt?error=cognito_token_missing");
+    redirect(authUnavailablePath());
   }
 
   const idClaims = await verifyCognitoJwt(tokenResponse.id_token, "id", config);
@@ -70,15 +70,15 @@ export async function GET(request: Request) {
 
   if (idClaims.nonce !== flow.nonce) {
     await clearAuthFlowCookies();
-    redirect("/signin-with-chatgpt?error=cognito_nonce_mismatch");
+    redirect(authUnavailablePath());
   }
   if (idClaims.sub !== accessClaims.sub) {
     await clearAuthFlowCookies();
-    redirect("/signin-with-chatgpt?error=cognito_subject_mismatch");
+    redirect(authUnavailablePath());
   }
   if (!idClaims.email) {
     await clearAuthFlowCookies();
-    redirect("/signin-with-chatgpt?error=cognito_email_missing");
+    redirect(authUnavailablePath());
   }
 
   const email = idClaims.email.toLowerCase();

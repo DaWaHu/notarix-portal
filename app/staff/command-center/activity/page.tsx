@@ -44,7 +44,7 @@ export default async function CommandCenterActivityPage() {
           <a className="nav-cta" href="/staff/command-center/activity">
             Command Activity
           </a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

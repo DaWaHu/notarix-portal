@@ -1,10 +1,10 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import { listOrderOperations } from "../../order-repository";
 import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function OrderOperationsCommandCenterPage() {
-  await requireChatGPTUser("/staff/orders");
+  await requireStaffRouteAccess("/staff/orders", ["GenAdmin", "Admin", "SuperAdmin"]);
   const latestCommandReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
   const orders = await listOrderOperations();
   const unassignedCount = orders.filter(
@@ -40,7 +40,7 @@ export default async function OrderOperationsCommandCenterPage() {
           <a href="/staff/financial-reports">Financial Reports</a>
           <a href="/notifications">Communications</a>
           <a className="nav-cta" href="/staff/orders">Orders</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

@@ -1,5 +1,9 @@
 # Notarix Signings Executive Handoff
 
+> **Superseded legacy architecture:** This historical handoff records the former
+> provider-specific authentication path. It is retained as evidence and is not
+> the approved Notarix Signings identity architecture.
+
 Date: Jul 18 2026
 
 Workspace: `/Users/hudlinbe/Desktop/100 Notarix Signing`

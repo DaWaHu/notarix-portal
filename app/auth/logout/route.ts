@@ -1,6 +1,12 @@
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cognitoAuthEnabled, readCognitoRuntimeConfig } from "../../auth-config";
-import { safeAuthReturnPath } from "../../chatgpt-auth";
+import {
+  authUnavailablePath,
+  isLocalDevHost,
+  localStaffCookieName,
+  safeAuthReturnPath,
+} from "../../portal-auth";
 import { clearPortalSessionCookie } from "../../cognito-session";
 
 export const runtime = "nodejs";
@@ -11,7 +17,13 @@ export async function GET(request: Request) {
 
   await clearPortalSessionCookie();
   if (!cognitoAuthEnabled()) {
-    redirect(`/signout-with-chatgpt?return_to=${encodeURIComponent(returnTo)}`);
+    const requestHeaders = await headers();
+    if (isLocalDevHost(requestHeaders.get("host"))) {
+      const cookieStore = await cookies();
+      cookieStore.delete(localStaffCookieName());
+      redirect(returnTo);
+    }
+    redirect(authUnavailablePath(returnTo));
   }
 
   const config = readCognitoRuntimeConfig();

@@ -34,7 +34,7 @@ export default function MaintenancePage() {
         </dl>
 
         <div className="maintenance-actions">
-          <a href="/signin-with-chatgpt">Staff Sign In</a>
+          <a href="/auth/login">Staff Sign In</a>
           <a href="mailto:support@notarix.live">Contact Support</a>
         </div>
 

@@ -4,7 +4,7 @@ import {
   isLocalDevHost,
   localStaffCookieName,
   safeAuthReturnPath,
-} from "../chatgpt-auth";
+} from "../portal-auth";
 
 export async function GET(request: Request) {
   const requestHeaders = await headers();

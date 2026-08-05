@@ -1,4 +1,4 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import { credentialMonitorRecords } from "../../operations-data";
 import { CommandStatusPanel } from "../../staff/command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../../staff/command-center/store";
@@ -12,7 +12,7 @@ function credentialAnchor(label: string) {
 }
 
 export default async function CredentialExpirationPage() {
-  await requireChatGPTUser("/credentials/expiration");
+  await requireStaffRouteAccess("/credentials/expiration", ["GenAdmin", "Admin", "SuperAdmin"]);
   const latestCommandReceipt = getLatestCommandCenterReceiptForHref(
     "/credentials/expiration",
   );
@@ -43,7 +43,7 @@ export default async function CredentialExpirationPage() {
           <a href="/staff/financial-reports">Financial Reports</a>
           <a href="/notifications">Communications</a>
           <a className="nav-cta" href="/credentials/expiration">Credentials</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

@@ -1,4 +1,4 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import {
   listOrderCloseoutControls,
   listOrderOperations,
@@ -7,7 +7,7 @@ import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function OrderCloseoutAndDeliveryConsolePage() {
-  await requireChatGPTUser("/staff/order-closeout");
+  await requireStaffRouteAccess("/staff/order-closeout", ["Admin", "SuperAdmin"]);
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
   const orders = await listOrderOperations();
   const closeoutControls = await listOrderCloseoutControls();
@@ -44,7 +44,7 @@ export default async function OrderCloseoutAndDeliveryConsolePage() {
           <a href="/staff/financial-reports">Financial Reports</a>
           <a href="/notifications">Communications</a>
           <a className="nav-cta" href="/staff/order-closeout">Order Closeout</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

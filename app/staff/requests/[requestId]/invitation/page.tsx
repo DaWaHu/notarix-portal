@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireChatGPTUser } from "../../../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../../../access-policy";
 import { findAccessRequest } from "../../data";
 
 type InvitationPageProps = {
@@ -29,7 +29,7 @@ export default async function StaffInvitationPage({
   params,
 }: InvitationPageProps) {
   const { requestId } = await params;
-  await requireChatGPTUser(`/staff/requests/${requestId}/invitation`);
+  await requireStaffRouteAccess(`/staff/requests/${requestId}/invitation`, ["GenAdmin", "Admin", "SuperAdmin"]);
 
   const request = findAccessRequest(requestId);
   if (!request) notFound();
@@ -52,7 +52,7 @@ export default async function StaffInvitationPage({
           <a className="nav-cta" href={`/staff/requests/${request.id}/invitation`}>
             Invitation
           </a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 
