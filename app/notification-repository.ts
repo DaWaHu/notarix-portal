@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import { getOptionalDb } from "../db";
 import * as schema from "../db/schema";
 import { sendNotificationToProvider } from "./notification-provider-dispatch";
@@ -488,7 +488,7 @@ function getLocalConsentRecords() {
 }
 
 function nextNotificationEventId() {
-  return `NDE-2607-${String(getLocalNotificationEvents().length + 1).padStart(4, "0")}`;
+  return `NDE-2607-${randomUUID()}`;
 }
 
 function notificationWorkflowTimestampUtc() {

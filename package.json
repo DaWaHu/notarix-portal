@@ -7,14 +7,20 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "NOTARIX_BUILD_MODE=1 next build",
+    "typecheck": "tsc --noEmit --pretty false",
+    "quality": "npm run lint && npm run typecheck && npm run test:contracts && npm run build",
     "start": "next start",
     "test": "npm run test:contracts && npm run build && npm run env:audit && npm run db:readiness && npm run deploy:readiness",
     "test:contracts": "node --test tests/source-contract.test.mjs",
     "env:audit": "node scripts/audit-env-local.mjs",
+    "auth:cognito:check": "node scripts/validate-cognito-env.mjs",
     "callbacks:replay": "node scripts/replay-signed-callbacks.mjs",
     "deploy:readiness": "node scripts/deploy-readiness.mjs",
+    "db:baseline": "node scripts/apply-postgres-baseline.mjs",
+    "db:inspect": "node scripts/inspect-production-db.mjs",
     "db:readiness": "node scripts/db-readiness.mjs",
+    "db:seed": "tsx scripts/seed-postgres-baseline.ts",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },
@@ -22,10 +28,14 @@
     "@aws-sdk/client-sesv2": "^3.1089.0",
     "@aws-sdk/client-sns": "^3.1089.0",
     "drizzle-orm": "0.45.2",
-    "next": "16.2.6",
+    "next": "16.3.0",
     "postgres": "^3.4.9",
     "react": "19.2.6",
     "react-dom": "19.2.6"
+  },
+  "overrides": {
+    "esbuild": "0.28.1",
+    "postcss": "8.5.23"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.2.1",

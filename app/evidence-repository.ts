@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { getOptionalDb } from "../db";
 import * as schema from "../db/schema";
@@ -482,7 +483,7 @@ export async function recordEvidenceMalwareScanUpdate(
     await db.insert(schema.evidenceMalwareScanEvents).values({
       callbackReceivedAtUtc: timestamp,
       evidenceId: input.evidenceId,
-      id: `EMS-2607-${String(getLocalMalwareEvents().length).padStart(4, "0")}`,
+      id: nextEvidenceMalwareEventId(),
       malwareStatus: input.malwareStatus,
       provider: input.provider,
       providerReceipt: input.providerReceipt,
@@ -754,6 +755,10 @@ function nextEvidenceReceiptId(): string {
 
 function nextEvidenceUploadId(): string {
   return `EVU-2607-${String(getLocalEvidenceUploadRecords().length + 1).padStart(4, "0")}`;
+}
+
+function nextEvidenceMalwareEventId(): string {
+  return `EMS-2607-${randomUUID()}`;
 }
 
 function evidenceWorkflowTimestampUtc(): string {

@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { sanitizePostgresUrl } from "./database-url";
 import * as schema from "./schema";
 
 let dbClient: ReturnType<typeof postgres> | undefined;
@@ -13,7 +14,7 @@ export async function getDb() {
     );
   }
 
-  dbClient ??= postgres(databaseUrl, {
+  dbClient ??= postgres(sanitizePostgresUrl(databaseUrl), {
     max: 1,
     prepare: false,
   });
@@ -22,6 +23,10 @@ export async function getDb() {
 }
 
 export async function getOptionalDb() {
+  // Static page discovery must never open a production database connection.
+  // Runtime requests do not inherit this build-command-only environment flag.
+  if (process.env.NOTARIX_BUILD_MODE === "1") return undefined;
+
   try {
     return await getDb();
   } catch {
