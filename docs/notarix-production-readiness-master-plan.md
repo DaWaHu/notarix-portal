@@ -97,7 +97,7 @@ certified.
 | System | Verified current architecture | Current state |
 | --- | --- | --- |
 | Application | Next.js 16.3.0 locally, React 19.2.6, TypeScript 5.9.3, Node >=22.13 | Vercel production remains on an untraceable earlier artifact; repository build uses Turbopack |
-| Authentication | Legacy ChatGPT/workspace headers; Cognito code behind `NOTARIX_AUTH_MODE`/`NOTARIX_AUTH_PROVIDER` | Cognito disabled; production variables absent |
+| Authentication | Application-owned portal session and RBAC; Cognito code behind `NOTARIX_AUTH_MODE`/`NOTARIX_AUTH_PROVIDER`; legacy provider-header trust removed on remediation branch | Cognito disabled; production variables absent; Production still runs the pre-remediation artifact |
 | Authorization | Server-side `requireStaffRouteAccess`; roles `SUPER_ADMIN`, `ADMIN`, `GEN_ADMIN`, `NOTARY`, `CLIENT`, `OBSERVER`; Postgres is intended role authority | Staff RBAC implemented; production assurance unverified |
 | Database | AWS RDS Postgres, Drizzle ORM 0.45.2 | Reachable; 21 baseline tables verified; identity migration unverified |
 | Documents | AWS S3-compatible presigned GET/PUT implementation; Postgres evidence metadata | Provider variables present; security configuration and end-to-end controls unverified |
@@ -285,6 +285,7 @@ escalation, required records, test cadence, and owner approval.
 | Aug 5 2026 | Phase 2 protected-preview TLS verification | Deployment `dpl_5Qn9b37WnTXAAMLQWBo7CNRyF1Pk` READY from `321f87c`; missing certificate warning absent; anonymous request redirected to Vercel SSO; `public: false` |
 | Aug 5 2026 | Phase 2 checkpoint CI | GitHub Actions run `31056174674` passed for full SHA `321f87c55e3c89d09c01aaceda3f11c2a86ada5b` |
 | Aug 5 2026 | Neon resource reconciliation | Vercel team owns available `notarix-portal-preview` on Free plan; no projects attached; no Neon variables; no connection, secret access, or configuration change performed |
+| Aug 5 2026 | Legacy authentication containment | Source checkpoint removes unverified identity-header trust and provider-specific routes, fails closed without a Notarix/Cognito session, and moves 16 staff pages to explicit RBAC; Production remains unremediated because no Production deployment is authorized |
 
 ## Phase 1 session result — Aug 5 2026
 

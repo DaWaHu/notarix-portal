@@ -7,15 +7,21 @@ Phase 1 result: all approved project changes were committed and pushed.
 Generated caches and unrelated `.codex-work` material remain preserved and
 ignored. No uncertain file was deleted.
 
+Superseding disposition — Aug 5 2026: owner-authorized authentication
+containment removed the legacy compatibility files listed below after evidence
+showed they trusted unauthenticated provider headers and remained reachable.
+They remain listed here as historical evidence; the active design uses
+`app/portal-auth.ts`, Notarix sessions, Cognito, and server-side RBAC.
+
 ## Modified tracked files
 
 | File | Classification | Proposed disposition |
 | --- | --- | --- |
 | `app/access-policy.ts` | Intentional identity/RBAC code | Preserve; review/test; commit in identity sequence |
-| `app/chatgpt-auth.ts` | Intentional auth compatibility code | Preserve; security review; commit in identity sequence |
+| `app/chatgpt-auth.ts` | Superseded legacy auth compatibility code | Removed by the authorized authentication-containment checkpoint |
 | `app/evidence-repository.ts` | Intentional Postgres/storage code | Preserve; test; commit with database recovery sequence |
 | `app/notification-repository.ts` | Intentional Postgres/provider code | Preserve; remove unused import; test |
-| `app/signout-with-chatgpt/route.ts` | Intentional auth code | Preserve; review redirect/session behavior |
+| `app/signout-with-chatgpt/route.ts` | Superseded legacy auth route | Removed by the authorized authentication-containment checkpoint |
 | `app/staff/access-control/page.tsx` | Intentional identity UI | Preserve; commit with identity work |
 | `app/staff/document-validation/page.tsx` | Intentional identity UI | Preserve; commit with identity work |
 | `app/staff/elevated-approval/[requestId]/page.tsx` | Intentional identity UI | Preserve; commit with identity work |

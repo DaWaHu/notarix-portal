@@ -4,8 +4,7 @@ const PUBLIC_FILE = /\.(.*)$/;
 
 const maintenanceAllowedPrefixes = [
   "/maintenance",
-  "/signin-with-chatgpt",
-  "/signout-with-chatgpt",
+  "/auth",
   "/local-staff-preview",
   "/staff",
   "/notifications/provider-callback",

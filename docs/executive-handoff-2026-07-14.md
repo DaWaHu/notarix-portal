@@ -1,5 +1,9 @@
 # Notarix Signings Executive Handoff
 
+> **Superseded legacy architecture:** This historical handoff predates the
+> approved Vercel, Cognito, Google Workspace, and Notarix-owned session design.
+> Provider-specific authentication and Sites statements are historical only.
+
 Date: Jul 14 2026
 Workspace: `/Users/hudlinbe/Desktop/100 Notarix Signing`
 Branch: `codex/notarix-portal-checkpoint`

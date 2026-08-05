@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireChatGPTUser } from "../../../../../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../../../../../access-policy";
 import {
   activationAuditRequirements,
   activationDecisions,
@@ -28,8 +28,9 @@ export default async function StaffProfileDecisionPage({
   params,
 }: StaffDecisionPageProps) {
   const { requestId, decision } = await params;
-  await requireChatGPTUser(
+  await requireStaffRouteAccess(
     `/staff/requests/${requestId}/profile-verification/decision/${decision}`,
+    ["Admin", "SuperAdmin"],
   );
 
   const request = findAccessRequest(requestId);
@@ -59,7 +60,7 @@ export default async function StaffProfileDecisionPage({
           <a className="nav-cta" href={`/staff/requests/${request.id}`}>
             Request Review
           </a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

@@ -1,4 +1,4 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import { listEvidenceStorageControls } from "../../evidence-repository";
 
 type EvidenceIntakePageProps = {
@@ -20,7 +20,7 @@ function evidenceAnchor(label: string) {
 export default async function EvidenceIntakePage({
   searchParams,
 }: EvidenceIntakePageProps) {
-  await requireChatGPTUser("/staff/evidence-intake");
+  await requireStaffRouteAccess("/staff/evidence-intake", ["GenAdmin", "Admin", "SuperAdmin"]);
   const evidenceRecords = await listEvidenceStorageControls();
   const uploadFeedback = await searchParams;
   const uploadIssued = uploadFeedback.upload === "issued";
@@ -57,7 +57,7 @@ export default async function EvidenceIntakePage({
           <a href="/staff/financial-controls">Financial Controls</a>
           <a href="/credentials/expiration">Credentials</a>
           <a className="nav-cta" href="/staff/evidence-intake">Evidence Intake</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { denyUnresolvedPortalOwnership } from "../../access-policy";
 import {
   applyCommandCenterAction,
   type CommandCenterAction,
@@ -11,6 +12,7 @@ const clientOrderActions = new Set<CommandCenterAction>([
 ]);
 
 export async function POST(request: Request) {
+  denyUnresolvedPortalOwnership();
   const payload = await safeJson(request);
   const action = String(payload.action ?? "") as CommandCenterAction;
 

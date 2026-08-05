@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireChatGPTUser } from "../../../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../../../access-policy";
 import {
   findAccessRequest,
   getProfileVerificationItems,
@@ -16,7 +16,7 @@ export default async function StaffProfileVerificationPage({
   params,
 }: StaffProfileVerificationPageProps) {
   const { requestId } = await params;
-  await requireChatGPTUser(`/staff/requests/${requestId}/profile-verification`);
+  await requireStaffRouteAccess(`/staff/requests/${requestId}/profile-verification`, ["GenAdmin", "Admin", "SuperAdmin"]);
 
   const request = findAccessRequest(requestId);
   if (!request) notFound();
@@ -58,7 +58,7 @@ export default async function StaffProfileVerificationPage({
           <a className="nav-cta" href={`/profile/complete/${request.id}`}>
             Submitted Profile
           </a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

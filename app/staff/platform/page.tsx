@@ -46,7 +46,7 @@ export default async function PlatformConfigurationCenterPage() {
           <a href="/staff/deployment-readiness">Deployment Readiness</a>
           <a href="/staff/retention">Retention</a>
           <a className="nav-cta" href="/staff/platform">Platform Configuration</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

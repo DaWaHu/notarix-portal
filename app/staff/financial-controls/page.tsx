@@ -27,7 +27,7 @@ export default async function FinancialControlsPage() {
           </a>
           <a href="/staff/financial-reports">Financial Reports</a>
           <a href="/staff/audit-reports">Audit Reports</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

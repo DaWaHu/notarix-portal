@@ -1,5 +1,9 @@
 # Notarix Signings Executive Handoff
 
+> **Superseded legacy architecture:** This historical handoff predates the
+> approved Vercel, Cognito, Google Workspace, and Notarix-owned session design.
+> Provider-specific authentication statements are retained only as evidence.
+
 Date: Jul 13 2026  
 Working session status: Portal build continued through staff workflow, evidence, finance, communications, credential monitoring, executive reporting, role-based routing, command-center actions, and command receipts.
 

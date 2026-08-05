@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import { cognitoAuthEnabled, legacyStaffRole } from "./auth-config";
 import {
   isLocalDevHost,
-  requireChatGPTUser,
-  type ChatGPTUser,
-} from "./chatgpt-auth";
+  requirePortalUser,
+  type PortalUser,
+} from "./portal-auth";
 import { getCognitoPortalSession } from "./cognito-session";
 
 export type StaffRole = "GenAdmin" | "Admin" | "SuperAdmin";
@@ -20,7 +20,7 @@ export type CommandAuthority =
 export type ProtectedStaffAccess = {
   role: StaffRole;
   session: StaffIdentitySession;
-  user: ChatGPTUser;
+  user: PortalUser;
 };
 
 export const accessPolicyContract = {
@@ -61,7 +61,7 @@ export async function requireStaffRouteAccess(
   returnTo: string,
   allowedRoles: readonly StaffRole[],
 ): Promise<ProtectedStaffAccess> {
-  const user = await requireChatGPTUser(returnTo);
+  const user = await requirePortalUser(returnTo);
   const session = await getStaffIdentitySession();
 
   if (!session.compliant || !session.role || !allowedRoles.includes(session.role)) {
@@ -74,6 +74,10 @@ export async function requireStaffRouteAccess(
 export async function getRequestStaffRole(): Promise<StaffRole> {
   const session = await getStaffIdentitySession();
   return session.role ?? "GenAdmin";
+}
+
+export function denyUnresolvedPortalOwnership(): void {
+  notFound();
 }
 
 export async function getStaffIdentitySession(): Promise<StaffIdentitySession> {

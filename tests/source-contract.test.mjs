@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readdir, readFile } from "node:fs/promises";
+import { access, readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 
@@ -107,7 +107,7 @@ test("active source no longer imports Cloudflare worker runtime", async () => {
   assert.deepEqual(offenders, []);
 });
 
-test("Cognito foundation preserves legacy rollback and avoids source secrets", async () => {
+test("Cognito foundation fails closed and avoids source secrets", async () => {
   const authConfig = await text("app/auth-config.ts");
   const loginRoute = await text("app/auth/login/route.ts");
   const callbackRoute = await text("app/auth/callback/route.ts");
@@ -140,6 +140,70 @@ test("Cognito foundation preserves legacy rollback and avoids source secrets", a
 
   assert.match(envTemplate, /NOTARIX_COGNITO_CLIENT_SECRET=/);
   assert.doesNotMatch(envTemplate, /NOTARIX_COGNITO_CLIENT_SECRET=.+\S/);
+});
+
+test("provider-specific identity trust is removed and auth routes fail closed", async () => {
+  const portalAuth = await text("app/portal-auth.ts");
+  const accessPolicy = await text("app/access-policy.ts");
+  const loginRoute = await text("app/auth/login/route.ts");
+  const logoutRoute = await text("app/auth/logout/route.ts");
+  const callbackRoute = await text("app/auth/callback/route.ts");
+  const proxy = await text("proxy.ts");
+
+  assert.match(portalAuth, /getCognitoPortalSession/);
+  assert.match(portalAuth, /isLocalDevHost/);
+  assert.match(portalAuth, /authUnavailablePath/);
+  assert.doesNotMatch(portalAuth, /oai-|x-notarix-/i);
+  assert.match(accessPolicy, /const user = await requirePortalUser\(returnTo\)/);
+  assert.match(loginRoute, /authUnavailablePath/);
+  assert.match(logoutRoute, /clearPortalSessionCookie/);
+  assert.match(callbackRoute, /authUnavailablePath/);
+  assert.doesNotMatch(`${loginRoute}${logoutRoute}${callbackRoute}${proxy}`, /signin-with-chatgpt|signout-with-chatgpt/i);
+
+  for (const removedRoute of [
+    "app/signin-with-chatgpt/page.tsx",
+    "app/signout-with-chatgpt/route.ts",
+  ]) {
+    await assert.rejects(access(new URL(removedRoute, projectRoot)));
+  }
+});
+
+test("formerly legacy-guarded staff pages enforce explicit server-side roles", async () => {
+  const expected = new Map([
+    ["app/credentials/expiration/page.tsx", ["GenAdmin", "Admin", "SuperAdmin"]],
+    ["app/notifications/page.tsx", ["GenAdmin", "Admin", "SuperAdmin"]],
+    ["app/evidence/[evidenceId]/page.tsx", ["GenAdmin", "Admin", "SuperAdmin"]],
+    ["app/staff/signers/page.tsx", ["GenAdmin", "Admin", "SuperAdmin"]],
+    ["app/staff/appointments/page.tsx", ["GenAdmin", "Admin", "SuperAdmin"]],
+    ["app/staff/requests/page.tsx", ["GenAdmin", "Admin", "SuperAdmin"]],
+    ["app/staff/requests/[requestId]/page.tsx", ["GenAdmin", "Admin", "SuperAdmin"]],
+    ["app/staff/orders/page.tsx", ["GenAdmin", "Admin", "SuperAdmin"]],
+    ["app/staff/orders/[orderId]/assignment/page.tsx", ["Admin", "SuperAdmin"]],
+    ["app/staff/order-intake/page.tsx", ["GenAdmin", "Admin", "SuperAdmin"]],
+    ["app/staff/order-closeout/page.tsx", ["Admin", "SuperAdmin"]],
+    ["app/staff/evidence-intake/page.tsx", ["GenAdmin", "Admin", "SuperAdmin"]],
+    ["app/staff/command-center/receipt/[receiptId]/page.tsx", ["GenAdmin", "Admin", "SuperAdmin"]],
+    ["app/staff/requests/[requestId]/invitation/page.tsx", ["GenAdmin", "Admin", "SuperAdmin"]],
+    ["app/staff/requests/[requestId]/profile-verification/page.tsx", ["GenAdmin", "Admin", "SuperAdmin"]],
+    ["app/staff/requests/[requestId]/profile-verification/decision/[decision]/page.tsx", ["Admin", "SuperAdmin"]],
+  ]);
+
+  for (const [file, roles] of expected) {
+    const content = await text(file);
+    assert.match(content, /requireStaffRouteAccess/);
+    for (const role of roles) assert.match(content, new RegExp(`"${role}"`));
+  }
+});
+
+test("client and notary writes fail closed until ownership policy is persisted", async () => {
+  const accessPolicy = await text("app/access-policy.ts");
+  const clientActions = await text("app/client/order-actions/route.ts");
+  const notaryActions = await text("app/notary/assignment-actions/route.ts");
+
+  assert.match(accessPolicy, /denyUnresolvedPortalOwnership\(\): void/);
+  assert.match(clientActions, /denyUnresolvedPortalOwnership\(\);/);
+  assert.match(notaryActions, /denyUnresolvedPortalOwnership\(\);/);
+  assert.doesNotMatch(`${clientActions}${notaryActions}`, /request\.headers\.get\("x-/);
 });
 
 test("Cognito identity persistence tables are migration-backed", async () => {

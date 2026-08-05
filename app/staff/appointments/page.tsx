@@ -1,10 +1,10 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import { listAppointmentConfirmations } from "../../order-repository";
 import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function AppointmentSchedulingConfirmationPage() {
-  await requireChatGPTUser("/staff/appointments");
+  await requireStaffRouteAccess("/staff/appointments", ["GenAdmin", "Admin", "SuperAdmin"]);
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
   const appointments = await listAppointmentConfirmations();
   const confirmationReady = appointments.filter((record) =>
@@ -37,7 +37,7 @@ export default async function AppointmentSchedulingConfirmationPage() {
           <a className="nav-cta" href="/staff/appointments">Appointments</a>
           <a href="/staff/order-closeout">Order Closeout</a>
           <a href="/notifications">Communications</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

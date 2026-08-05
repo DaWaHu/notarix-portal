@@ -70,7 +70,7 @@ export default async function DocumentValidationPage() {
           <a className="nav-cta" href="/staff/document-validation">
             Document Validation
           </a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

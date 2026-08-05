@@ -1,10 +1,10 @@
-import { requireChatGPTUser } from "../chatgpt-auth";
+import { requireStaffRouteAccess } from "../access-policy";
 import { listNotificationDeliveryRecords } from "../notification-repository";
 import { CommandStatusPanel } from "../staff/command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../staff/command-center/store";
 
 export default async function NotificationsPage() {
-  await requireChatGPTUser("/notifications");
+  await requireStaffRouteAccess("/notifications", ["GenAdmin", "Admin", "SuperAdmin"]);
   const latestCommandReceipt = getLatestCommandCenterReceiptForHref("/notifications");
   const notificationRecords = await listNotificationDeliveryRecords();
 
@@ -29,7 +29,7 @@ export default async function NotificationsPage() {
           <a href="/staff/financial-controls">Financial Controls</a>
           <a href="/staff/financial-reports">Financial Reports</a>
           <a className="nav-cta" href="/notifications">Communications</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

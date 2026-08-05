@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireChatGPTUser } from "../../../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../../../access-policy";
 import { getPersistedCommandCenterReceipt } from "../../store";
 
 type CommandReceiptPageProps = {
@@ -12,7 +12,7 @@ export default async function CommandCenterReceiptPage({
   params,
 }: CommandReceiptPageProps) {
   const { receiptId } = await params;
-  await requireChatGPTUser(`/staff/command-center/receipt/${receiptId}`);
+  await requireStaffRouteAccess(`/staff/command-center/receipt/${receiptId}`, ["GenAdmin", "Admin", "SuperAdmin"]);
 
   const receipt = await getPersistedCommandCenterReceipt(receiptId);
   if (!receipt) notFound();
@@ -31,7 +31,7 @@ export default async function CommandCenterReceiptPage({
           <a className="nav-cta" href={`/staff/command-center/receipt/${receipt.id}`}>
             Command Receipt
           </a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

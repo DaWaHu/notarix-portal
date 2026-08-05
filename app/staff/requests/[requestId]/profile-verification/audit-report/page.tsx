@@ -39,7 +39,7 @@ export default async function SuperAdminAuditReportPage({
           <a href={`/staff/requests/${request.id}/profile-verification`}>
             Verification Console
           </a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 

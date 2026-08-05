@@ -1,10 +1,10 @@
-import { requireChatGPTUser } from "../../chatgpt-auth";
+import { requireStaffRouteAccess } from "../../access-policy";
 import { listSignerReadiness } from "../../order-repository";
 import { CommandStatusPanel } from "../command-center/CommandStatusPanel";
 import { getLatestCommandCenterReceiptForHref } from "../command-center/store";
 
 export default async function SignerReadinessIdentityCheckPage() {
-  await requireChatGPTUser("/staff/signers");
+  await requireStaffRouteAccess("/staff/signers", ["GenAdmin", "Admin", "SuperAdmin"]);
   const latestOrderReceipt = getLatestCommandCenterReceiptForHref("/staff/orders");
   const signers = await listSignerReadiness();
   const pendingIdentity = signers.filter((record) =>
@@ -36,7 +36,7 @@ export default async function SignerReadinessIdentityCheckPage() {
           <a className="nav-cta" href="/staff/signers">Signer Readiness</a>
           <a href="/staff/document-validation">Document Validation</a>
           <a href="/notifications">Communications</a>
-          <a href="/signout-with-chatgpt?return_to=/">Logout</a>
+          <a href="/auth/logout?return_to=/">Logout</a>
         </nav>
       </header>
 
