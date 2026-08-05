@@ -25,7 +25,7 @@ Readiness is reported by phase and control area, not as a single percentage:
 | --- | --- | --- |
 | Phase 0: current-state verification | Complete for Phase 1 | Repository, Vercel deployment, environment names, Postgres connectivity, migrations, auth mode, lint, TypeScript, and contract tests inspected Aug 5 2026 |
 | Phase 1: release baseline and quality | Complete | Commits pushed; GitHub Actions passed; protected preview maps to exact SHA; zero lint errors/vulnerabilities; TypeScript, 7 tests, and build pass |
-| Phase 2: identity and authorization | In progress; blocked at database isolation gate | Preview/Production variables are identical; no isolated DB is available; Cognito public endpoints exist but preview configuration is absent |
+| Phase 2: identity and authorization | In progress; blocked at database isolation gate | Preview/Production variables are identical; an owned unattached Neon Free candidate exists but its provider metadata, contents, privileges, and bidirectional isolation remain unverified; Cognito preview configuration is absent |
 | Phase 3: evidence and documents | Partial/unverified | S3 signing code and callback models exist; production scanner, quarantine, IAM, versioning, and recovery not certified |
 | Phase 4: external providers | Partial/unverified | SES dispatch code and shared callbacks exist; SMS, identity proofing, and financial providers are not certified |
 | Phase 5: security and resilience | Not ready | Immutable audit, restore drill, monitoring, alerting, incident response, IAM review, RTO/RPO, and penetration testing lack closure evidence |
@@ -284,6 +284,7 @@ escalation, required records, test cadence, and owner approval.
 | Aug 5 2026 | Phase 2 database inventory | No preview database exists on the configured server; production-instance logical DB option rejected |
 | Aug 5 2026 | Phase 2 protected-preview TLS verification | Deployment `dpl_5Qn9b37WnTXAAMLQWBo7CNRyF1Pk` READY from `321f87c`; missing certificate warning absent; anonymous request redirected to Vercel SSO; `public: false` |
 | Aug 5 2026 | Phase 2 checkpoint CI | GitHub Actions run `31056174674` passed for full SHA `321f87c55e3c89d09c01aaceda3f11c2a86ada5b` |
+| Aug 5 2026 | Neon resource reconciliation | Vercel team owns available `notarix-portal-preview` on Free plan; no projects attached; no Neon variables; no connection, secret access, or configuration change performed |
 
 ## Phase 1 session result — Aug 5 2026
 

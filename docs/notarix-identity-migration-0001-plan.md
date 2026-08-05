@@ -39,6 +39,14 @@ could interrupt authentication.
 - Production read-only check on Aug 5 2026: none of the four identity tables are present.
 - Value-blind comparison proved Vercel Preview and Production use the same
   `DATABASE_URL`. No isolated preview database exists on the configured server.
+- Read-only Vercel reconciliation found an owned, available, unattached Neon
+  Free-plan resource named `notarix-portal-preview`. It is the preferred
+  candidate, but project/branch/database/region, contents, migration history,
+  TLS, role, and DDL privileges remain unverified. No connection was attempted.
+- Static SQL review found only standard PostgreSQL tables, foreign keys,
+  `timestamp with time zone`, booleans, and btree indexes; no tablespaces,
+  unsupported extensions, or host-level features. It is compatible in principle
+  with Neon PostgreSQL 14–17, subject to target version and privilege checks.
 - Cognito remains disabled in legacy rollback mode.
 
 ## Prerequisites

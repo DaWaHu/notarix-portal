@@ -4,7 +4,8 @@ Date: Aug 5 2026
 
 Owner authorization: Phase 2 preview-only identity and authorization work.
 
-Status: **database isolation not proven; migration and identity activation blocked**.
+Status: **isolated Neon candidate discovered; target safety not yet proven;
+migration and identity activation blocked**.
 
 ## Isolation conclusion
 
@@ -33,6 +34,102 @@ production infrastructure and does not meet the owner's complete-isolation rule.
 AWS read-only inventory through the application IAM user was denied for RDS
 instances, RDS clusters, and Cognito pools. This is consistent with least
 privilege, but it prevents designation of an unseen existing managed resource.
+
+## Read-only Neon reconciliation — Aug 5 2026
+
+Repository and local-configuration searches found no Neon hostname, Neon token,
+Neon CLI profile, Neon-specific environment variable, or prior Neon decision
+record. The package lock mentions `@neondatabase/serverless` only as an optional
+peer dependency; the application does not install or import it and uses the
+standard `postgres` driver.
+
+Vercel Marketplace account inventory established the following without reading
+or changing a secret:
+
+| Attribute | Read-only evidence |
+| --- | --- |
+| Integration | Neon Marketplace integration installed Jul 19 2026 |
+| Installation ownership | Notarix Vercel team; installation ID retained only in Vercel |
+| Plan | `free_v3`; Free; no payment method required; $0 current minimum |
+| Resource | `notarix-portal-preview`; Vercel resource ID redacted from documentation |
+| Resource state | `available`; `owned` |
+| Connected projects | None; the Notarix project reports no connected integration resources |
+| Existing Preview variables | No `NEON_*`, `PG*`, `POSTGRES_*`, or Neon-specific URL variable; current `DATABASE_URL` remains the AWS RDS value |
+| Administrative access | Vercel account can list and inspect the owned resource; database-console and SQL privileges are not yet proven |
+| Project/branch/database/region | Not exposed by the available read-only Vercel metadata; unverified |
+| Contents and migration journal | Unverified because this reconciliation prohibited database connections |
+
+The Neon resource is physically/provider-separate from AWS RDS at the resource
+control-plane level and is not attached to any Vercel project. This is strong
+candidate-isolation evidence, but it is not yet sufficient to approve migration:
+the database endpoint, project, branch, database, region, role, contents,
+migration history, TLS mode, and privileges remain unverified.
+
+### Candidate cost and capacity
+
+The installed plan reports $0, 0.5 GB storage per project, up to 2 compute units
+(8 GB RAM), and 100 CU-hours per project. Neon currently advertises its Free
+plan at $0 with automatic scale-to-zero; its Launch plan has no fixed monthly
+minimum and charges usage (currently $0.106/CU-hour and $0.35/GB-month). Free
+plan point-in-time restore history is six hours. These limits are adequate for a
+low-volume synthetic Preview if the migration fits within 0.5 GB.
+
+Sources: [Neon pricing](https://neon.com/pricing),
+[Neon scale to zero](https://neon.com/docs/introduction/scale-to-zero), and
+[Neon Postgres compatibility](https://neon.com/docs/reference/compatibility).
+
+### Proposed Preview-only variable mapping — not applied
+
+| Vercel environment | Variable | Proposed source | Production action |
+| --- | --- | --- | --- |
+| Preview only | `DATABASE_URL` | Neon pooled, TLS-verified connection generated for the isolated branch and least-privilege Preview role | None; retain AWS RDS value |
+| Preview only, migration runner only | `DATABASE_URL_UNPOOLED` | Neon direct TLS-verified connection for controlled DDL | Do not define |
+
+The application requires only `DATABASE_URL`. Do not map Neon `PG*`,
+`POSTGRES_*`, authentication, or public-client variables unless a later reviewed
+implementation requires them. Connecting the Vercel integration must be scoped
+explicitly to Preview and must not overwrite Production, Development, or local
+configuration.
+
+### Proposed bidirectional-isolation verification — not executed
+
+1. Inspect Neon Console metadata through the existing owned integration and
+   record redacted project ID, branch ID, database, region, Postgres version,
+   owner, plan, restore window, and role.
+2. Compare redacted endpoint/provider and SHA-256 fingerprints with Production;
+   require a Neon endpoint and a nonmatching resource, host, database, and role.
+3. Using the Neon credential only, connect to the Neon target and verify current
+   database/user, TLS, server version, schemas, tables, journal, extensions,
+   approximate size, and absence of non-synthetic records.
+4. Prove the Neon credential cannot authenticate to the AWS RDS endpoint.
+5. Prove the production RDS credential cannot authenticate to the Neon endpoint.
+6. Confirm Preview-only Vercel scope after owner approval without changing the
+   Production value; pull both scopes and compare only redacted metadata and
+   in-memory fingerprints.
+7. Take or verify a restore point, then obtain owner approval before migration.
+
+No connection, attachment, variable change, or SQL was performed during this
+reconciliation.
+
+## Database option decision memo
+
+| Consideration | Existing/separate Neon Preview | Separate AWS RDS PostgreSQL Preview |
+| --- | --- | --- |
+| Estimated monthly minimum | Existing Free resource: $0. Launch remains usage-based with no fixed minimum; intermittent 1 GB workload is typically about $15/month | Approximately $14–$18/month for single-AZ `db.t4g.micro`, 20 GB gp3, ordinary backup, and very low transfer in `us-east-1`; public IPv4, NAT, excess backup, monitoring, and transfer can increase cost |
+| Compute | Free: up to 2 CU, 100 CU-hours/project; Launch $0.106/CU-hour | Continuously billed instance hours while running; estimate assumes about $0.016/hour and 730 hours |
+| Storage/backups | Free: 0.5 GB/project and six-hour restore history; Launch $0.35/GB-month with seven-day history | Minimum 20 GB general-purpose SSD; automated backup storage up to allocated DB storage is generally included, with excess/snapshots charged |
+| Networking/transfer | Managed public TLS endpoint; normal egress allowances/charges by plan | VPC/security-group administration; possible public IPv4 or NAT cost; regional/cross-region and internet transfer charges may apply |
+| Suspend/scale to zero | Yes; Free suspends after inactivity and cannot disable scale-to-zero | No true scale-to-zero; may stop temporarily but AWS restarts after seven days; storage and backups remain billable |
+| Operational complexity | Low; already owned in Vercel, standard Postgres endpoint, simple Preview-only binding | Higher; IAM, VPC/subnets, security groups, parameter groups, backups, monitoring, credentials, patching, and Vercel reachability |
+| Security/isolation | Separate provider/resource and credentials; must verify branch/database/role and prevent accidental Production scoping | Strong AWS account/VPC consistency and separate resource boundary; larger IAM/network control surface |
+| Migration compatibility | Static review finds only standard tables, foreign keys, `timestamptz`, btree indexes, and booleans; compatible with supported Neon PostgreSQL 14–17, subject to live version/privilege verification | Native PostgreSQL compatibility; same provider family as Production |
+| Recommendation | **Preferred for protected, low-volume synthetic Preview**, subject to completing the verification procedure and owner approval to connect it to Preview only | Use if organizational policy requires AWS-only hosting, private networking, longer native backup controls, or Neon verification fails |
+
+AWS assumptions and stop limitations are based on
+[AWS RDS pricing](https://aws.amazon.com/rds/pricing/) and
+[AWS RDS temporary-stop behavior](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_StopInstance.html).
+The AWS figure is a planning estimate, not a quote; the AWS Pricing Calculator
+must be run with the final network and retention design before authorization.
 
 ## Current and required matrix
 
@@ -72,14 +169,20 @@ Cognito against the current Vercel Preview configuration.
 
 ## Acceptable isolation paths
 
-### Path A — new isolated managed preview database
+### Path A — reconcile the existing isolated Neon candidate
+
+Complete the proposed verification procedure for `notarix-portal-preview`. Do
+not attach it or expose credentials until the owner approves the proposed
+Preview-only mapping after reviewing this reconciliation.
+
+### Path B — new isolated managed preview database
 
 Create a separate managed Postgres instance/cluster with distinct network,
 credentials, database, backups, migration history, and synthetic data. This is
 the preferred security posture but likely creates a paid resource. Owner approval
 is required before creation.
 
-### Path B — designate an existing isolated database
+### Path C — designate another existing isolated database
 
 The owner or AWS administrator identifies an existing non-production managed
 Postgres resource and provides a preview-only credential through Vercel's secret
@@ -137,7 +240,8 @@ range and is unrelated to certificate verification.
 
 ## Approval gate
 
-Phase 2 is blocked before migration. The owner must either approve creation of a
-separate paid managed preview database or designate an existing isolated
-resource accessible to the project administrator. No production change is
-requested or authorized.
+Phase 2 is blocked before migration. The recommended next gate is owner approval
+for read-only administrative inspection of the existing owned Neon candidate's
+provider metadata and, only afterward, a separately approved Preview-only
+connection/isolation test. A new paid database is not currently recommended.
+No production change is requested or authorized.
