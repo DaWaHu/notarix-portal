@@ -43,5 +43,66 @@ report them. CI fails on errors and records warnings in job output.
 
 ## Execution results
 
-To be completed with commit SHAs, push, CI run, protected-preview deployment,
-smoke/security checks, domain investigation, and migration comparison evidence.
+### Commit and push record
+
+| SHA | Message | Result |
+| --- | --- | --- |
+| `a07c424` | `Implement Cognito-ready application and authorization foundation` | Committed and pushed |
+| `447d6fc` | `Stabilize production builds and database runtime boundaries` | Committed and pushed |
+| `096f781` | `Add enforceable CI and code-quality gates` | Committed and pushed |
+| `f2f5d80` | `Establish production-readiness governance record` | Committed and pushed |
+| `6b098ea` | `Harden disabled Cognito route handling` | Preview-smoke defect correction; committed and pushed |
+
+Branch: `codex/notarix-portal-checkpoint`
+
+Repository: `DaWaHu/notarix-portal`
+
+### Quality gate
+
+- `npm ci`: exit 0; 393 packages installed; zero vulnerabilities.
+- Lint: exit 0; zero errors and 199 categorized warnings.
+- TypeScript: exit 0.
+- Contract tests: 7 passed, 0 failed.
+- Production build: exit 0; 53 static pages generated.
+- Dependency audit: exit 0; zero vulnerabilities.
+- Sensitive-pattern scan found no private-key, AWS access-key, or credential-value pattern.
+- GitHub Actions run `31054897112`: success for exact SHA `6b098ea5eb8b83afa0443060cc3b4d512e8e99d7`.
+
+### Protected preview
+
+- Project: `prj_CsXZ0PzV6Ekdv2AjzniVcIxdnbt2` (`notarix-portal`).
+- Deployment: `dpl_UL2qt8F2E19GGbAqD79rCicBCBbm`, READY, preview target.
+- Source: `DaWaHu/notarix-portal`, branch `codex/notarix-portal-checkpoint`, exact SHA `6b098ea5eb8b83afa0443060cc3b4d512e8e99d7`.
+- URL: `https://notarix-portal-fokz8pgss-owner-9915s-projects.vercel.app`.
+- Access: non-public Vercel SSO protection. Anonymous access redirects to Vercel SSO with `no-store` and `noindex`.
+
+Smoke results: home 200; maintenance 200; sign-in 200; local staff preview 404;
+staff and elevated-approval 307 to sign-in; Cognito login/callback/logout fail
+safely with 307 while disabled. Security headers were present. Synthetic checks
+found no environment, internal stack, or source-map reference in tested home and
+error responses. No transaction endpoint was invoked.
+
+The Vercel build logged a non-fatal missing extra-CA warning for
+`./us-east-1-bundle.pem`; deployment completed. Reconcile preview certificate
+configuration before Phase 2 identity testing.
+
+### Domain investigation
+
+Current Notarix project domains are `notarix.live`, `www.notarix.live`, and
+`notarix-portal.vercel.app`; `dawahucollective.com` is absent. The name remains
+only in historical alias metadata for production deployment
+`dpl_5wjupjmcHyzoL2ehXuPUmzkV3ymh`. Current DNS and HTTP resolve to Squarespace,
+not Notarix. The TLS mismatch does not expose the portal. Recommended action:
+ask Vercel Support to purge or clarify stale deployment metadata. No DNS,
+certificate, redirect, or production alias change is indicated.
+
+Source references are identity-policy references for the owner email and staff
+domain, not routing or redirect configuration.
+
+### Migration status
+
+Read-only production comparison confirmed that `portal_users`,
+`portal_user_identities`, `portal_role_assignments`, and `portal_auth_sessions`
+are absent. Migration 0001 was not applied. See
+`docs/notarix-identity-migration-0001-plan.md`. Environment-scope overlap means
+no preview migration is safe until an isolated preview database is proven.

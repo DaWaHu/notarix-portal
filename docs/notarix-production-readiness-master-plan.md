@@ -10,10 +10,11 @@ claims in older handoffs. Historical reports remain evidence, not current truth.
 
 ## A. Executive status
 
-### Determination: No-Go
+### Determination: Conditional Go for Phase 2 protected-preview work
 
-Notarix Signings is **No-Go for real customer data and unrestricted production
-use**. The production site responds successfully and major workflows are
+Notarix Signings remains **No-Go for real customer data and unrestricted
+production use**, but Phase 1 evidence supports a **Conditional Go for Phase 2
+work limited to protected preview environments**. The production site responds successfully and major workflows are
 implemented, but critical identity, document-security, traceability, quality,
 provider-certification, and operational-resilience controls are incomplete or
 unverified.
@@ -22,9 +23,9 @@ Readiness is reported by phase and control area, not as a single percentage:
 
 | Area | State | Verified evidence |
 | --- | --- | --- |
-| Phase 0: current-state verification | In progress | Repository, Vercel deployment, environment names, Postgres connectivity, migrations, auth mode, lint, TypeScript, and contract tests inspected Aug 5 2026 |
-| Phase 1: release baseline and quality | In progress; awaiting commit/preview approval | Lint has zero errors; TypeScript and 7 contract tests pass; repeatable build established; CI workflow prepared; no preview deployed |
-| Phase 2: identity and authorization | Blocked | Cognito code exists but runtime is `legacy_rollback_mode`; production Cognito variables absent |
+| Phase 0: current-state verification | Complete for Phase 1 | Repository, Vercel deployment, environment names, Postgres connectivity, migrations, auth mode, lint, TypeScript, and contract tests inspected Aug 5 2026 |
+| Phase 1: release baseline and quality | Complete | Commits pushed; GitHub Actions passed; protected preview maps to exact SHA; zero lint errors/vulnerabilities; TypeScript, 7 tests, and build pass |
+| Phase 2: identity and authorization | Ready to begin in protected preview; infrastructure blocked | Cognito code exists but runtime is `legacy_rollback_mode`; Cognito variables and an isolated preview database are absent |
 | Phase 3: evidence and documents | Partial/unverified | S3 signing code and callback models exist; production scanner, quarantine, IAM, versioning, and recovery not certified |
 | Phase 4: external providers | Partial/unverified | SES dispatch code and shared callbacks exist; SMS, identity proofing, and financial providers are not certified |
 | Phase 5: security and resilience | Not ready | Immutable audit, restore drill, monitoring, alerting, incident response, IAM review, RTO/RPO, and penetration testing lack closure evidence |
@@ -104,7 +105,7 @@ certified.
 | SMS | AWS SNS/Pinpoint configuration placeholders | Variables absent; not certified |
 | Identity proofing | Required business workflow only | No approved provider integration verified |
 | Financial/payable | Modeled controls and ledger surfaces | No funds-movement/payable provider certified |
-| Deployment | Vercel project `notarix-portal`; production deployment ID verified | Production source SHA not traceable; no repository CI workflow |
+| Deployment | Vercel project `notarix-portal`; GitHub Actions quality workflow | Production source SHA remains untraceable; protected preview SHA is verified |
 | Environments | Local, Vercel Preview, Vercel Production | Preview and production share multiple credentials/scopes; separation review required |
 | Monitoring | Staff health/readiness UI and Vercel platform visibility | No centralized application monitoring/alerting evidence |
 | Audit | Postgres workflow events and command receipts | Immutability and loss-resistant export/storage unverified |
@@ -112,11 +113,12 @@ certified.
 ### Domains and deployment relationships
 
 - Primary production: `https://notarix.live`
-- Additional production aliases reported by Vercel: `www.notarix.live`,
-  `notarix-portal.vercel.app`, and `dawahucollective.com`.
+- Current project domains: `www.notarix.live`, `notarix.live`, and
+  `notarix-portal.vercel.app`. Historical deployment metadata still names
+  `dawahucollective.com`, but current DNS routes it to Squarespace.
 - Active branch: `codex/notarix-portal-checkpoint`.
-- HEAD and `origin/codex/notarix-portal-checkpoint`:
-  `47b807f405c933b771ca30ca9584fdeb89ed5819`.
+- Phase 1 application preview SHA:
+  `6b098ea5eb8b83afa0443060cc3b4d512e8e99d7`.
 - Production deployment: `dpl_5wjupjmcHyzoL2ehXuPUmzkV3ymh`.
 - Deployment-to-commit relationship: unverified.
 - A legacy `sites` Git remote and generated deployment output exist, but the
@@ -144,11 +146,11 @@ database, and webhook variable entries; actual value separation is unverified.
 | Severity | Problem and risk | System | Corrective action / dependencies | Acceptance evidence | Owner approval |
 | --- | --- | --- | --- | --- | --- |
 | Critical | Cognito is disabled; legacy identity cannot establish required MFA/passkey/device assurance | Identity/RBAC | Configure Cognito + Google Workspace in preview; validate sessions and database roles | Positive/negative auth matrix, MFA/passkey evidence, signed test report | Required for cloud configuration and cutover |
-| Critical | Deployed artifact includes local staff preview route | Identity | Prove production denial; add fail-closed production guard and tests | Direct route test returns 404/deny on all production aliases | Required before production cutover |
-| Critical | Production deployment has no verifiable source SHA | Release | Create traceable CI/preview release and record SHA/deployment mapping | Approved SHA equals preview metadata and artifact | Required before promotion |
+| Critical | Deployed artifact includes local staff preview route | Identity | Retain fail-closed host guard and test on every current production domain | Route returns 404 on current production domains; repeat after auth cutover | Required before production cutover |
+| Critical | Production deployment has no verifiable source SHA | Release | Use the traceable Phase 1 preview as the source for any separately approved promotion | Approved SHA equals future production metadata and artifact | Required before promotion |
 | Medium | Lint has 199 non-blocking navigation/image warnings | Quality/performance | Complete reviewed Link/Image migration | Zero warnings or documented, time-bound waivers | No |
 | Critical | Document quarantine/scanner/storage configuration not certified | Documents | Validate IAM, encryption, upload checks, quarantine, scanner, denial paths | End-to-end clean/infected/invalid/oversize tests and AWS configuration record | Required for IAM/provider changes |
-| High | Identity migration exists only in uncommitted work and is unverified in production | Database/identity | Review migration; apply to preview; verify rollback and schema | Migration journal, four tables, constraints/indexes, integration tests | Required before production migration |
+| High | Identity migration is committed but absent from production; no isolated preview database is proven | Database/identity | Provision/verify isolated preview DB, backup, then apply only after approval | Migration journal, four tables, constraints/indexes, integration tests | Required before shared-preview or production migration |
 | High | SES native bounce/complaint/delivery behavior unverified | Notifications | Configure and test SES event destinations and idempotent callbacks | Provider event receipts and database readback | Required for provider configuration |
 | High | SMS, identity proofing, and payable integrations absent | Providers | Select/configure providers and implement consent/approval gates | Sandbox certification and business acceptance | Required; possible commercial decision |
 | High | Audit immutability and backup restore are unproven | Resilience | Append-only/WORM design; automated backups; restore drill | Tamper test, exported evidence, timed restore report | Required for architecture/infrastructure |
@@ -281,15 +283,15 @@ escalation, required records, test cadence, and owner approval.
 
 ## Phase 1 session result — Aug 5 2026
 
-Completed locally: complete working-tree classification, sensitive-pattern scan,
+Completed: complete working-tree classification, sensitive-pattern scan,
 `.gitignore` repair, lint error remediation, explicit typecheck, seven contract
 tests, repeatable build correction, CI workflow preparation, dependency
-remediation, and production local-preview denial checks. The source remains
-uncommitted and no preview or production deployment was created.
+remediation, production local-preview denial checks, traceable commits, passing
+GitHub Actions, and protected-preview deployment. Production was not changed.
 
-Next approval gate: owner review of the proposed commit sequence and permission
-to create a protected Vercel preview from the approved commits. The preview must
-not be publicly exposed.
+Phase 1 preview `dpl_UL2qt8F2E19GGbAqD79rCicBCBbm` maps to exact application
+SHA `6b098ea5`. Phase 2 may begin only in protected preview. Production identity
+cutover remains a separate owner approval gate.
 
 ## Change control and closure rules
 
@@ -297,5 +299,5 @@ not be publicly exposed.
 - Production data, migrations, DNS, IAM, secrets, unrestricted access, and
   material production deployments require explicit owner approval.
 - Uncertain files are preserved until disposition approval.
-- Real customer data remains prohibited while the determination is No-Go.
+- Real customer data remains prohibited under the Conditional Go determination.
 - The owner alone changes the determination to Conditional Go or Go.

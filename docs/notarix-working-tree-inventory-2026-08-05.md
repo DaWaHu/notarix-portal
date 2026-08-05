@@ -3,6 +3,10 @@
 No files were deleted or reset during inventory. Dispositions are proposed and
 must be reviewed before uncertain material is removed.
 
+Phase 1 result: all approved project changes were committed and pushed.
+Generated caches and unrelated `.codex-work` material remain preserved and
+ignored. No uncertain file was deleted.
+
 ## Modified tracked files
 
 | File | Classification | Proposed disposition |
