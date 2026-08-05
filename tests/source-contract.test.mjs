@@ -35,7 +35,7 @@ async function walk(dir, files = []) {
 test("runtime scripts target Vercel, AWS services, and Postgres", async () => {
   const packageJson = JSON.parse(await text("package.json"));
   assert.equal(packageJson.scripts.dev, "next dev");
-  assert.equal(packageJson.scripts.build, "next build");
+  assert.equal(packageJson.scripts.build, "NOTARIX_BUILD_MODE=1 next build");
   assert.equal(packageJson.scripts.start, "next start");
   assert.match(packageJson.scripts.test, /test:contracts/);
   assert.ok(packageJson.dependencies.postgres);
@@ -51,6 +51,14 @@ test("runtime scripts target Vercel, AWS services, and Postgres", async () => {
   assert.match(dbIndex, /drizzle-orm\/postgres-js/);
   assert.match(dbIndex, /from "postgres"/);
   assert.doesNotMatch(dbIndex, /cloudflare:workers|sqlite|D1/i);
+});
+
+test("production builds do not open runtime database connections", async () => {
+  const packageJson = await text("package.json");
+  const database = await text("db/index.ts");
+
+  assert.match(packageJson, /NOTARIX_BUILD_MODE=1 next build/);
+  assert.match(database, /process\.env\.NOTARIX_BUILD_MODE === "1"/);
 });
 
 test("deployment readiness names Vercel as the production host", async () => {
@@ -97,4 +105,57 @@ test("active source no longer imports Cloudflare worker runtime", async () => {
   }
 
   assert.deepEqual(offenders, []);
+});
+
+test("Cognito foundation preserves legacy rollback and avoids source secrets", async () => {
+  const authConfig = await text("app/auth-config.ts");
+  const loginRoute = await text("app/auth/login/route.ts");
+  const callbackRoute = await text("app/auth/callback/route.ts");
+  const logoutRoute = await text("app/auth/logout/route.ts");
+  const jwtVerifier = await text("app/cognito-jwt.ts");
+  const envTemplate = await text("examples/notarix-env-template.txt");
+
+  assert.match(authConfig, /NOTARIX_AUTH_MODE/);
+  assert.match(authConfig, /legacy/);
+  assert.match(authConfig, /SUPER_ADMIN/);
+  assert.match(authConfig, /OBSERVER/);
+  assert.match(authConfig, /owner@dawahucollective\.com/);
+
+  assert.match(loginRoute, /code_challenge_method/);
+  assert.match(loginRoute, /S256/);
+  assert.match(loginRoute, /identity_provider/);
+  assert.match(callbackRoute, /authorization_code/);
+  assert.match(callbackRoute, /verifyCognitoJwt\(tokenResponse\.id_token,\s*"id"/);
+  assert.match(callbackRoute, /verifyCognitoJwt\(\s*tokenResponse\.access_token,\s*"access"/);
+  assert.match(callbackRoute, /nonce/);
+  assert.match(logoutRoute, /clearPortalSessionCookie/);
+
+  assert.match(jwtVerifier, /crypto\.subtle\.verify/);
+  assert.match(jwtVerifier, /RS256/);
+  assert.match(jwtVerifier, /token_use/);
+  assert.match(jwtVerifier, /claims\.iss !== config\.issuer/);
+
+  assert.match(envTemplate, /NOTARIX_COGNITO_CLIENT_SECRET=/);
+  assert.doesNotMatch(envTemplate, /NOTARIX_COGNITO_CLIENT_SECRET=.+\S/);
+});
+
+test("Cognito identity persistence tables are migration-backed", async () => {
+  const schema = await text("db/schema.ts");
+  const migration = await text("drizzle/0001_nebulous_slipstream.sql");
+  const dbReadiness = await text("scripts/db-readiness.mjs");
+
+  for (const table of [
+    "portal_users",
+    "portal_user_identities",
+    "portal_role_assignments",
+    "portal_auth_sessions",
+  ]) {
+    assert.match(migration, new RegExp(`CREATE TABLE "${table}"`));
+    assert.match(dbReadiness, new RegExp(`"${table}"`));
+  }
+
+  assert.match(schema, /export const portalUsers/);
+  assert.match(schema, /export const portalUserIdentities/);
+  assert.match(schema, /export const portalRoleAssignments/);
+  assert.match(schema, /export const portalAuthSessions/);
 });
