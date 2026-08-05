@@ -282,6 +282,8 @@ escalation, required records, test cadence, and owner approval.
 | Aug 5 2026 | Production preview-route denial | `notarix.live` and redirected `www.notarix.live` returned 404; unrelated alias had TLS hostname mismatch |
 | Aug 5 2026 | Phase 2 environment isolation comparison | Preview and Production share database, AWS, storage, callback, URL, and lock values; isolation failed; temporary secret files removed |
 | Aug 5 2026 | Phase 2 database inventory | No preview database exists on the configured server; production-instance logical DB option rejected |
+| Aug 5 2026 | Phase 2 protected-preview TLS verification | Deployment `dpl_5Qn9b37WnTXAAMLQWBo7CNRyF1Pk` READY from `321f87c`; missing certificate warning absent; anonymous request redirected to Vercel SSO; `public: false` |
+| Aug 5 2026 | Phase 2 checkpoint CI | GitHub Actions run `31056174674` passed for full SHA `321f87c55e3c89d09c01aaceda3f11c2a86ada5b` |
 
 ## Phase 1 session result — Aug 5 2026
 

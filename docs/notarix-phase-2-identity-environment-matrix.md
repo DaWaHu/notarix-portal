@@ -126,6 +126,15 @@ in Production. Preview-only variables were added:
 TLS verification was not weakened. A fresh protected-preview build is required
 to close the warning with log evidence.
 
+The fresh protected-preview deployment
+`dpl_5Qn9b37WnTXAAMLQWBo7CNRyF1Pk` completed successfully from checkpoint
+`321f87c`. Its build log did not report the missing
+`./us-east-1-bundle.pem` warning or a disabled-TLS warning. Vercel reports the
+deployment as `READY`, `target: null`, and `public: false`. An anonymous request
+returned HTTP 302 to Vercel SSO with `noindex` and HSTS headers. No public alias
+was created. The remaining build warning concerns the broad Node.js engine
+range and is unrelated to certificate verification.
+
 ## Approval gate
 
 Phase 2 is blocked before migration. The owner must either approve creation of a
