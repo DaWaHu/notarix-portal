@@ -4,8 +4,22 @@ Date: Aug 5 2026
 
 Owner authorization: Phase 2 preview-only identity and authorization work.
 
-Status: **isolated Neon Preview role boundary committed and verified; credentials,
-Vercel mapping, migration, and identity activation remain blocked**.
+Status: **Production database credential incident contained; Preview has no
+`DATABASE_URL`; all Phase 2 Preview work remains paused for owner review**.
+
+## Production credential incident checkpoint — Aug 6 2026
+
+The exposed Production RDS master password was replaced and immediately applied
+at 12:04 PM ET. Vercel now holds `DATABASE_URL` only in Production, marked
+Sensitive; Preview and Development have no `DATABASE_URL`, and
+`DATABASE_MIGRATION_URL` is absent. Production deployment
+`ZJtCwJb1bJ9jCe8tDKG67ofhDK19` is READY from unchanged commit `47b807f`, and
+`notarix.live` is operational.
+
+This repair intentionally makes Preview fail closed. It supersedes older matrix
+statements that Preview currently inherits the Production `DATABASE_URL`.
+Neon remains unattached, migration 0001 remains unapplied, and Phase 2 does not
+resume automatically after incident closure.
 
 ## Isolation conclusion
 
@@ -19,9 +33,9 @@ no usable credential was created. The runtime role has `CONNECT` and schema
 membership from `cloud_admin` (OID 10) to `neondb_owner` for each role, with
 ADMIN true, SET false, and INHERIT false.
 
-The Neon resource remains unattached to Vercel. Current Vercel Preview still
-uses the Production `DATABASE_URL`; no Preview runtime database test is allowed
-until a separate credential-generation and Preview-only mapping authorization.
+The Neon resource remains unattached to Vercel. Current Vercel Preview has no
+`DATABASE_URL`; no Preview runtime database test is allowed until a separate
+credential-generation and Preview-only mapping authorization.
 Migration `0001_nebulous_slipstream` remains unapplied.
 
 The existing Vercel Preview environment is not isolated from Production.
@@ -69,7 +83,7 @@ or changing a secret:
 | Resource | `notarix-portal-preview`; Vercel resource ID redacted from documentation |
 | Resource state | `available`; `owned` |
 | Connected projects | None; the Notarix project reports no connected integration resources |
-| Existing Preview variables | No `NEON_*`, `PG*`, `POSTGRES_*`, or Neon-specific URL variable; current `DATABASE_URL` remains the AWS RDS value |
+| Existing Preview variables at reconciliation time | No `NEON_*`, `PG*`, `POSTGRES_*`, or Neon-specific URL variable; `DATABASE_URL` then remained the AWS RDS value (removed from Preview during Aug 6 incident containment) |
 | Administrative access | Vercel account can list and inspect the owned resource; database-console and SQL privileges are not yet proven |
 | Project/branch/database/region | Not exposed by the available read-only Vercel metadata; unverified |
 | Contents and migration journal | Unverified because this reconciliation prohibited database connections |
@@ -152,8 +166,8 @@ must be run with the final network and retention design before authorization.
 | --- | --- | --- | --- | --- |
 | Access | Developer workstation | Vercel SSO protected | Vercel SSO protected; no public alias | Public application domain with application auth |
 | Source branch | Working branch | `codex/notarix-portal-checkpoint` | Same protected branch | Existing production artifact; unchanged |
-| Database infrastructure | Local reference points to production-compatible Postgres | Same URL as Production | Separate managed instance/cluster or owner-designated isolated service | AWS RDS production |
-| Database credentials | Local secret file | Same as Production | Unique preview-only role/password | Production-only credentials |
+| Database infrastructure | Local reference points to production-compatible Postgres | No database binding; fail closed after incident containment | Separate managed instance/cluster or owner-designated isolated service | AWS RDS production |
+| Database credentials | Local secret file | `DATABASE_URL` absent | Unique preview-only role/password | Production-only sensitive `DATABASE_URL` |
 | Database name/data | Production-connected reference | Production database | Unique database with synthetic data only | Production records |
 | Migration history | Repository has 0000 and 0001 | Production schema currently lacks 0001 | Independent journal; apply 0001 only after proof/backup | 0000 baseline; 0001 prohibited |
 | AWS credentials | Local application credentials | Same as Production | Unique least-privilege preview credentials | Production application credentials |
@@ -265,7 +279,7 @@ No production change is requested or authorized.
 
 | Concern | Implemented contract | Configuration status |
 | --- | --- | --- |
-| Runtime | `DATABASE_URL` only; Preview target identity validates before client creation | Preview branch value still points to Production; runtime testing prohibited |
+| Runtime | `DATABASE_URL` only; Preview target identity validates before client creation | Preview `DATABASE_URL` is absent after incident containment; runtime testing prohibited |
 | Migration | `DATABASE_MIGRATION_URL` only; no fallback; direct endpoint and migrator validation | Credential not generated or configured |
 | Administration | Inspection tools require the operator channel; `neondb_owner` is rejected by application tooling | Provider-console administration remains separate |
 | Preview identity | Approved Neon project/endpoint/database, pooled runtime/direct migration, exact roles | Non-secret Vercel markers not configured |

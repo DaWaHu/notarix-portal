@@ -243,6 +243,9 @@ database, and webhook variable entries; actual value separation is unverified.
 | Database corruption | Medium | Critical | Backups, PITR, migration controls | Restore to isolated recovery environment | Database Lead | Open |
 | Failed deployment | Medium | High | CI, preview, SHA traceability, rollback | Roll back to last approved SHA | Release Lead | Open |
 | Lost audit evidence | Medium | Critical | Append-only external audit retention | Freeze changes and reconstruct from providers/backups | Compliance Lead | Open |
+| Public Production database ingress | High | Critical | Replace `0.0.0.0/0` with an approved restricted network path; validate Vercel connectivity | Keep Preview database-free; incident response and credential rotation | Security + Platform Leads | Open; observed external probes |
+| Insufficient database connection attribution | High | High | Approve PostgreSQL connection/audit logging, retention, alerting, and privacy controls | Treat misuse-exclusion conclusions as unavailable | Security + Compliance Leads | Open |
+| High-severity `js-yaml` advisory | Medium | High | Review dependency path, apply a compatible patched release, and rerun full CI/audit | Block the next release if no safe patch is available | Engineering Lead | Open; `GHSA-5p4m-2wfm-xmqj` |
 | Backup failure | Medium | Critical | Scheduled verification and restore drills | Alternate snapshot/export recovery | Operations Lead | Open |
 | Authentication lockout | Medium | High | Tested break-glass and recovery | Owner-controlled emergency access | Identity Lead | Open |
 | Financial-processing errors | Medium | Critical | Dual approval, idempotency, reconciliation | Freeze payouts and execute correction SOP | Finance Lead | Open |
@@ -286,6 +289,9 @@ escalation, required records, test cadence, and owner approval.
 | Aug 5 2026 | Phase 2 checkpoint CI | GitHub Actions run `31056174674` passed for full SHA `321f87c55e3c89d09c01aaceda3f11c2a86ada5b` |
 | Aug 5 2026 | Neon resource reconciliation | Vercel team owns available `notarix-portal-preview` on Free plan; no projects attached; no Neon variables; no connection, secret access, or configuration change performed |
 | Aug 6 2026 | Database connection-contract implementation | Runtime restricted to `DATABASE_URL`; migration/inspection tooling requires `DATABASE_MIGRATION_URL`; Preview identity and TLS checks and exact-0001 runner added; no provider configuration or migration performed |
+| Aug 6 2026 | Production database credential incident containment | RDS password reset applied immediately at 12:04 PM ET; Vercel `DATABASE_URL` is Sensitive and Production-only; Preview/Development have no database URL; replacement Production deployment `ZJtCwJb1bJ9jCe8tDKG67ofhDK19` READY from unchanged `47b807f`; `notarix.live` operational |
+| Aug 6 2026 | Incident activity/log review | Expected Vercel and MFA-authenticated AWS actions only; failed external PostgreSQL probes observed; no identified misuse, but current logs cannot prove absence of successful unauthorized use; public RDS ingress and audit coverage remain open risks |
+| Aug 6 2026 | Incident documentation quality gate | ESLint zero errors/199 warnings; TypeScript passed; source contracts 7/7; database contracts 6/6; webpack production build passed; sensitive-pattern scan passed; npm audit found one high-severity `js-yaml` advisory requiring separate remediation |
 
 ## Phase 2 database contract checkpoint — Aug 6 2026
 
@@ -295,9 +301,9 @@ provider, role class, direct/pooled classification, and TLS `verify-full`.
 Production runtime continues using its existing `DATABASE_URL`; Production
 migration execution additionally requires two explicit approval gates.
 
-Credentials remain ungenerated, Vercel remains unchanged, migration 0001 remains
-unapplied, and Preview still inherits Production `DATABASE_URL`. Phase 2 remains
-blocked at the atomic Preview-only mapping gate.
+Preview credentials remain ungenerated, migration 0001 remains unapplied, and
+incident containment removed `DATABASE_URL` from Preview. Phase 2 remains paused
+and blocked at the atomic Preview-only mapping gate.
 
 ## Phase 1 session result — Aug 5 2026
 
