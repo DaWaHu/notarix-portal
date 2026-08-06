@@ -95,7 +95,8 @@ function assertSafeMigration(source) {
 }
 
 function printEvidence(identityValue, details) {
-  const { sanitizedUrl: _secret, ...safeIdentity } = identityValue;
+  const safeIdentity = { ...identityValue };
+  delete safeIdentity.sanitizedUrl;
   console.log(JSON.stringify({ identity: safeIdentity, ...details }, null, 2));
 }
 

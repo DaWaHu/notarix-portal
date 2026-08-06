@@ -91,6 +91,12 @@ const readiness = {
 
 if (
   readiness.database.runtimeConfigured &&
+  readiness.database.environment !== "unmarked" &&
+  readiness.database.provider !== "unmarked" &&
+  readiness.database.resourceIdentified &&
+  readiness.database.endpointIdentified &&
+  readiness.database.nameIdentified &&
+  readiness.database.roleClass !== "unmarked" &&
   !readiness.database.tlsVerificationDisabled &&
   readiness.migrations.dialect === "postgresql" &&
   readiness.migrations.headSnapshotPresent &&
