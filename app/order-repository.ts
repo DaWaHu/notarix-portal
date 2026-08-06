@@ -17,11 +17,22 @@ import {
   signerReadinessRecords,
   signersForOrder,
 } from "./operations-data";
+import { orderSeedFallbackAllowed } from "./order-seed-policy";
+
+export { orderSeedFallbackAllowed } from "./order-seed-policy";
 
 const cloneRecord = <T extends Record<string, unknown>>(record: T): T => ({ ...record });
 const cloneRecords = <T extends Record<string, unknown>>(records: readonly T[]): T[] =>
   records.map(cloneRecord);
 const nowUtc = () => new Date();
+
+function requireOrderSeedFallbackAllowed() {
+  if (!orderSeedFallbackAllowed()) {
+    throw new Error(
+      "Production Order persistence is unavailable; synthetic fallback is prohibited.",
+    );
+  }
+}
 
 export const orderRepositoryPersistenceContract = {
   sourceOfTruth: "Order remains the central system record for Notarix Signings.",
@@ -37,12 +48,14 @@ export async function listOrderOperations() {
   if (db) {
     try {
       const records = await db.select().from(schema.orderOperationalRecords);
-      if (records.length > 0) return cloneRecords(records);
+      return cloneRecords(records);
     } catch {
+      requireOrderSeedFallbackAllowed();
       return cloneRecords(orderOperationRecords);
     }
   }
 
+  requireOrderSeedFallbackAllowed();
   return cloneRecords(orderOperationRecords);
 }
 
@@ -57,11 +70,13 @@ export async function getOrderOperation(orderId: string) {
         .limit(1);
       if (record) return cloneRecord(record);
     } catch {
+      requireOrderSeedFallbackAllowed();
       const order = findOrderOperationRecord(orderId);
       return order ? cloneRecord(order) : undefined;
     }
   }
 
+  requireOrderSeedFallbackAllowed();
   const order = findOrderOperationRecord(orderId);
   return order ? cloneRecord(order) : undefined;
 }
@@ -87,12 +102,14 @@ export async function listOrderLifecycle(orderId: string) {
         .select()
         .from(schema.orderLifecycleStages)
         .where(eq(schema.orderLifecycleStages.orderId, orderId.toUpperCase()));
-      if (records.length > 0) return cloneRecords(records);
+      return cloneRecords(records);
     } catch {
+      requireOrderSeedFallbackAllowed();
       return cloneRecords(lifecycleForOrder(orderId));
     }
   }
 
+  requireOrderSeedFallbackAllowed();
   return cloneRecords(lifecycleForOrder(orderId));
 }
 
@@ -108,14 +125,16 @@ export async function listOrderCloseoutControls(orderId?: string) {
       const records = orderId
         ? await query.where(eq(schema.orderCloseoutControls.orderId, orderId.toUpperCase()))
         : await query;
-      if (records.length > 0) return cloneRecords(records);
+      return cloneRecords(records);
     } catch {
+      requireOrderSeedFallbackAllowed();
       return cloneRecords(
         orderId ? closeoutControlsForOrder(orderId) : orderCloseoutRecords,
       );
     }
   }
 
+  requireOrderSeedFallbackAllowed();
   return cloneRecords(
     orderId ? closeoutControlsForOrder(orderId) : orderCloseoutRecords,
   );
@@ -129,12 +148,14 @@ export async function listOrderDeliveryReceipts(orderId: string) {
         .select()
         .from(schema.orderDeliveryReceipts)
         .where(eq(schema.orderDeliveryReceipts.orderId, orderId.toUpperCase()));
-      if (records.length > 0) return cloneRecords(records);
+      return cloneRecords(records);
     } catch {
+      requireOrderSeedFallbackAllowed();
       return cloneRecords(deliveryReceiptsForOrder(orderId));
     }
   }
 
+  requireOrderSeedFallbackAllowed();
   return cloneRecords(deliveryReceiptsForOrder(orderId));
 }
 
@@ -146,12 +167,14 @@ export async function listNotaryCompletionReceipts(orderId: string) {
         .select()
         .from(schema.notaryCompletionReceipts)
         .where(eq(schema.notaryCompletionReceipts.orderId, orderId.toUpperCase()));
-      if (records.length > 0) return cloneRecords(records);
+      return cloneRecords(records);
     } catch {
+      requireOrderSeedFallbackAllowed();
       return cloneRecords(notaryCompletionReceiptsForOrder(orderId));
     }
   }
 
+  requireOrderSeedFallbackAllowed();
   return cloneRecords(notaryCompletionReceiptsForOrder(orderId));
 }
 
@@ -160,12 +183,14 @@ export async function listAppointmentConfirmations() {
   if (db) {
     try {
       const records = await db.select().from(schema.orderAppointments);
-      if (records.length > 0) return cloneRecords(records);
+      return cloneRecords(records);
     } catch {
+      requireOrderSeedFallbackAllowed();
       return cloneRecords(appointmentConfirmationRecords);
     }
   }
 
+  requireOrderSeedFallbackAllowed();
   return cloneRecords(appointmentConfirmationRecords);
 }
 
@@ -174,12 +199,14 @@ export async function listSignerReadiness() {
   if (db) {
     try {
       const records = await db.select().from(schema.orderSignerReadiness);
-      if (records.length > 0) return cloneRecords(records);
+      return cloneRecords(records);
     } catch {
+      requireOrderSeedFallbackAllowed();
       return cloneRecords(signerReadinessRecords);
     }
   }
 
+  requireOrderSeedFallbackAllowed();
   return cloneRecords(signerReadinessRecords);
 }
 
@@ -191,12 +218,14 @@ export async function listOrderSigners(orderId: string) {
         .select()
         .from(schema.orderSignerReadiness)
         .where(eq(schema.orderSignerReadiness.orderId, orderId.toUpperCase()));
-      if (records.length > 0) return cloneRecords(records);
+      return cloneRecords(records);
     } catch {
+      requireOrderSeedFallbackAllowed();
       return cloneRecords(signersForOrder(orderId));
     }
   }
 
+  requireOrderSeedFallbackAllowed();
   return cloneRecords(signersForOrder(orderId));
 }
 
@@ -211,6 +240,7 @@ export async function persistOrderCommandTransition(input: {
 }) {
   const db = await getOptionalDb();
   if (!db) {
+    requireOrderSeedFallbackAllowed();
     return {
       persisted: false,
       reason: "Postgres DATABASE_URL unavailable; command receipt remains in local preview store.",

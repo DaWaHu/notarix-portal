@@ -20,7 +20,10 @@ import {
 } from "../../operations-data";
 import { getOptionalDb } from "../../../db";
 import * as schema from "../../../db/schema";
-import { persistOrderCommandTransition } from "../../order-repository";
+import {
+  orderSeedFallbackAllowed,
+  persistOrderCommandTransition,
+} from "../../order-repository";
 import { evidenceRecords } from "../../evidence-data";
 
 export type CommandActorRole = PortalActorRole;
@@ -558,7 +561,10 @@ export async function listPersistedCommandCenterReceipts(): Promise<
   StoredCommandReceipt[]
 > {
   const db = await getOptionalDb();
-  if (!db) return listCommandCenterReceipts();
+  if (!db) {
+    requireCommandSeedFallbackAllowed();
+    return listCommandCenterReceipts();
+  }
 
   try {
     const [receiptRows, eventRows, targetRows] = await Promise.all([
@@ -567,7 +573,9 @@ export async function listPersistedCommandCenterReceipts(): Promise<
       db.select().from(schema.commandCenterTargets),
     ]);
 
-    if (receiptRows.length === 0) return listCommandCenterReceipts();
+    if (receiptRows.length === 0) {
+      return orderSeedFallbackAllowed() ? listCommandCenterReceipts() : [];
+    }
 
     const eventsById = new Map(eventRows.map((event) => [event.id, event]));
     const targetsById = new Map(targetRows.map((target) => [target.id, target]));
@@ -581,6 +589,7 @@ export async function listPersistedCommandCenterReceipts(): Promise<
       })
       .filter((receipt): receipt is StoredCommandReceipt => Boolean(receipt));
   } catch {
+    requireCommandSeedFallbackAllowed();
     return listCommandCenterReceipts();
   }
 }
@@ -606,7 +615,10 @@ export async function getPersistedCommandCenterReceipt(
   receiptId: string,
 ): Promise<StoredCommandReceipt | undefined> {
   const db = await getOptionalDb();
-  if (!db) return getCommandCenterReceipt(receiptId);
+  if (!db) {
+    requireCommandSeedFallbackAllowed();
+    return getCommandCenterReceipt(receiptId);
+  }
 
   try {
     const [receipt] = await db
@@ -614,7 +626,11 @@ export async function getPersistedCommandCenterReceipt(
       .from(schema.commandCenterReceipts)
       .where(eq(schema.commandCenterReceipts.id, receiptId))
       .limit(1);
-    if (!receipt) return getCommandCenterReceipt(receiptId);
+    if (!receipt) {
+      return orderSeedFallbackAllowed()
+        ? getCommandCenterReceipt(receiptId)
+        : undefined;
+    }
 
     const [event] = await db
       .select()
@@ -627,9 +643,14 @@ export async function getPersistedCommandCenterReceipt(
       .where(eq(schema.commandCenterTargets.id, receipt.targetId))
       .limit(1);
 
-    if (!event || !target) return getCommandCenterReceipt(receiptId);
+    if (!event || !target) {
+      return orderSeedFallbackAllowed()
+        ? getCommandCenterReceipt(receiptId)
+        : undefined;
+    }
     return commandReceiptFromRows({ event, receipt, target });
   } catch {
+    requireCommandSeedFallbackAllowed();
     return getCommandCenterReceipt(receiptId);
   }
 }
@@ -773,6 +794,7 @@ async function persistCommandCenterReceipt(
 ): Promise<CommandCenterPersistenceResult> {
   const db = await getOptionalDb();
   if (!db) {
+    requireCommandSeedFallbackAllowed();
     return {
       persisted: false,
       reason: "Postgres DATABASE_URL unavailable; command receipt remains in local preview store.",
@@ -870,6 +892,14 @@ async function persistCommandCenterReceipt(
     });
 
   return { persisted: true };
+}
+
+function requireCommandSeedFallbackAllowed() {
+  if (!orderSeedFallbackAllowed()) {
+    throw new Error(
+      "Production command persistence is unavailable; synthetic fallback is prohibited.",
+    );
+  }
 }
 
 function commandReceiptFromRows(input: {
