@@ -44,10 +44,10 @@ function loadLocalEnv() {
 }
 
 const env = { ...loadLocalEnv(), ...process.env };
-const databaseUrl = env.DATABASE_URL;
+const databaseUrl = env.DATABASE_MIGRATION_URL;
 
 if (!databaseUrl) {
-  throw new Error("DATABASE_URL is missing.");
+  throw new Error("DATABASE_MIGRATION_URL is required for administrative database inspection.");
 }
 
 const sql = postgres(sanitizePostgresUrl(databaseUrl), {

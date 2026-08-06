@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { validateRuntimeDatabaseContract } from "./connection-contract";
 import { sanitizePostgresUrl } from "./database-url";
 import * as schema from "./schema";
 
@@ -13,6 +14,8 @@ export async function getDb() {
       "Postgres DATABASE_URL is unavailable. Configure DATABASE_URL as a Vercel environment variable before using the production database.",
     );
   }
+
+  validateRuntimeDatabaseContract(process.env);
 
   dbClient ??= postgres(sanitizePostgresUrl(databaseUrl), {
     max: 1,

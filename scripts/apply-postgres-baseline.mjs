@@ -50,10 +50,10 @@ function sanitizePostgresUrl(databaseUrl) {
 }
 
 const env = { ...loadLocalEnv(), ...process.env };
-const databaseUrl = env.DATABASE_URL;
+const databaseUrl = env.DATABASE_MIGRATION_URL;
 
 if (!databaseUrl) {
-  throw new Error("DATABASE_URL is missing.");
+  throw new Error("DATABASE_MIGRATION_URL is required for baseline migration tooling.");
 }
 
 const sql = postgres(sanitizePostgresUrl(databaseUrl), {
