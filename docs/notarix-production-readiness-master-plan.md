@@ -292,6 +292,7 @@ escalation, required records, test cadence, and owner approval.
 | Aug 6 2026 | Production database credential incident containment | RDS password reset applied immediately at 12:04 PM ET; Vercel `DATABASE_URL` is Sensitive and Production-only; Preview/Development have no database URL; replacement Production deployment `ZJtCwJb1bJ9jCe8tDKG67ofhDK19` READY from unchanged `47b807f`; `notarix.live` operational |
 | Aug 6 2026 | Incident activity/log review | Expected Vercel and MFA-authenticated AWS actions only; failed external PostgreSQL probes observed; no identified misuse, but current logs cannot prove absence of successful unauthorized use; public RDS ingress and audit coverage remain open risks |
 | Aug 6 2026 | Incident documentation quality gate | ESLint zero errors/199 warnings; TypeScript passed; source contracts 7/7; database contracts 6/6; webpack production build passed; sensitive-pattern scan passed; npm audit found one high-severity `js-yaml` advisory requiring separate remediation |
+| Aug 6 2026 | Order API/Lambda Phase A | Provider-neutral GET/place-hold contracts, pure authorization/transition/idempotency/audit rules, repository-only tests, Production seed-fallback guard, proposed normalized migration, and non-deployable AWS manifest completed; no AWS, database, environment, billing, deployment, Preview, or Production change |
 
 ## Phase 2 database contract checkpoint — Aug 6 2026
 
@@ -304,6 +305,28 @@ migration execution additionally requires two explicit approval gates.
 Preview credentials remain ungenerated, migration 0001 remains unapplied, and
 incident containment removed `DATABASE_URL` from Preview. Phase 2 remains paused
 and blocked at the atomic Preview-only mapping gate.
+
+## Order API/Lambda Phase A checkpoint — Aug 6 2026
+
+Status: **DESIGNED / REPOSITORY IMPLEMENTED / NOT DEPLOYED**.
+
+The owner selected the future browser/Cognito/API Gateway/VPC Lambda/private RDS
+boundary and authorized repository-only Order Phase A. Shared contracts and pure
+rules now define a minimal authorized Order read and Admin/Super Admin
+operational hold. Tests cover tenant/notary/role denial, validation, optimistic
+versioning, idempotent replay, audit requirements, sensitive-field exclusion,
+and absence of provider/database dependencies.
+
+The live call-site review confirmed 10 Order repository database entry points
+and three command-center entry points. Production Order/command database failure
+or empty results now fail closed instead of returning synthetic records; fixture
+fallback remains available for build and non-production use. Hard-coded client
+and notary actors and name-filtered tenancy remain documented launch blockers.
+
+Proposed migration 0002 and the AWS manifest are non-executable design artifacts.
+No IaC framework was selected or installed. The next gate is owner authorization
+for isolated Preview AWS implementation; that gate must also decide browser
+direct access, normalized schema execution, secret delivery, and cost ceiling.
 
 ## Phase 1 session result — Aug 5 2026
 

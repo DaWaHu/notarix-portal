@@ -28,6 +28,7 @@ means no launch-acceptable controlled procedure was found.
 | SOP-019 | Legal hold | Incomplete | Compliance/Legal | Hold placement/release authority and deletion-prevention test |
 | SOP-020 | Data-retention enforcement | Incomplete | Compliance Lead | Approved schedule, lifecycle configuration, exception and destruction evidence |
 | SOP-021 | Database migration and target validation | Incomplete | Database/Release Leads | Explicit target identity, separate migration credential, checksum, backup/restore point, exact-file execution, privilege verification, rollback evidence, owner approval |
+| SOP-022 | Business API authorization and domain cutover | Incomplete | Security/Engineering Leads | Cognito/API identity proof, normalized tenant/assignment policy, one-writer register, idempotency/audit transaction, denial matrix, staged rollback exercise |
 
 ## Required SOP template
 
