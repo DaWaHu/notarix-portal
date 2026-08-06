@@ -138,3 +138,17 @@ contained to protected preview and fail closed.
 - Do not seed real customer, W-9, banking, or identity-document information.
 - Do not enable production Cognito or unrestricted access.
 - Successful DDL does not authorize production cutover.
+
+## Relationship to proposed Order authorization migration
+
+Repository-only Order Phase A proposes
+`0002_normalized_order_authorization.sql` outside the Drizzle journal at
+`docs/migrations/proposals/`. It is **DESIGNED / NOT EXECUTED**, ends in
+`ROLLBACK`, and must not be moved into `drizzle/` without separate approval.
+
+Proposed 0002 depends on successful verification of all four 0001 identity
+tables. It references `portal_users`, `portal_user_identities`, and
+`portal_role_assignments`; adds normalized organizations, memberships, notary
+profiles, Order ownership/assignments, audit, and idempotency records; and stages
+nullable role-approval attribution for reviewed backfill. It does not modify
+0001. Any ambiguity in existing identity/role data is a stop condition.
