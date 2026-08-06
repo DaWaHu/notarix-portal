@@ -1,0 +1,53 @@
+status: DESIGN_ONLY_NOT_DEPLOYABLE
+environment: protected-preview
+syntheticDataOnly: true
+
+resources:
+  evidenceBucket:
+    provider: AWS::S3::Bucket
+    publicAccessBlock: all
+    objectOwnership: BucketOwnerEnforced
+    versioning: enabled
+    encryption:
+      algorithm: aws:kms
+      key: dedicated-preview-evidence-key
+      bucketKeyEnabled: true
+    lifecycle:
+      incompleteMultipartUploadDays: 1
+      noncurrentVersionRetention: OWNER_DECISION_REQUIRED
+      expiration: NEVER_WHILE_LEGAL_HOLD_OR_RETENTION_ACTIVE
+    logging: CloudTrailDataEventsRequired
+  evidenceKey:
+    provider: AWS::KMS::Key
+    rotation: enabled
+    deletionWindowDays: 30
+    administrators: named-preview-security-administrators-only
+    usage: evidence-service-role-only
+  scanner:
+    provider: OWNER_DECISION_REQUIRED
+    trigger: S3 object-created event for quarantine prefix
+    failClosed: true
+    outcomes: [CLEAN, INFECTED, ERROR]
+  recovery:
+    versionRestore: required
+    checksumVerification: required
+    isolatedRestoreRehearsal: required
+
+prefixes:
+  quarantine: quarantine/
+  released: released/
+
+signedUrlContract:
+  uploadTtlSeconds: 600
+  downloadTtlSeconds: 300
+  uploadRequires: [content-type, content-length-policy, sha256-checksum, sse-kms, kms-key-id]
+  downloadRequires: [server-side-authorization, clean-scan, released-state, immutable-version-id, audit-receipt]
+
+explicitlyExcluded:
+  - Production resources
+  - public bucket access
+  - permanent object URLs
+  - unscanned object release
+  - provider purchase
+  - environment-variable changes
+  - deployment
