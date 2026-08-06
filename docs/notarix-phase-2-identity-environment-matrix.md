@@ -111,6 +111,33 @@ configuration.
 No connection, attachment, variable change, or SQL was performed during this
 reconciliation.
 
+### Post-containment revalidation — Aug 5 2026
+
+After authentication-containment checkpoint
+`870e6889b04f738f0c46a814d0694e928d38d1e7`, the control-plane evidence was
+revalidated without opening a database connection:
+
+- Vercel still reports exactly one team-level database integration resource:
+  owned Neon resource `notarix-portal-preview`, status `available`.
+- The resource remains on `free_v3`; Vercel describes it as Free, with no
+  payment method required, 0.5 GB storage per project, up to 2 CU/8 GB RAM, and
+  100 CU-hours per project.
+- The resource has zero attached Vercel projects. Project-specific integration
+  inventory for `notarix-portal` returns no resources.
+- Preview variable-name inventory contains no `NEON_*`, `PG*`, `POSTGRES_*`, or
+  unpooled database variable. Existing `DATABASE_URL` scope is unchanged.
+- No other non-production PostgreSQL resource is visible through the configured
+  Vercel account. AWS application credentials still do not provide RDS inventory
+  authority, so an unseen AWS resource cannot be administratively proven.
+
+This revalidation proves provider/control-plane separation and current traffic
+disconnection. It does **not** prove the Neon project, branch, database, region,
+PostgreSQL version, emptiness, TLS posture, database role, DDL authority,
+migration history, restore state, or credential-level bidirectional isolation.
+Those controls require a separately authorized provider-metadata review and
+read-only connection test. No new paid resource should be created while this
+owned Free candidate remains viable for verification.
+
 ## Database option decision memo
 
 | Consideration | Existing/separate Neon Preview | Separate AWS RDS PostgreSQL Preview |

@@ -286,6 +286,7 @@ escalation, required records, test cadence, and owner approval.
 | Aug 5 2026 | Phase 2 checkpoint CI | GitHub Actions run `31056174674` passed for full SHA `321f87c55e3c89d09c01aaceda3f11c2a86ada5b` |
 | Aug 5 2026 | Neon resource reconciliation | Vercel team owns available `notarix-portal-preview` on Free plan; no projects attached; no Neon variables; no connection, secret access, or configuration change performed |
 | Aug 5 2026 | Legacy authentication containment | Source checkpoint removes unverified identity-header trust and provider-specific routes, fails closed without a Notarix/Cognito session, and moves 16 staff pages to explicit RBAC; Production remains unremediated because no Production deployment is authorized |
+| Aug 5 2026 | Post-containment database-resource reconciliation | Owned `notarix-portal-preview` Neon Free resource remains available, unattached to all Vercel projects, and absent from Preview variable names; no other Vercel database resource is visible; no connection or configuration change performed |
 
 ## Phase 1 session result — Aug 5 2026
 

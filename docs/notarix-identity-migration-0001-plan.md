@@ -47,11 +47,18 @@ could interrupt authentication.
   `timestamp with time zone`, booleans, and btree indexes; no tablespaces,
   unsupported extensions, or host-level features. It is compatible in principle
   with Neon PostgreSQL 14–17, subject to target version and privilege checks.
+- Post-containment read-only revalidation at `870e6889` confirmed the Neon
+  candidate remains owned, available, Free, and unattached, with no Neon-specific
+  Vercel Preview variables. Emptiness, target metadata, restore state, TLS,
+  privileges, and bidirectional credential isolation remain unverified because
+  no database connection or resource attachment was authorized.
 - Cognito remains disabled in legacy rollback mode.
 
 ## Prerequisites
 
 1. Owner approves the isolated preview database and migration window.
+   Candidate designation alone does not authorize connection, attachment,
+   credential configuration, backup creation, or migration.
 2. Confirm the target identifier without printing credentials.
 3. Prove the target is not production RDS.
 4. Capture and privately record a restorable snapshot.
