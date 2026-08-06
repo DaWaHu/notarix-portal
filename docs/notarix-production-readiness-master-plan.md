@@ -25,7 +25,7 @@ Readiness is reported by phase and control area, not as a single percentage:
 | --- | --- | --- |
 | Phase 0: current-state verification | Complete for Phase 1 | Repository, Vercel deployment, environment names, Postgres connectivity, migrations, auth mode, lint, TypeScript, and contract tests inspected Aug 5 2026 |
 | Phase 1: release baseline and quality | Complete | Commits pushed; GitHub Actions passed; protected preview maps to exact SHA; zero lint errors/vulnerabilities; TypeScript, 7 tests, and build pass |
-| Phase 2: identity and authorization | In progress; blocked at database isolation gate | Preview/Production variables are identical; an owned unattached Neon Free candidate exists but its provider metadata, contents, privileges, and bidirectional isolation remain unverified; Cognito preview configuration is absent |
+| Phase 2: identity and authorization | In progress; blocked at database isolation gate | The owned, unattached Neon Free candidate is PostgreSQL 17.10, empty of user relations, and DDL-capable; TLS and bidirectional credential isolation remain unverified; Cognito preview configuration is absent |
 | Phase 3: evidence and documents | Partial/unverified | S3 signing code and callback models exist; production scanner, quarantine, IAM, versioning, and recovery not certified |
 | Phase 4: external providers | Partial/unverified | SES dispatch code and shared callbacks exist; SMS, identity proofing, and financial providers are not certified |
 | Phase 5: security and resilience | Not ready | Immutable audit, restore drill, monitoring, alerting, incident response, IAM review, RTO/RPO, and penetration testing lack closure evidence |
@@ -288,6 +288,7 @@ escalation, required records, test cadence, and owner approval.
 | Aug 5 2026 | Legacy authentication containment | Source checkpoint removes unverified identity-header trust and provider-specific routes, fails closed without a Notarix/Cognito session, and moves 16 staff pages to explicit RBAC; Production remains unremediated because no Production deployment is authorized |
 | Aug 5 2026 | Post-containment database-resource reconciliation | Owned `notarix-portal-preview` Neon Free resource remains available, unattached to all Vercel projects, and absent from Preview variable names; no other Vercel database resource is visible; no connection or configuration change performed |
 | Aug 5 2026 | Authorized Neon verification gate | Stopped before connection: CLI exposes owned/available/Free/unattached status only; provider SSO returned HTTP 403; no existing Neon CLI profile or credential is available; database metadata, contents, TLS, privileges, restore, and bidirectional isolation remain untested |
+| Aug 5 2026 | Owner-operated Neon SQL verification | Authenticated SQL Editor SELECTs confirmed `neondb`, PostgreSQL 17.10, approximately 7.17 MiB logical size, no user tables/views or migration journal, only `plpgsql`, and owner database/schema CREATE authority; TLS and bidirectional credential isolation remain open; no migration or configuration change performed |
 
 ## Phase 1 session result — Aug 5 2026
 

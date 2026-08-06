@@ -4,8 +4,9 @@ Date: Aug 5 2026
 
 Owner authorization: Phase 2 preview-only identity and authorization work.
 
-Status: **isolated Neon candidate discovered; target safety not yet proven;
-migration and identity activation blocked**.
+Status: **Neon database contents and migration privileges verified read-only;
+TLS and bidirectional credential isolation remain unproven; migration and
+identity activation blocked**.
 
 ## Isolation conclusion
 
@@ -170,6 +171,38 @@ the available browser and open the owned Neon resource through its dashboard
 SSO, or provide an already-existing read-only Neon connection credential through
 an approved secret-delivery channel. This does not authorize credential creation,
 reset, rotation, attachment, environment changes, or migration.
+
+### Owner-operated SQL verification evidence — Aug 5 2026
+
+The owner opened the authenticated Neon SQL Editor for
+`notarix-portal-preview`, branch `main`, and executed the approved metadata-only
+query set. Screenshots of all eight result tabs establish:
+
+- Database `neondb`; current role `neondb_owner`; PostgreSQL `17.10`.
+- Logical database size `7,520,256` bytes (approximately 7.17 MiB). The Neon
+  dashboard separately reports approximately 0.03 GB of the 0.5 GB Free-plan
+  allowance in use; these figures measure different provider/logical scopes.
+- `neondb_owner` can connect to and create in `neondb`. It is login-enabled,
+  can create databases and roles, is not a superuser, and has bypass-RLS status.
+  Neon-managed roles remain provider-controlled.
+- The only non-system schema is `public`; `neondb_owner` has both `USAGE` and
+  `CREATE` on it.
+- `pg_stat_user_tables` returned no rows. The non-system table inventory and
+  view inventory also returned no rows. No customer, Production-derived,
+  identity, notarial, payment, or other sensitive application data is indicated.
+- The only installed extension is `plpgsql` version `1.0`.
+- The migration-journal name search returned no rows. Migration
+  `0001_nebulous_slipstream` has not been applied.
+- The branch was archived before the query; Neon automatically unarchived its
+  compute when the owner ran the SELECT statements. No DDL or data write was
+  performed.
+
+This proves the target is empty of user relations and that the current owner
+role has sufficient database- and schema-level authority for the planned DDL.
+It does not prove TLS certificate verification, endpoint fingerprints,
+Production/Neon cross-credential rejection, or Preview-only credential scope.
+Suitability remains **conditionally suitable** and the database-isolation gate
+remains closed pending those controls and separate owner authorization.
 
 ## Database option decision memo
 

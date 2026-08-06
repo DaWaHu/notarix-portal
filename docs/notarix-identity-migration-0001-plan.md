@@ -57,6 +57,13 @@ could interrupt authentication.
   profile or connection credential is available. No SQL, TLS negotiation,
   catalog query, credential-isolation attempt, or migration action occurred.
   Migration suitability remains a static compatibility assessment only.
+- The owner subsequently used the authenticated Neon SQL Editor to run the
+  approved SELECT-only metadata set. `neondb` is PostgreSQL 17.10, contains no
+  user tables or views, has no migration-journal candidate, and has only the
+  standard `plpgsql` extension. `neondb_owner` has database `CREATE` plus
+  `USAGE` and `CREATE` on `public`, establishing sufficient authority for the
+  planned DDL. Migration 0001 remains unapplied. TLS verification and both
+  cross-provider credential-rejection tests remain mandatory before migration.
 - Cognito remains disabled in legacy rollback mode.
 
 ## Prerequisites
