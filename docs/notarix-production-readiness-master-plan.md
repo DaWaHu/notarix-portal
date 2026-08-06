@@ -285,6 +285,19 @@ escalation, required records, test cadence, and owner approval.
 | Aug 5 2026 | Phase 2 protected-preview TLS verification | Deployment `dpl_5Qn9b37WnTXAAMLQWBo7CNRyF1Pk` READY from `321f87c`; missing certificate warning absent; anonymous request redirected to Vercel SSO; `public: false` |
 | Aug 5 2026 | Phase 2 checkpoint CI | GitHub Actions run `31056174674` passed for full SHA `321f87c55e3c89d09c01aaceda3f11c2a86ada5b` |
 | Aug 5 2026 | Neon resource reconciliation | Vercel team owns available `notarix-portal-preview` on Free plan; no projects attached; no Neon variables; no connection, secret access, or configuration change performed |
+| Aug 6 2026 | Database connection-contract implementation | Runtime restricted to `DATABASE_URL`; migration/inspection tooling requires `DATABASE_MIGRATION_URL`; Preview identity and TLS checks and exact-0001 runner added; no provider configuration or migration performed |
+
+## Phase 2 database contract checkpoint — Aug 6 2026
+
+Source now separates application runtime credentials from migration authority.
+Preview validation requires the approved Neon project, endpoint, database,
+provider, role class, direct/pooled classification, and TLS `verify-full`.
+Production runtime continues using its existing `DATABASE_URL`; Production
+migration execution additionally requires two explicit approval gates.
+
+Credentials remain ungenerated, Vercel remains unchanged, migration 0001 remains
+unapplied, and Preview still inherits Production `DATABASE_URL`. Phase 2 remains
+blocked at the atomic Preview-only mapping gate.
 
 ## Phase 1 session result — Aug 5 2026
 

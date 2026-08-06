@@ -6,6 +6,14 @@ Status: reviewed and committed; not applied to production or preview
 
 Approval: explicit owner approval required before use outside an isolated test database
 
+Implementation checkpoint, Aug 6 2026: an exact-file runner now selects only
+`0001_nebulous_slipstream.sql`, validates SHA-256
+`e3d59b0ab29305933b468f2884bb16c739fadfb49598a47895b638f4679ba5af`,
+rejects destructive/administrative statements, requires
+`DATABASE_MIGRATION_URL`, validates the target, and verifies the four tables,
+migrator ownership, and sixteen non-grantable runtime DML grants. It has not been
+executed against a database.
+
 ## Purpose
 
 Add the server-controlled identity, role-assignment, and session persistence
@@ -83,6 +91,17 @@ backup and restoration plan even though the migration is additive.
 7. Run session, role, revocation, and authorization integration tests.
 8. Deploy the exact matching application SHA to a protected preview.
 9. Keep Cognito disabled until schema and rollback evidence are accepted.
+
+Later Preview command contract:
+
+```text
+npm run db:migrate:preview:readiness
+npm run db:migrate:preview:execute
+npm run db:migrate:preview:verify
+```
+
+Production execution additionally requires both the literal approval flag and
+`NOTARIX_PRODUCTION_MIGRATION_APPROVED=true`; neither constitutes authorization.
 
 ## Rollback procedure
 

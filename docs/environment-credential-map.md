@@ -30,7 +30,9 @@ provider's vocabulary.
 | Seed owner password | `SEED_OWNER_PASSWORD` | none | Local/bootstrap only; rotate before production. |
 | Seed owner first name | `SEED_OWNER_FIRST_NAME` | none | Seed profile metadata. |
 | Seed owner last name | `SEED_OWNER_LAST_NAME` | none | Seed profile metadata. |
-| Database connection URL | `DATABASE_URL` | none | Production Postgres connection URL stored as a Vercel Environment Variable. |
+| Runtime database connection | `DATABASE_URL` | none | Runtime only; Production and protected Preview require separate scopes and roles. |
+| Migration database connection | `DATABASE_MIGRATION_URL` | none | Operator process only; never Vercel runtime and never a fallback to `DATABASE_URL`. |
+| Database target identity | `NOTARIX_DATABASE_ENVIRONMENT`, `NOTARIX_DATABASE_PROVIDER`, `NOTARIX_DATABASE_RESOURCE_ID`, `NOTARIX_DATABASE_ENDPOINT_ID`, `NOTARIX_DATABASE_NAME`, `NOTARIX_DATABASE_ROLE_CLASS` | Vercel system environment marker where applicable | Non-secret metadata must agree with URL host, database, role, and operation. |
 | Email provider | `AWS_SES_REGION`, `AWS_SES_FROM_EMAIL` | none | AWS SES is the primary operational email provider. |
 | Email webhook secret | `NOTARIX_EMAIL_WEBHOOK_SECRET` | none | Used to verify provider delivery callbacks when callback signing is configured. |
 | Shared notification webhook secret | `NOTARIX_NOTIFICATION_WEBHOOK_SECRET` | none | May be used for both email and SMS callbacks when a shared HMAC secret is selected. |
@@ -67,8 +69,9 @@ required for the AWS-primary setup.
 
 `S3_BUCKET_NAME` is not a credential. It is the name of the storage bucket.
 
-`DATABASE_URL` is the production Postgres connection string for the Vercel
-runtime. It is not an AWS key, notification secret, or storage bucket name.
+`DATABASE_URL` is runtime-only. `DATABASE_MIGRATION_URL` is a separately held
+direct migration connection and must not be defined in Vercel application
+runtime. Neither is an AWS key, notification secret, or storage bucket name.
 
 `NOTARIX_COGNITO_CLIENT_SECRET` is not an AWS access key, Google password, or
 Vercel password. It is a Cognito app-client secret and must be stored only in

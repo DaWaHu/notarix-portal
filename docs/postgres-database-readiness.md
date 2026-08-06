@@ -18,6 +18,13 @@ The application database helper uses `DATABASE_URL` through the `postgres`
 driver and Drizzle ORM. Vercel environment variables are the production home for
 that value.
 
+Migration and administrative inspection commands fail closed unless an approved
+operator process supplies `DATABASE_MIGRATION_URL`. Non-secret
+`NOTARIX_DATABASE_*` markers identify environment, provider, resource, endpoint,
+database, and role class. Preview additionally requires the approved Neon
+identity, pooled runtime/direct migration classification, and
+`sslmode=verify-full`.
+
 ## Schema Coverage
 
 The current Postgres schema contains 21 workflow tables covering:
@@ -61,11 +68,18 @@ Run the Postgres readiness gate:
 npm run db:readiness
 ```
 
-Expected readiness signals when `DATABASE_URL` is configured:
+Readiness reports runtime and migration configuration separately without values:
 
 ```text
-database_provider=Postgres
-database_url_configured=true
+database_environment=production
+database_provider=aws-rds
+database_runtime_url_configured=true
+database_migration_url_configured=false
+database_resource_identified=true
+database_endpoint_identified=true
+database_name_identified=true
+database_role_class=runtime
+tls_verification_disabled=false
 migration_dialect=postgresql
 migration_count=1
 migration_head=0000_postgres_production_baseline
@@ -91,9 +105,11 @@ No schema changes, nothing to migrate
 
 ## Production Deployment Sequence
 
-1. Configure `DATABASE_URL` in Vercel.
+1. Confirm the Production-scoped runtime `DATABASE_URL` remains in Vercel.
 2. Confirm `npm run db:readiness` reports `ready_for_postgres`.
-3. Apply the Postgres migration SQL to the production database.
+3. Obtain separate authorization, inject `DATABASE_MIGRATION_URL` only into the
+   migration process, validate Production identity, and apply only the approved
+   migration.
 4. Deploy the application on Vercel with all required environment variables.
 5. Open `/staff/platform/seed` as Admin or Super Admin to reconcile baseline
    records after the database is available.

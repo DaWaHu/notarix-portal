@@ -260,3 +260,21 @@ for read-only administrative inspection of the existing owned Neon candidate's
 provider metadata and, only afterward, a separately approved Preview-only
 connection/isolation test. A new paid database is not currently recommended.
 No production change is requested or authorized.
+
+## Database connection-contract implementation — Aug 6 2026
+
+| Concern | Implemented contract | Configuration status |
+| --- | --- | --- |
+| Runtime | `DATABASE_URL` only; Preview target identity validates before client creation | Preview branch value still points to Production; runtime testing prohibited |
+| Migration | `DATABASE_MIGRATION_URL` only; no fallback; direct endpoint and migrator validation | Credential not generated or configured |
+| Administration | Inspection tools require the operator channel; `neondb_owner` is rejected by application tooling | Provider-console administration remains separate |
+| Preview identity | Approved Neon project/endpoint/database, pooled runtime/direct migration, exact roles | Non-secret Vercel markers not configured |
+| Production identity | AWS RDS classification; existing runtime behavior preserved | Production unchanged |
+| TLS/build | Disabled verification rejected; Preview `verify-full`; build remains database-inert | Existing Vercel TLS records unchanged |
+
+AWS scope review: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`,
+`AWS_SES_REGION`, `NOTARIX_STORAGE_REGION`, and `NOTARIX_STORAGE_BUCKET` are
+currently available to Preview. Access keys and storage selectors are **shared
+and unsafe** until removed or replaced with Preview-specific least privilege.
+SES sender/region need is **unverified**. No inventoried AWS variable is yet
+approved as required by Phase 2 identity testing.
