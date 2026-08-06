@@ -138,6 +138,39 @@ Those controls require a separately authorized provider-metadata review and
 read-only connection test. No new paid resource should be created while this
 owned Free candidate remains viable for verification.
 
+### Authorized Neon verification gate result — Aug 5 2026
+
+The owner designated `notarix-portal-preview` and authorized provider metadata,
+read-only connection, and bidirectional credential-isolation inspection using
+existing access only. The gate stopped before any database connection:
+
+- Vercel CLI authentication can list and inspect the owned resource, confirming
+  `available`, Neon, `free_v3`, and zero project attachments.
+- No Neon CLI, Neon CLI profile, local Neon configuration, Neon environment
+  variable, or existing Neon connection credential is available in the project
+  session.
+- The available Vercel resource-inspection response does not expose the Neon
+  project, branch, database, region, PostgreSQL version, roles, endpoints,
+  restore history, or connection secret.
+- The Vercel-to-Neon resource-dashboard SSO handoff returned HTTP 403. The
+  browser session is not authenticated to Vercel, and no connected authenticated
+  external browser is available.
+- The transient SSO handoff material and temporary response files were removed;
+  no token, connection string, password, or certificate was printed or retained.
+
+Because an existing administrative session or connection credential cannot be
+proven, project/branch/database metadata, emptiness, TLS, schemas, tables,
+migration journal, extensions, database size, row counts, data classification,
+roles, privileges, restore history, and bidirectional credential isolation are
+**not tested**. Candidate status remains **conditionally suitable; access
+blocked**, not approved for migration or configuration.
+
+Exact access action required: the owner must sign into the Vercel dashboard in
+the available browser and open the owned Neon resource through its dashboard
+SSO, or provide an already-existing read-only Neon connection credential through
+an approved secret-delivery channel. This does not authorize credential creation,
+reset, rotation, attachment, environment changes, or migration.
+
 ## Database option decision memo
 
 | Consideration | Existing/separate Neon Preview | Separate AWS RDS PostgreSQL Preview |

@@ -287,6 +287,7 @@ escalation, required records, test cadence, and owner approval.
 | Aug 5 2026 | Neon resource reconciliation | Vercel team owns available `notarix-portal-preview` on Free plan; no projects attached; no Neon variables; no connection, secret access, or configuration change performed |
 | Aug 5 2026 | Legacy authentication containment | Source checkpoint removes unverified identity-header trust and provider-specific routes, fails closed without a Notarix/Cognito session, and moves 16 staff pages to explicit RBAC; Production remains unremediated because no Production deployment is authorized |
 | Aug 5 2026 | Post-containment database-resource reconciliation | Owned `notarix-portal-preview` Neon Free resource remains available, unattached to all Vercel projects, and absent from Preview variable names; no other Vercel database resource is visible; no connection or configuration change performed |
+| Aug 5 2026 | Authorized Neon verification gate | Stopped before connection: CLI exposes owned/available/Free/unattached status only; provider SSO returned HTTP 403; no existing Neon CLI profile or credential is available; database metadata, contents, TLS, privileges, restore, and bidirectional isolation remain untested |
 
 ## Phase 1 session result — Aug 5 2026
 

@@ -52,6 +52,11 @@ could interrupt authentication.
   Vercel Preview variables. Emptiness, target metadata, restore state, TLS,
   privileges, and bidirectional credential isolation remain unverified because
   no database connection or resource attachment was authorized.
+- The subsequent owner-authorized read-only verification gate stopped before
+  connection: Vercel-to-Neon SSO returned HTTP 403 and no existing Neon CLI
+  profile or connection credential is available. No SQL, TLS negotiation,
+  catalog query, credential-isolation attempt, or migration action occurred.
+  Migration suitability remains a static compatibility assessment only.
 - Cognito remains disabled in legacy rollback mode.
 
 ## Prerequisites
