@@ -1,0 +1,220 @@
+manifestVersion: "1.0"
+status: DESIGNED_NOT_DEPLOYED
+deployable: false
+track: Phase-B-F-operational-security
+productionChangesAuthorized: false
+
+scope:
+  environments: [preview-design, production-design]
+  dataPolicy:
+    preview: synthetic-only
+    production: no-change-without-separate-owner-approval
+  prohibitedData:
+    - database-passwords
+    - connection-strings
+    - access-tokens
+    - identity-documents
+    - customer-document-content
+
+administration:
+  humanAccess:
+    provider: AWS-IAM-Identity-Center
+    sharedAccounts: prohibited
+    rootUse: break-glass-only
+    mfa: required
+    sessionDuration: "<=4-hours"
+    permissionSets:
+      - name: NotarixReadOnlyOperations
+        purpose: monitoring-and-incident-triage
+        writeAccess: false
+      - name: NotarixDatabaseOperator
+        purpose: approval-gated-RDS-operations
+        standingProductionAccess: false
+      - name: NotarixSecurityAdministrator
+        purpose: approval-gated-security-remediation
+        standingProductionAccess: false
+    controls:
+      - named-attributable-principals
+      - phishing-resistant-MFA-where-supported
+      - short-lived-federated-sessions
+      - separate-break-glass-evidence
+      - quarterly-access-review
+  workloadAccess:
+    staticAccessKeys: prohibited
+    lambdaExecutionRoles: least-privilege-per-service
+    databaseRoles: separate-runtime-migration-administration
+
+logging:
+  cloudTrail:
+    organizationTrailPreferred: true
+    allRegions: true
+    managementEvents: read-and-write
+    logFileValidation: true
+    destination: dedicated-security-log-bucket
+  cloudWatch:
+    encryption: customer-managed-kms-key-or-approved-equivalent
+    retentionDays:
+      preview: 30
+      production: 365
+    redact:
+      - authorization-header
+      - cookies
+      - request-and-response-bodies
+      - database-credentials
+      - tokens
+      - identity-document-data
+    sources:
+      - api-gateway-access-logs
+      - lambda-structured-logs
+      - rds-postgresql-log-export
+      - cloudtrail-security-events
+  rdsAttribution:
+    parameterChangesRequireSeparateApproval: true
+    proposedSettings:
+      log_connections: true
+      log_disconnections: true
+      log_hostname: false
+      log_statement: none
+      log_min_error_statement: error
+      log_line_prefixRequiredFields:
+        - timestamp
+        - process-id
+        - user
+        - database
+        - application-name
+        - remote-host
+        - session-id
+    requiredClientMetadata:
+      application_name: notarix-environment-and-service
+    limitation: network-attribution-is-not-human-identity-without-session-and-audit-correlation
+
+alerts:
+  authenticationFailures:
+    source: rds-postgresql-log-export
+    dimensions: [environment, database, role-fingerprint, source-class]
+    thresholds:
+      burst: "5 failures / 5 minutes"
+      sustained: "20 failures / 15 minutes"
+    actions: [security-notification, incident-ticket]
+    neverInclude: [password, connection-string, raw-token]
+  successfulConnectionAnomaly:
+    source: rds-postgresql-log-export
+    conditions:
+      - unexpected-role
+      - unexpected-database
+      - unexpected-application-name
+      - unexpected-source-class
+      - after-hours-administrative-session
+  controlPlane:
+    conditions:
+      - security-group-world-ingress
+      - rds-public-access-change
+      - rds-credential-or-secret-change
+      - cloudtrail-stop-or-delete
+      - log-retention-or-kms-change
+      - backup-retention-change
+
+audit:
+  databaseLedger:
+    appendOnly: true
+    writerPrivileges: [INSERT]
+    prohibitedWriterPrivileges: [UPDATE, DELETE, TRUNCATE, ALTER, DROP]
+    requiredFields:
+      - event-id
+      - occurred-at-utc
+      - actor-subject
+      - actor-role
+      - actor-session-id
+      - action
+      - resource-type
+      - resource-id
+      - order-id
+      - correlation-id
+      - outcome
+      - before-hash
+      - after-hash
+    sameTransactionAsBusinessMutation: required
+  immutableExport:
+    destination: dedicated-security-log-bucket
+    objectLock: compliance-or-governance-mode-owner-decision
+    versioning: required
+    encryption: required
+    crossAccountWriteProtection: preferred
+    integrity:
+      - cloudtrail-log-file-validation
+      - chained-or-batched-record-digests
+      - daily-manifest-and-verification
+  verification:
+    cadence: daily-automated-and-quarterly-manual
+    alertOn:
+      - missing-sequence
+      - digest-mismatch
+      - export-lag
+      - unauthorized-ledger-DDL
+
+recovery:
+  proposedObjectivesPendingOwnerApproval:
+    protectedPreview: { rpo: "24 hours", rto: "8 hours" }
+    controlledPilot: { rpo: "15 minutes", rto: "4 hours" }
+    unrestrictedProduction: { rpo: "5 minutes", rto: "2 hours" }
+  backups:
+    automatedBackups: required
+    pointInTimeRecovery: required
+    deletionProtection: required-for-production
+    finalSnapshot: required-before-approved-destructive-change
+    retentionDays: { preview: 7, production: 35 }
+    encryption: required
+  restoreDrill:
+    destination: isolated-nonproduction-resource
+    productionNetworkAttachment: prohibited
+    productionCredentials: prohibited
+    externalNotifications: disabled
+    realDataHandling: owner-approved-restricted-access-only
+    validation:
+      - restore-completes-within-rto
+      - selected-recovery-point-meets-rpo
+      - schema-and-migration-journal-match
+      - row-count-and-integrity-sampling
+      - application-readiness-with-safe-synthetic-checks
+      - audit-chain-verification
+      - restored-resource-destroyed-after-evidence-and-approval
+    cadence: quarterly-and-before-unrestricted-launch
+
+incidentResponse:
+  severityClasses: [SEV-1, SEV-2, SEV-3, SEV-4]
+  phases: [detect, preserve, contain, eradicate, recover, review]
+  credentialIncident:
+    - prohibit-secret-retrieval-and-chat-disclosure
+    - rotate-and-invalidate-through-owner-controlled-interface
+    - repair-environment-scope
+    - redeploy-approved-artifact
+    - verify-old-credential-rejection-without-reuse
+  databaseIncident:
+    - preserve-cloudtrail-rds-and-application-evidence
+    - restrict-network-path-without-destroying-evidence
+    - use-isolated-restore-for-investigation
+    - require-owner-approval-for-production-write-or-failover
+  evidence:
+    timestamps: UTC
+    secretValues: prohibited
+    immutableCaseRecord: required
+  exercises: quarterly-tabletop-and-prelaunch-technical-drill
+
+deploymentGates:
+  - named-admin-identities-approved
+  - log-content-redaction-tested
+  - rds-success-and-failure-attribution-tested
+  - auth-failure-and-control-plane-alerts-tested
+  - append-only-audit-denial-and-integrity-tested
+  - isolated-restore-drill-passed
+  - rto-rpo-owner-approved
+  - incident-runbook-tabletop-passed
+
+explicitlyExcluded:
+  - AWS-resource-creation
+  - production-parameter-group-change
+  - production-log-export-change
+  - database-DDL
+  - credential-or-environment-variable-change
+  - deployment
+  - real-data-restore
