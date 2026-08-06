@@ -47,6 +47,12 @@ could interrupt authentication.
   `timestamp with time zone`, booleans, and btree indexes; no tablespaces,
   unsupported extensions, or host-level features. It is compatible in principle
   with Neon PostgreSQL 14–17, subject to target version and privilege checks.
+- On Aug 6 2026, the canonical Preview role bootstrap committed successfully to
+  Neon project `plain-shadow-93565861`, branch `br-restless-pond-aucwu8b2`,
+  database `neondb`. The restricted runtime and migrator roles exist with NULL
+  passwords, exact connection limits, bootstrap-only administrative memberships,
+  and verified table/sequence/function defaults. No application object or
+  migration journal was created. Migration 0001 remains unapplied.
 - Cognito remains disabled in legacy rollback mode.
 
 ## Prerequisites

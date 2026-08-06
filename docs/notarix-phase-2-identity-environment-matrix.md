@@ -4,10 +4,25 @@ Date: Aug 5 2026
 
 Owner authorization: Phase 2 preview-only identity and authorization work.
 
-Status: **isolated Neon candidate discovered; target safety not yet proven;
-migration and identity activation blocked**.
+Status: **isolated Neon Preview role boundary committed and verified; credentials,
+Vercel mapping, migration, and identity activation remain blocked**.
 
 ## Isolation conclusion
+
+On Aug 6 2026, the owner-authorized role bootstrap committed only
+`notarix_preview_app` and `notarix_preview_migrator` to Neon project
+`plain-shadow-93565861`, branch `br-restless-pond-aucwu8b2`, endpoint
+`ep-orange-fog-ausod744`, database `neondb`. Both roles have `PASSWORD NULL`;
+no usable credential was created. The runtime role has `CONNECT` and schema
+`USAGE` without `CREATE`; the migrator has `CONNECT`, `USAGE`, and `CREATE` on
+`public`. PostgreSQL retained exactly one bootstrap-superuser administrative
+membership from `cloud_admin` (OID 10) to `neondb_owner` for each role, with
+ADMIN true, SET false, and INHERIT false.
+
+The Neon resource remains unattached to Vercel. Current Vercel Preview still
+uses the Production `DATABASE_URL`; no Preview runtime database test is allowed
+until a separate credential-generation and Preview-only mapping authorization.
+Migration `0001_nebulous_slipstream` remains unapplied.
 
 The existing Vercel Preview environment is not isolated from Production.
 Cryptographic, value-blind comparison proved that Preview and Production use the
