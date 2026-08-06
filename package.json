@@ -20,6 +20,12 @@
     "db:baseline": "node scripts/apply-postgres-baseline.mjs",
     "db:inspect": "node scripts/inspect-production-db.mjs",
     "db:readiness": "node scripts/db-readiness.mjs",
+    "db:migration:contract": "node --test tests/database-contract.test.mjs",
+    "db:migrate:preview:readiness": "node scripts/phase2-identity-migration.mjs --target=preview --mode=readiness",
+    "db:migrate:preview:execute": "node scripts/phase2-identity-migration.mjs --target=preview --mode=execute",
+    "db:migrate:preview:verify": "node scripts/phase2-identity-migration.mjs --target=preview --mode=verify",
+    "db:migrate:production:readiness": "node scripts/phase2-identity-migration.mjs --target=production --mode=readiness",
+    "db:migrate:production:execute": "node scripts/phase2-identity-migration.mjs --target=production --mode=execute --approval=OWNER_APPROVED_PRODUCTION_MIGRATION",
     "db:seed": "tsx scripts/seed-postgres-baseline.ts",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"

@@ -45,7 +45,8 @@ test("runtime scripts target Vercel, AWS services, and Postgres", async () => {
 
   const drizzleConfig = await text("drizzle.config.ts");
   assert.match(drizzleConfig, /dialect:\s*"postgresql"/);
-  assert.match(drizzleConfig, /process\.env\.DATABASE_URL/);
+  assert.match(drizzleConfig, /process\.env\.DATABASE_MIGRATION_URL/);
+  assert.doesNotMatch(drizzleConfig, /process\.env\.DATABASE_URL(?:\W|$)/);
 
   const dbIndex = await text("db/index.ts");
   assert.match(dbIndex, /drizzle-orm\/postgres-js/);
