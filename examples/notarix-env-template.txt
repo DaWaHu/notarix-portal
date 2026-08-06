@@ -39,7 +39,19 @@ SEED_OWNER_LAST_NAME=
 
 # Database
 DATABASE_URL=
-# Production uses Postgres through DATABASE_URL in Vercel.
+# Runtime only. Production uses AWS RDS through a Production-scoped Vercel value.
+# Preview must use a branch-specific Neon pooled URL with sslmode=verify-full.
+NOTARIX_DATABASE_ENVIRONMENT=
+NOTARIX_DATABASE_PROVIDER=
+NOTARIX_DATABASE_RESOURCE_ID=
+NOTARIX_DATABASE_ENDPOINT_ID=
+NOTARIX_DATABASE_NAME=
+NOTARIX_DATABASE_ROLE_CLASS=runtime
+NOTARIX_PRODUCTION_DATABASE_HOST_SHA256=
+
+# Migration/operator process only. Never add this variable to Vercel application
+# runtime, never fall back to DATABASE_URL, and never commit a populated value.
+DATABASE_MIGRATION_URL=
 
 # Storage / evidence / order documents
 AWS_REGION=

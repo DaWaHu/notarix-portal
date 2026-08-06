@@ -59,8 +59,17 @@ const untrackedMigrationSql = migrationFiles
 
 const readiness = {
   database: {
-    configured: Boolean(env.DATABASE_URL),
-    provider: "Postgres",
+    runtimeConfigured: Boolean(env.DATABASE_URL),
+    migrationConfigured: Boolean(env.DATABASE_MIGRATION_URL),
+    environment: env.NOTARIX_DATABASE_ENVIRONMENT ?? "unmarked",
+    provider: env.NOTARIX_DATABASE_PROVIDER ?? "unmarked",
+    resourceIdentified: Boolean(env.NOTARIX_DATABASE_RESOURCE_ID),
+    endpointIdentified: Boolean(env.NOTARIX_DATABASE_ENDPOINT_ID),
+    nameIdentified: Boolean(env.NOTARIX_DATABASE_NAME),
+    roleClass: env.NOTARIX_DATABASE_ROLE_CLASS ?? "unmarked",
+    tlsVerificationDisabled: ["0", "false"].includes(
+      String(env.NODE_TLS_REJECT_UNAUTHORIZED ?? "").toLowerCase(),
+    ),
   },
   migrations: {
     dialect: journal.dialect,
@@ -81,7 +90,8 @@ const readiness = {
 };
 
 if (
-  readiness.database.configured &&
+  readiness.database.runtimeConfigured &&
+  !readiness.database.tlsVerificationDisabled &&
   readiness.migrations.dialect === "postgresql" &&
   readiness.migrations.headSnapshotPresent &&
   readiness.migrations.journalSqlMissing.length === 0 &&
@@ -94,8 +104,15 @@ if (
 if (jsonOutput) {
   console.log(JSON.stringify(readiness, null, 2));
 } else {
+  console.log(`database_environment=${readiness.database.environment}`);
   console.log(`database_provider=${readiness.database.provider}`);
-  console.log(`database_url_configured=${readiness.database.configured}`);
+  console.log(`database_runtime_url_configured=${readiness.database.runtimeConfigured}`);
+  console.log(`database_migration_url_configured=${readiness.database.migrationConfigured}`);
+  console.log(`database_resource_identified=${readiness.database.resourceIdentified}`);
+  console.log(`database_endpoint_identified=${readiness.database.endpointIdentified}`);
+  console.log(`database_name_identified=${readiness.database.nameIdentified}`);
+  console.log(`database_role_class=${readiness.database.roleClass}`);
+  console.log(`tls_verification_disabled=${readiness.database.tlsVerificationDisabled}`);
   console.log(`migration_dialect=${readiness.migrations.dialect}`);
   console.log(`migration_count=${readiness.migrations.migrationCount}`);
   console.log(`migration_head=${readiness.migrations.head ?? "missing"}`);

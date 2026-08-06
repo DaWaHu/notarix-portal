@@ -26,7 +26,7 @@ const requiredGroups = [
     ],
   },
   {
-    label: "database",
+    label: "database_runtime",
     keys: ["DATABASE_URL"],
   },
   {
@@ -41,6 +41,15 @@ const requiredGroups = [
 ];
 
 const optionalKeys = new Set([
+  "DATABASE_MIGRATION_URL",
+  "NOTARIX_DATABASE_ENVIRONMENT",
+  "NOTARIX_DATABASE_PROVIDER",
+  "NOTARIX_DATABASE_RESOURCE_ID",
+  "NOTARIX_DATABASE_ENDPOINT_ID",
+  "NOTARIX_DATABASE_NAME",
+  "NOTARIX_DATABASE_ROLE_CLASS",
+  "NOTARIX_PRODUCTION_DATABASE_HOST_SHA256",
+  "NOTARIX_PRODUCTION_MIGRATION_APPROVED",
   "AWS_SES_TO_EMAIL",
   "NOTARIX_EMAIL_WEBHOOK_SECRET",
   "NOTARIX_NOTIFICATION_WEBHOOK_SECRET",
