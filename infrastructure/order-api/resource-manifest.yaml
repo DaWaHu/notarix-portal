@@ -1,0 +1,194 @@
+manifestVersion: "1.0"
+status: DESIGNED_NOT_DEPLOYED
+deployable: false
+frameworkDecision: PENDING_OWNER_APPROVAL
+architecture: browser-cognito-http-api-vpc-lambda-private-rds
+
+environments:
+  preview:
+    accountBoundary: separate-or-explicitly-isolated-preview
+    dataClassification: synthetic-only
+    productionTrust: denied
+  production:
+    creationAuthorized: false
+
+tags:
+  Application: NotarixSignings
+  Domain: Order
+  Environment: "<preview-or-production>"
+  ManagedBy: "<future-approved-iac-framework>"
+  DataClassification: "<synthetic-or-production>"
+  Owner: "<approved-operations-owner>"
+
+resources:
+  httpApi:
+    type: AWS::ApiGatewayV2::Api
+    protocol: HTTP
+    stage: "$default"
+    routes:
+      - method: GET
+        path: /v1/orders/{orderId}
+        authorization: cognitoJwt
+      - method: POST
+        path: /v1/orders/{orderId}/actions/place-hold
+        authorization: cognitoJwt
+    cors:
+      allowedOrigins:
+        - "<exact-approved-notarix-origin>"
+      allowedMethods: [GET, POST, OPTIONS]
+      allowedHeaders: [Authorization, Content-Type, If-Match, Idempotency-Key, X-Correlation-Id]
+      exposedHeaders: [ETag, X-Correlation-Id]
+      allowCredentials: false
+      maxAgeSeconds: 300
+    throttling:
+      defaultRatePerSecond: "<load-test-derived>"
+      defaultBurst: "<load-test-derived>"
+    accessLogging:
+      enabled: true
+      destination: httpApiAccessLogGroup
+      excludeValues: [authorizationToken, requestBody, responseBody, secrets]
+
+  cognitoJwtAuthorizer:
+    type: AWS::ApiGatewayV2::Authorizer
+    authorizerType: JWT
+    issuer: "<environment-specific-cognito-issuer>"
+    audiences:
+      - "<environment-specific-cognito-app-client-id>"
+    identitySource: "$request.header.Authorization"
+
+  orderLambda:
+    type: AWS::Lambda::Function
+    runtime: nodejs22.x
+    architecture: arm64
+    handler: services/order-api/handler.handler
+    timeoutSeconds: "<less-than-api-timeout>"
+    memoryMb: "<load-test-derived>"
+    reservedConcurrency: "<rds-connection-budget-derived>"
+    subnets:
+      - privateApplicationSubnetA
+      - privateApplicationSubnetB
+    securityGroups:
+      - orderLambdaSecurityGroup
+    executionRole: orderLambdaExecutionRole
+    environmentNonSecrets:
+      NOTARIX_ENVIRONMENT: "<preview-or-production>"
+      NOTARIX_DATABASE_RESOURCE_ID: "<non-secret-resource-id>"
+      NOTARIX_DATABASE_NAME: "<non-secret-database-name>"
+      NOTARIX_DATABASE_ROLE_CLASS: runtime
+      NOTARIX_ORDER_LOG_LEVEL: info
+      NOTARIX_ORDER_SECRET_ARN: "<secret-reference-only>"
+    tracing: active
+    logGroup: orderLambdaLogGroup
+
+  orderLambdaExecutionRole:
+    type: AWS::IAM::Role
+    trust:
+      service: lambda.amazonaws.com
+    permissions:
+      - action: [logs:CreateLogStream, logs:PutLogEvents]
+        resource: orderLambdaLogGroup
+      - action: [ec2:CreateNetworkInterface, ec2:DescribeNetworkInterfaces, ec2:DeleteNetworkInterface]
+        resource: "*"
+        conditions: "<approved-vpc-subnet-security-group-boundaries>"
+      - action: [secretsmanager:GetSecretValue, secretsmanager:DescribeSecret]
+        resource: orderRuntimeDatabaseSecret
+      - action: [xray:PutTraceSegments, xray:PutTelemetryRecords]
+        resource: "*"
+    explicitlyDenied:
+      - rds:ModifyDBInstance
+      - rds-data:ExecuteStatement
+      - iam:PassRole
+      - secretsmanager:PutSecretValue
+      - secretsmanager:UpdateSecret
+
+  orderLambdaSecurityGroup:
+    type: AWS::EC2::SecurityGroup
+    inbound: []
+    outbound:
+      - protocol: tcp
+        port: 5432
+        destinationSecurityGroup: productionRdsSecurityGroup
+      - protocol: tcp
+        port: 443
+        destinationSecurityGroup: secretsManagerEndpointSecurityGroup
+
+  productionRdsSecurityGroupRelationship:
+    type: AWS::EC2::SecurityGroupIngress
+    target: productionRdsSecurityGroup
+    protocol: tcp
+    port: 5432
+    sourceSecurityGroup: orderLambdaSecurityGroup
+    prohibitedSources: [0.0.0.0/0, "::/0", Vercel, Preview]
+
+  privateApplicationSubnetA:
+    type: AWS::EC2::Subnet
+    availabilityZone: "<az-a>"
+    publicIpOnLaunch: false
+    defaultInternetRoute: none
+  privateApplicationSubnetB:
+    type: AWS::EC2::Subnet
+    availabilityZone: "<az-b>"
+    publicIpOnLaunch: false
+    defaultInternetRoute: none
+
+  secretsManagerEndpoint:
+    type: AWS::EC2::VPCEndpoint
+    service: com.amazonaws.<region>.secretsmanager
+    endpointType: Interface
+    subnets: [privateApplicationSubnetA, privateApplicationSubnetB]
+    privateDnsEnabled: true
+    securityGroup: secretsManagerEndpointSecurityGroup
+    optionalLowerCostAlternative: approved-aws-native-deployment-time-secret-injection
+
+  secretsManagerEndpointSecurityGroup:
+    type: AWS::EC2::SecurityGroup
+    inbound:
+      - protocol: tcp
+        port: 443
+        sourceSecurityGroup: orderLambdaSecurityGroup
+    outbound: []
+
+  orderRuntimeDatabaseSecret:
+    type: AWS::SecretsManager::SecretReferenceOnly
+    createdByManifest: false
+    valuePresent: false
+    credentialClass: least-privilege-order-runtime
+    prohibitedConsumers: [Vercel, Preview, migrationTooling, administrators]
+
+  orderLambdaLogGroup:
+    type: AWS::Logs::LogGroup
+    retentionDays: 30
+    encryption: "<approved-kms-key-or-aws-managed-default>"
+  httpApiAccessLogGroup:
+    type: AWS::Logs::LogGroup
+    retentionDays: 30
+    encryption: "<approved-kms-key-or-aws-managed-default>"
+
+  alarms:
+    type: SpecificationOnly
+    signals:
+      - api-4xx-auth-burst
+      - api-429-throttle
+      - api-5xx
+      - lambda-error
+      - lambda-timeout
+      - lambda-concurrency-near-limit
+      - rds-authentication-failure
+      - rds-connection-budget
+      - missing-audit-transaction
+
+explicitlyExcluded:
+  - NATGateway
+  - RDSPROXY
+  - InternetFacingDatabase
+  - PublicPostgresIngress
+  - VercelDatabaseCredential
+  - MigrationCredentialInLambda
+  - AdministrativeCredentialInLambda
+  - RealCustomerDataInPreview
+
+deploymentGate:
+  ownerApprovalRequired: true
+  isolatedPreviewFirst: true
+  migrationsExecuted: false
+  resourcesCreated: false
