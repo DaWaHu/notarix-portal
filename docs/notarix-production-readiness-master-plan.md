@@ -294,6 +294,7 @@ escalation, required records, test cadence, and owner approval.
 | Aug 6 2026 | Incident documentation quality gate | ESLint zero errors/199 warnings; TypeScript passed; source contracts 7/7; database contracts 6/6; webpack production build passed; sensitive-pattern scan passed; npm audit found one high-severity `js-yaml` advisory requiring separate remediation |
 | Aug 6 2026 | Order API/Lambda Phase A | Provider-neutral GET/place-hold contracts, pure authorization/transition/idempotency/audit rules, repository-only tests, Production seed-fallback guard, proposed normalized migration, and non-deployable AWS manifest completed; no AWS, database, environment, billing, deployment, Preview, or Production change |
 | Aug 5 2026 | Legacy authentication containment | Source checkpoint removes unverified identity-header trust and provider-specific routes, fails closed without a Notarix/Cognito session, and moves 16 staff pages to explicit RBAC; Production remains unremediated because no Production deployment is authorized |
+| Sep 7 2026 | Authentication-containment integration | Commit `870e6889` was manually integrated into the current checkpoint as `e9b89d8` while preserving all later work; authentication reference control, lint with zero errors, TypeScript, 47 application/security tests, six database-contract tests, and the production build passed in a secret-free local validation copy; current dependency audit remains an open security gate |
 
 ## Phase 2 database contract checkpoint — Aug 6 2026
 
@@ -306,6 +307,25 @@ migration execution additionally requires two explicit approval gates.
 Preview credentials remain ungenerated, migration 0001 remains unapplied, and
 incident containment removed `DATABASE_URL` from Preview. Phase 2 remains paused
 and blocked at the atomic Preview-only mapping gate.
+
+## Authentication containment integration checkpoint — Sep 7 2026
+
+The legacy provider-authentication containment is now part of
+`codex/notarix-portal-checkpoint`. Manual conflict resolution retained the later
+Phase 2 database boundary, production incident response, Order Phase A,
+document-security, and operational-security controls. Runtime provider-specific
+identity trust remains removed, unresolved client/notary ownership writes fail
+closed, and protected staff routes use application-owned session and RBAC
+checks. Production remains unchanged.
+
+The full local quality command passed from the committed Git tree in a
+secret-free temporary validation directory. The Desktop working copy's
+cloud-offloaded files caused direct lint, TypeScript, and build processes to
+stall; this was an execution-environment issue, not a source failure. The
+current dependency audit reports high-severity advisories in the runtime
+Next.js/PostCSS/nanoid chain and development tooling. Dependency remediation
+remains required before production launch and was not folded into this narrowly
+scoped integration.
 
 ## Order API/Lambda Phase A checkpoint — Aug 6 2026
 

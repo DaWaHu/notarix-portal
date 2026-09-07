@@ -2,7 +2,11 @@
 
 Date: Aug 5 2026
 
-Checkpoint branch: `codex/notarix-auth-containment`
+Original checkpoint branch: `codex/notarix-auth-containment`
+
+Integrated branch: `codex/notarix-portal-checkpoint` on Sep 7 2026. The
+integration preserves all later database-contract, incident-response, Order
+Phase A, document-security, and operational-security work.
 
 Production status: unchanged; the deployed Production artifact still contains
 the superseded routes until a separate Production authorization is granted.
