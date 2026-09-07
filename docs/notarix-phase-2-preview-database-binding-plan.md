@@ -1,12 +1,16 @@
 # Notarix Signings Phase 2 Preview Database Binding Plan
 
-Status: **code contract implemented; provider configuration not executed**  
+Status: **code contract and runtime credential completed; Vercel binding not executed**
 Prepared: Aug 6 2026  
-Decision gate: secure credential generation and protected Vercel Preview binding
+Decision gate: protected Vercel Preview binding
 
 ## Executive status
 
-The isolated Neon resource is technically suitable for the protected Phase 2 Preview, but binding is **not yet safe to execute**. Vercel currently has one `DATABASE_URL` record scoped to all environments, so Preview inherits the Production AWS RDS connection. The application also uses `DATABASE_URL` for both runtime traffic and Drizzle migration commands. No branch-specific Preview override exists.
+The isolated Neon resource is technically suitable for the protected Phase 2
+Preview. The owner-controlled procedure has established and verified the
+`notarix_preview_app` credential without displaying or recording it. Vercel
+Preview remains database-disabled and has no `DATABASE_URL`; no branch-specific
+Preview binding exists.
 
 Runtime/migration separation and the guarded exact-file runner are now
 implemented in source. The remaining safe path is to deploy while Preview is
@@ -14,7 +18,10 @@ locked and database-disabled, then bind a branch-specific Neon runtime
 credential. The migration credential remains outside Vercel. `neondb_owner`
 remains provider-controlled and outside application runtime.
 
-No credential was generated or viewed. No database, Vercel variable, deployment, migration, Cognito, Google Workspace, DNS, or Production change was made.
+Only the isolated Preview runtime role credential changed. The migration role
+remains passwordless. No credential was viewed or recorded, and no Vercel
+variable, deployment, migration, Cognito, Google Workspace, DNS, or Production
+change was made.
 
 ## Approved resource identities
 
@@ -33,7 +40,7 @@ No credential was generated or viewed. No database, Vercel variable, deployment,
 | Neon database | `neondb` |
 | Neon region/version/plan | AWS US East 1; PostgreSQL 17; Free |
 | Administrative role | `neondb_owner` |
-| Runtime role | `notarix_preview_app`, `PASSWORD NULL`, connection limit 20 |
+| Runtime role | `notarix_preview_app`, credential established and login verified, connection limit 20 |
 | Migration role | `notarix_preview_migrator`, `PASSWORD NULL`, connection limit 2 |
 
 The latest visible Preview and the previously proven protected Preview are not the current repository HEAD. A later cutover deployment must map to its exact Git SHA and reverify protection.
@@ -262,13 +269,13 @@ Material risks:
 
 1. Approve the listed code-contract changes before credential generation.
 2. Approve value-preserving retargeting of encrypted `DATABASE_URL` to Production only, then a locked database-disabled Preview deployment.
-3. Approve password generation and assignment through the owner-controlled password manager.
+3. Completed Sep 7 2026: password generation and assignment through the owner-controlled password manager.
 4. Approve the branch-specific sensitive runtime binding and protected exact-SHA deployment.
 5. Decide whether database-only isolation may proceed while shared AWS/service credentials remain, or require their separation first.
 6. Separately approve the guarded migration 0001 and restore/checkpoint method.
 
 ## Exact next action
 
-Approve secure credential generation and the fail-closed Vercel scope transition
-as a separately controlled operation. Credentials remain ungenerated, Vercel and
-Neon remain unchanged, and migration 0001 remains unapplied.
+Approve the fail-closed, branch-specific Vercel Preview `DATABASE_URL` mapping
+as a separately controlled operation. The runtime credential is established;
+the migration credential remains unset and migration 0001 remains unapplied.

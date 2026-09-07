@@ -296,6 +296,7 @@ escalation, required records, test cadence, and owner approval.
 | Aug 5 2026 | Legacy authentication containment | Source checkpoint removes unverified identity-header trust and provider-specific routes, fails closed without a Notarix/Cognito session, and moves 16 staff pages to explicit RBAC; Production remains unremediated because no Production deployment is authorized |
 | Sep 7 2026 | Authentication-containment integration | Commit `870e6889` was manually integrated into the current checkpoint as `e9b89d8` while preserving all later work; authentication reference control, lint with zero errors, TypeScript, 47 application/security tests, six database-contract tests, and the production build passed in a secret-free local validation copy; current dependency audit remains an open security gate |
 | Sep 7 2026 | Lockfile-only dependency remediation | Eight transitive packages were refreshed within existing direct dependency ranges; `package.json` and application source remained unchanged; full and Production-only npm audits returned zero vulnerabilities; complete quality, build, and database-contract validation passed in a secret-free local validation copy |
+| Sep 7 2026 | Preview runtime credential bootstrap | The owner-controlled procedure established the initial `notarix_preview_app` password and verified runtime authentication against the approved isolated Neon direct endpoint with TLS verification; no secret was displayed or recorded; `notarix_preview_migrator` remains `PASSWORD NULL`; Vercel, migration 0001, and Production remain unchanged |
 
 ## Phase 2 database contract checkpoint — Aug 6 2026
 
@@ -305,9 +306,10 @@ provider, role class, direct/pooled classification, and TLS `verify-full`.
 Production runtime continues using its existing `DATABASE_URL`; Production
 migration execution additionally requires two explicit approval gates.
 
-Preview credentials remain ungenerated, migration 0001 remains unapplied, and
-incident containment removed `DATABASE_URL` from Preview. Phase 2 remains paused
-and blocked at the atomic Preview-only mapping gate.
+The Preview runtime credential is established and verified; the migration
+credential remains unset. Migration 0001 remains unapplied, and incident
+containment removed `DATABASE_URL` from Preview. Phase 2 is blocked at the
+atomic Preview-only mapping gate.
 
 ## Authentication containment integration checkpoint — Sep 7 2026
 
