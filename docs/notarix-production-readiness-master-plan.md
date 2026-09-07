@@ -295,6 +295,7 @@ escalation, required records, test cadence, and owner approval.
 | Aug 6 2026 | Order API/Lambda Phase A | Provider-neutral GET/place-hold contracts, pure authorization/transition/idempotency/audit rules, repository-only tests, Production seed-fallback guard, proposed normalized migration, and non-deployable AWS manifest completed; no AWS, database, environment, billing, deployment, Preview, or Production change |
 | Aug 5 2026 | Legacy authentication containment | Source checkpoint removes unverified identity-header trust and provider-specific routes, fails closed without a Notarix/Cognito session, and moves 16 staff pages to explicit RBAC; Production remains unremediated because no Production deployment is authorized |
 | Sep 7 2026 | Authentication-containment integration | Commit `870e6889` was manually integrated into the current checkpoint as `e9b89d8` while preserving all later work; authentication reference control, lint with zero errors, TypeScript, 47 application/security tests, six database-contract tests, and the production build passed in a secret-free local validation copy; current dependency audit remains an open security gate |
+| Sep 7 2026 | Lockfile-only dependency remediation | Eight transitive packages were refreshed within existing direct dependency ranges; `package.json` and application source remained unchanged; full and Production-only npm audits returned zero vulnerabilities; complete quality, build, and database-contract validation passed in a secret-free local validation copy |
 
 ## Phase 2 database contract checkpoint — Aug 6 2026
 
@@ -324,8 +325,10 @@ cloud-offloaded files caused direct lint, TypeScript, and build processes to
 stall; this was an execution-environment issue, not a source failure. The
 current dependency audit reports high-severity advisories in the runtime
 Next.js/PostCSS/nanoid chain and development tooling. Dependency remediation
-remains required before production launch and was not folded into this narrowly
-scoped integration.
+was completed as a separately authorized lockfile-only change on Sep 7 2026.
+The remediation retained every direct dependency version and refreshed only
+transitive packages within their existing version ranges. Both full and
+Production-only audits subsequently reported zero vulnerabilities.
 
 ## Order API/Lambda Phase A checkpoint — Aug 6 2026
 
